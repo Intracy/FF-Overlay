@@ -16,7 +16,8 @@
     "build:server": "tsc -p server/tsconfig.json",
     "start": "node dist/server/index.js",
     "test": "vitest run",
-    "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p web/tsconfig.json --noEmit"
+    "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p web/tsconfig.json --noEmit",
+    "local": "bash scripts/start-local.sh"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

@@ -44,7 +44,17 @@ Webhooks ────────┘                                            
 
 ## Schnellstart
 
-Voraussetzung: Node.js ≥ 22.
+Voraussetzung: Node.js ≥ 22 (macOS: `brew install node`).
+
+**Zum Ausprobieren – ein Befehl:**
+
+```bash
+./scripts/start-local.sh        # oder: npm run local
+```
+
+Das Skript legt beim ersten Start eine `.env` mit zufälligem Passwort an, installiert die Abhängigkeiten, baut alles, startet auf http://localhost:3000 und öffnet den Browser. Das Passwort steht in der Konsole. Mit `--dev` startet es stattdessen den Entwicklungsmodus mit Hot Reload.
+
+**Manuell:**
 
 ```bash
 cp .env.example .env      # Werte eintragen

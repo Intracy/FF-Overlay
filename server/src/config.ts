@@ -1,5 +1,9 @@
 import path from 'node:path';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+
+// .env aus dem Projektordner laden (Node ≥ 22). Bereits gesetzte Umgebungsvariablen haben Vorrang.
+if (!process.env.VITEST && fs.existsSync('.env')) process.loadEnvFile('.env');
 
 function env(name: string, fallback = ''): string {
   return process.env[name]?.trim() || fallback;

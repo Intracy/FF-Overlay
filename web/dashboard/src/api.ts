@@ -50,6 +50,8 @@ export const EVENT_TYPES: Array<{ type: EventType; subtype?: string; label: stri
   { type: 'cheer', label: 'Cheer / Bits', icon: '◆' },
   { type: 'raid', label: 'Raid', icon: '⚑' },
   { type: 'redemption', label: 'Kanalpunkte', icon: '●' },
+  { type: 'power_up', label: 'Power-Up', icon: '⚡' },
+  { type: 'charity', label: 'Charity-Spende', icon: '♥' },
   { type: 'donation', label: 'Spende', icon: '€' },
   { type: 'custom', label: 'Eigenes Event', icon: '✱' },
 ];

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, EVENT_TYPES, typeIcon, typeLabel, type EventLogEntry, type Overlay, type QueueState } from '../api';
 import { useLive } from '../live';
 import { StatusBadge, timeAgo, useAction, useLoad } from '../ui';
@@ -10,6 +10,8 @@ const FILTERS = [
   { key: 'cheer', label: 'Bits' },
   { key: 'raid', label: 'Raids' },
   { key: 'redemption', label: 'Kanalpunkte' },
+  { key: 'power_up', label: 'Power-Ups' },
+  { key: 'charity', label: 'Charity' },
   { key: 'donation', label: 'Spenden' },
 ];
 
@@ -26,6 +28,8 @@ function EventTitle({ e }: { e: EventLogEntry['event'] }) {
     case 'cheer': return <>{name} cheert {amount}</>;
     case 'raid': return <>{name} raidet mit {e.count} Leuten</>;
     case 'redemption': return <>{name} löst „{e.product}“ ein</>;
+    case 'power_up': return <>{name} löst Power-Up „{e.product}“ aus ({e.count} Bits)</>;
+    case 'charity': return <>{name} spendet {amount} für {e.product ?? 'den guten Zweck'}</>;
     case 'donation': return <>{name} spendet {amount || '(Betrag verborgen)'}</>;
     case 'stream_status': return <>Stream {e.subtype === 'online' ? 'gestartet' : 'beendet'}</>;
     default: return <>{name} · {typeLabel(e.type, e.subtype)} {amount}</>;
@@ -37,6 +41,13 @@ function QueueCard({ overlay, state }: { overlay: Overlay; state?: QueueState })
   const act = (a: string, msg?: string) => run(() => api.post(`/api/overlays/${overlay.id}/queue/${a}`), msg);
   const setAudio = (patch: { muted?: boolean; volume?: number }) => run(() => api.patch(`/api/overlays/${overlay.id}`, patch));
   const s = state;
+  // Countdown der Moderation sekündlich aktualisieren
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!s?.held.some((h) => h.releaseAt)) return;
+    const i = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(i);
+  }, [s?.held]);
   return (
     <div className="card stack">
       <div className="row between">
@@ -45,6 +56,24 @@ function QueueCard({ overlay, state }: { overlay: Overlay; state?: QueueState })
           <span className="dot" />{s?.connections ?? 0} Quelle{s?.connections === 1 ? '' : 'n'}
         </span>
       </div>
+      {!!s?.held.length && (
+        <div className="stack">
+          <div className="small" style={{ color: 'var(--warn)', fontWeight: 700 }}>Wartet auf Moderation ({s.held.length})</div>
+          {s.held.map((h) => (
+            <div key={h.itemId} className="held">
+              <div style={{ fontWeight: 650 }}>{h.title}</div>
+              {h.message && <div className="small muted">„{h.message}“</div>}
+              <div className="row between" style={{ marginTop: 6 }}>
+                <span className="small muted">{h.releaseAt ? `automatisch in ${Math.max(0, Math.round((h.releaseAt - Date.now()) / 1000))} s` : 'wartet auf Freigabe'}</span>
+                <span className="row">
+                  <button className="small" onClick={() => run(() => api.post(`/api/overlays/${overlay.id}/moderation/${h.itemId}/approve`))}>✓ Freigeben</button>
+                  <button className="small danger" onClick={() => run(() => api.post(`/api/overlays/${overlay.id}/moderation/${h.itemId}/reject`))}>✕ Ablehnen</button>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="queue-now">
         <div className="small muted">Läuft gerade</div>
         <div style={{ fontWeight: 650 }}>{s?.playing?.title ?? (s?.paused ? 'Pausiert' : '–')}</div>

@@ -10,8 +10,17 @@ export type EventType =
   | 'donation'
   | 'raid'
   | 'redemption'
+  | 'power_up'
+  | 'charity'
   | 'stream_status'
   | 'custom';
+
+/** Twitch-Emote in einer Nachricht (Positionen in Zeichen, inklusive Ende). */
+export interface EmotePosition {
+  id: string;
+  begin: number;
+  end: number;
+}
 
 /** Einheitliches Event-Objekt, das alle Connectoren liefern (siehe Konzept „Event-Modell“). */
 export interface NormalizedEvent {
@@ -34,6 +43,8 @@ export interface NormalizedEvent {
   gifter?: string;
   isAnonymous?: boolean;
   isTest?: boolean;
+  /** Emotes in `message` (nur Twitch) */
+  emotes?: EmotePosition[];
   receivedAt: string;
   raw?: unknown;
 }
@@ -77,6 +88,16 @@ export interface Rule {
   templateId: string;
   enabled: boolean;
   onlyWhenLive: boolean;
+  /** Profil (Streamlabs: „Thema“), zu dem die Regel gehört */
+  profileId?: string;
+  /** Standard-Alert eines Event-Typs oder Variante (Streamlabs-Begriff) */
+  kind?: 'default' | 'variation';
+}
+
+export interface Profile {
+  id: string;
+  overlayId: string;
+  name: string;
 }
 
 export type Layout = 'above' | 'below' | 'left' | 'textOnly';
@@ -108,7 +129,24 @@ export interface AlertTemplate {
     letterAnimation: string;
     outro: string;
   };
-  message: { show: boolean; font: string; size: number; weight: number; color: string; minAmount: number };
+  message: { show: boolean; font: string; size: number; weight: number; color: string; minAmount: number; allowEmotes: boolean };
+  /** Text-to-Speech im Overlay (Web Speech API der Browserquelle) */
+  tts: {
+    enabled: boolean;
+    /** Name der Stimme (leer = Standardstimme der Sprache) */
+    voice: string;
+    lang: string;
+    minAmount: number;
+    volume: number;
+    /** Nachrichtenvorlage mit vorlesen */
+    includeTemplate: boolean;
+    /** Spam-Sicherheit: 0 aus, 1 niedrig, 2 mittel, 3 hoch */
+    security: number;
+    /** Ein Wort höchstens so oft vorlesen (0 = aus) */
+    repetitionBlock: number;
+  };
+  /** Eigener Code in einem Sandbox-Frame */
+  custom: { enabled: boolean; html: string; css: string; js: string; fields: string };
   animation: { in: string; out: string; speedMs: number };
   /** Gesamtdauer in ms */
   duration: number;
@@ -122,12 +160,20 @@ export interface TextSegment {
 }
 
 /** Fertig aufgelöster Alert, den das Overlay nur noch abspielt. */
+export type MessagePart = { text: string } | { emote: string; name: string };
+
 export interface AlertPayload {
   itemId: string;
   eventId: string;
   template: AlertTemplate;
   title: TextSegment[];
   message?: string;
+  /** Nachricht mit Emotes, wenn das Design Emotes erlaubt */
+  messageParts?: MessagePart[];
+  /** Fertig gefilterter Vorlesetext */
+  tts?: string;
+  /** Werte für Platzhalter im eigenen Code */
+  tokens: Record<string, string>;
 }
 
 export interface OverlayInfo {
@@ -139,9 +185,19 @@ export interface OverlayInfo {
   alertDelay: number;
   volume: number;
   muted: boolean;
+  /** Moderationsverzögerung in ms: 0 = aus, -1 = unbegrenzt (bis Freigabe) */
+  moderationDelay: number;
+  /** Streamlabs „Alert-Parry“: neue Alerts unterbrechen den laufenden */
+  interruptMode: boolean;
+  interruptDelay: number;
+  /** Ereignisfilter: Schlüssel aus dem Alert-Katalog, die dieses Overlay ignoriert */
+  disabledTypes: string[];
+  activeProfileId: string;
+  /** Hintergrund der Vorschau im Editor */
+  previewBackground: string;
 }
 
-export type EventStatus = 'queued' | 'played' | 'filtered' | 'suppressed' | 'no_rule' | 'skipped';
+export type EventStatus = 'queued' | 'held' | 'played' | 'filtered' | 'suppressed' | 'no_rule' | 'skipped' | 'rejected';
 
 export interface EventLogEntry {
   id: string;
@@ -159,6 +215,8 @@ export interface QueueState {
   volume: number;
   playing: { itemId: string; eventId: string; title: string } | null;
   pending: Array<{ itemId: string; eventId: string; title: string }>;
+  /** Wartet auf Moderation; releaseAt null = unbegrenzt */
+  held: Array<{ itemId: string; eventId: string; title: string; message?: string; releaseAt: number | null }>;
   connections: number;
 }
 
@@ -167,6 +225,14 @@ export interface GlobalSettings {
   blockedUsers: string[];
   badWords: string[];
   badWordMode: 'censor' | 'hide';
+  /** Eingebaute Liste gängiger Schimpfwörter zusätzlich verwenden */
+  useDefaultBadWords: boolean;
+  /** Namen mit Schimpfwörtern durch „Anonym“ ersetzen */
+  anonymizeNames: boolean;
+  /** Filter auch auf das Event-Log anwenden */
+  censorEventLog: boolean;
+  /** Session (größte Spende) bei Stream-Start automatisch zurücksetzen */
+  autoResetSession: boolean;
 }
 
 /** Nachrichten Backend → Overlay */

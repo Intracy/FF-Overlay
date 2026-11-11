@@ -58,7 +58,7 @@ describe('API', () => {
     const show = messages.find((m) => m.t === 'alert.show');
     expect(show.alert.title.map((s: { text: string }) => s.text).join('').replace(/\u00a0/g, ' ')).toBe('Lea spendet 60,00 €!');
     expect(show.alert.message).toBe('Für FrankenFinals!');
-    expect(show.alert.template.name).toBe('Große Spende');
+    expect(show.alert.template.name).toContain('Große Spende');
 
     ws.send(JSON.stringify({ t: 'alert.done', itemId: show.alert.itemId }));
     await new Promise((r) => setTimeout(r, 100));

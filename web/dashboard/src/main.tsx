@@ -7,6 +7,7 @@ import { LiveProvider, useLive } from './live';
 import { LoginPage } from './pages/Login';
 import { LivePage } from './pages/Live';
 import { RulesPage } from './pages/Rules';
+import { AlertBoxPage } from './pages/AlertBox';
 import { TemplatesPage } from './pages/Templates';
 import { OverlaysPage } from './pages/Overlays';
 import { ConnectionsPage } from './pages/Connections';
@@ -15,8 +16,9 @@ import { SettingsPage } from './pages/Settings';
 
 const NAV = [
   { to: '/', label: 'Live' },
-  { to: '/rules', label: 'Regeln' },
-  { to: '/templates', label: 'Alert-Designs' },
+  { to: '/alertbox', label: 'Alert-Box' },
+  { to: '/rules', label: 'Regeln (erweitert)' },
+  { to: '/templates', label: 'Alle Designs' },
   { to: '/overlays', label: 'Overlays' },
   { to: '/connections', label: 'Verbindungen' },
   { to: '/media', label: 'Mediathek' },
@@ -31,6 +33,7 @@ function Shell() {
 
   const page = (() => {
     switch (path) {
+      case '/alertbox': return <AlertBoxPage />;
       case '/rules': return <RulesPage />;
       case '/templates': return <TemplatesPage />;
       case '/overlays': return <OverlaysPage />;

@@ -43,13 +43,38 @@ export const templateSchema = z.object({
     weight: z.number().min(100).max(900),
     color,
     minAmount: z.number().min(0),
+    allowEmotes: z.boolean(),
+  }),
+  tts: z.object({
+    enabled: z.boolean(),
+    voice: z.string().max(200),
+    lang: z.string().max(20),
+    minAmount: z.number().min(0),
+    volume: z.number().min(0).max(1),
+    includeTemplate: z.boolean(),
+    security: z.number().int().min(0).max(3),
+    repetitionBlock: z.number().int().min(0).max(100),
+  }),
+  custom: z.object({
+    enabled: z.boolean(),
+    html: z.string().max(50_000),
+    css: z.string().max(50_000),
+    js: z.string().max(50_000),
+    fields: z.string().max(10_000).refine((f) => {
+      try {
+        const v = JSON.parse(f || '{}');
+        return v && typeof v === 'object' && !Array.isArray(v);
+      } catch {
+        return false;
+      }
+    }, 'muss ein JSON-Objekt sein'),
   }),
   animation: z.object({ in: animName, out: animName, speedMs: z.number().min(100).max(5000) }),
   duration: z.number().min(1000).max(120000),
   textDelay: z.number().min(0).max(60000),
 });
 
-const eventType = z.enum(['follow', 'subscription', 'cheer', 'donation', 'raid', 'redemption', 'stream_status', 'custom']);
+const eventType = z.enum(['follow', 'subscription', 'cheer', 'donation', 'raid', 'redemption', 'power_up', 'charity', 'stream_status', 'custom']);
 
 export const ruleSchema = z.object({
   id: z.string().min(1).max(40),
@@ -73,6 +98,8 @@ export const ruleSchema = z.object({
   templateId: z.string().min(1).max(40),
   enabled: z.boolean(),
   onlyWhenLive: z.boolean(),
+  profileId: z.string().max(40).optional(),
+  kind: z.enum(['default', 'variation']).optional(),
 });
 
 export const settingsSchema = z.object({
@@ -80,6 +107,10 @@ export const settingsSchema = z.object({
   blockedUsers: z.array(z.string().max(100)).max(1000),
   badWords: z.array(z.string().max(100)).max(1000),
   badWordMode: z.enum(['censor', 'hide']),
+  useDefaultBadWords: z.boolean(),
+  anonymizeNames: z.boolean(),
+  censorEventLog: z.boolean(),
+  autoResetSession: z.boolean(),
 });
 
 export const overlayPatchSchema = z.object({
@@ -89,6 +120,12 @@ export const overlayPatchSchema = z.object({
   alertDelay: z.number().int().min(0).max(60000).optional(),
   volume: z.number().min(0).max(1).optional(),
   muted: z.boolean().optional(),
+  moderationDelay: z.number().int().min(-1).max(600_000).optional(),
+  interruptMode: z.boolean().optional(),
+  interruptDelay: z.number().int().min(0).max(60_000).optional(),
+  disabledTypes: z.array(z.string().max(40)).max(50).optional(),
+  activeProfileId: z.string().max(40).optional(),
+  previewBackground: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional(),
 });
 
 export const testEventSchema = z.object({

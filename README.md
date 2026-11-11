@@ -18,7 +18,17 @@ Webhooks ────────┘                                            
 - **betterplace** Spendenaktionen über die Public API v4 (Polling ≥ 15 s mit ETag, Duplikat-Filter; vorhandene Spenden lösen beim Einrichten keinen Alert aus).
 - **Eigene Webhooks** für Ko-fi, Streamer.bot, Zapier oder eigene Tools.
 
-**Regeln** (mehr als Streamlabs: beliebig viele UND-Bedingungen pro Regel)
+**Alert-Box im Aufbau von Streamlabs** (Menüpunkt „Alert-Box“)
+- Navigation wie Streamlabs: *Allgemeine Einstellungen*, *Globale Bearbeitung*, dann pro Plattform jeder Event-Typ mit Standard-Alert und Varianten („Variation hinzufügen“ mit Standard- oder aktuellen Einstellungen, „Variationen verwalten“ mit Reihenfolge, Pausieren, Löschen)
+- Varianten-Bedingungen aus dem Streamlabs-Katalog: zufällig mit Häufigkeit (sehr selten … sehr häufig), Betrag/Bits/Monate/Streak mindestens oder genau, Abo-Stufe, Mindestanzahl Gift-Subs, anonym verschenkt, Raid-Größe, bestimmtes Power-Up, Belohnungsname, größte Spende des Streams
+- **Themen** (Profile): mehrere komplette Alert-Box-Konfigurationen pro Overlay, umschaltbar, als Kopie oder leer anlegbar
+- **Ereignisse filtern** pro Overlay und **Test**-Menü für jeden Event-Typ
+- **Allgemeine Einstellungen**: Alert-Verzögerung, **Moderationsverzögerung** (Sekunden oder unbegrenzt, Freigabe/Ablehnen im Live-Bereich), **Alert-Parry** (neuer Alert unterbricht den laufenden), Vorschau-Hintergrund, Session-Reset bei Stream-Start, Schimpfwort-Filter (Sternchen oder ausblenden, Standardliste, Namen anonymisieren, auf Event-Log anwenden, eigene Wörter, Blacklist)
+- **Globale Bearbeitung**: Allgemein, Animationen, Bild, Video-Lautstärke, Positionierung, Sound, Schrift, Nachrichtenschrift und TTS mit „Auf alle Alerts anwenden“
+- Pro Alert: **Text-in-Sprache** (Stimme, Sprache, Mindestbetrag, Spam-Sicherheit aus/niedrig/mittel/hoch, Wiederholungssperre, Lautstärke, Vorlage mitlesen), **Twitch-Emotes** in Nachrichten, **eigenes HTML/CSS/JS** mit eigenen Feldern in einem abgeschotteten Sandbox-Frame
+- Zusätzliche Twitch-Events: **Power-Ups** und **Charity-Spenden**
+
+**Regeln** (mehr als Streamlabs: beliebig viele UND-Bedingungen pro Regel; unter „Regeln (erweitert)“)
 - Auslöser: Event-Typ + optional Subtyp (Sub/Resub/Gift) und Plattform
 - Bedingungen: mindestens, höchstens, genau, nicht, zwischen, enthält, Regex, leer/nicht leer, **größter Betrag dieses Streams**, **erstes Event dieses Users**, **Zufall in %**
 - Priorität (höchste gewinnt) und Gewichtung (Zufall unter Gleichen), „nur wenn live“
@@ -96,7 +106,11 @@ Ist der Key einmal sichtbar geworden: **Key erneuern** – alte Quellen werden s
 3. `TWITCH_CLIENT_ID` und `TWITCH_CLIENT_SECRET` in `.env` eintragen, neu starten
 4. Dashboard → **Verbindungen** → „Mit Twitch verbinden“ (mit dem Broadcaster-Account)
 
-Benötigte Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`.
+Benötigte Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`.
+Wer Twitch vor dem Update verbunden hat, muss einmal **neu verbinden**, damit Charity-Spenden ankommen.
+
+### Text-in-Sprache
+TTS nutzt die Sprachausgabe der Browserquelle (Web Speech API). Welche Stimmen es gibt, hängt vom Rechner ab, auf dem OBS läuft (macOS und Windows bringen deutsche Stimmen mit). Die Stimmenliste im Dashboard zeigt die Stimmen des Rechners, auf dem das Dashboard offen ist; fehlt die gewählte Stimme in OBS, wird die Standardstimme der Sprache genutzt.
 
 ### GIPHY
 Key unter https://developers.giphy.com/dashboard/ anlegen und als `GIPHY_API_KEY` setzen. Neue Keys sind Beta-Keys (100 Aufrufe/Stunde); für mehr ein Production-Upgrade beantragen. Die Kennzeichnung „Powered By GIPHY“ ist im Picker enthalten.
@@ -165,7 +179,8 @@ npm run build     # dist/web + dist/server
 
 ## Noch offen (Phase 2/3 des Konzepts)
 
-- YouTube Live (Super Chat, Mitglieder), TTS, Moderations-Verzögerung mit Freigabe
-- Safe Mode gegen Hate-Raids, globale Bearbeitung „auf alle anwenden“, umschaltbare Profile
+- YouTube Live (Super Chat, Mitglieder), Cloud-Stimmen für TTS (z. B. Amazon Polly wie bei Streamlabs)
+- Safe Mode gegen Hate-Raids
+- Von Streamlabs bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot-Einlösungen, Twitch-Clips bei Großspenden, Zuschauer-GIFs vor Spenden (braucht eine eigene Spendenseite)
 - betterplace-Webhook-Connector, ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket)
-- Weitere Widgets (Spendenziel, Event-Liste, Abspann), eigener HTML/CSS/JS-Code in einem Sandbox-Frame
+- Weitere Widgets (Spendenziel, Event-Liste, Abspann)

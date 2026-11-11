@@ -5,7 +5,8 @@ import * as store from '../db.js';
 import { config } from '../config.js';
 import { overlayPatchSchema, ruleSchema, settingsSchema, templateSchema, testEventSchema } from '../schemas.js';
 import { requireAuth } from './auth.js';
-import { sampleEvent } from '../seed.js';
+import { addVariation, alertboxView, applyGlobalEdit, createProfile, ensureDefault, GLOBAL_EDIT_GROUPS, removeRule, sampleEvent, type GlobalEditGroup } from '../alertbox.js';
+import { z } from 'zod';
 import { selectRule } from '../rules/engine.js';
 import { buildAlert, defaultTemplate } from '../templates/render.js';
 import type { EventType, NormalizedEvent } from '../shared/types.js';
@@ -26,6 +27,8 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
 
   app.patch<{ Params: { id: string } }>('/api/overlays/:id', async (req, reply) => {
     const patch = overlayPatchSchema.parse(req.body);
+    if (patch.activeProfileId && store.profiles.get(db, patch.activeProfileId)?.overlayId !== req.params.id)
+      return reply.code(400).send({ error: 'Profil gehört nicht zu diesem Overlay' });
     const o = store.overlays.update(db, req.params.id, patch);
     if (!o) return reply.code(404).send({ error: 'Overlay nicht gefunden' });
     if (patch.muted !== undefined || patch.volume !== undefined) pipeline.queue(o.id)?.setAudio(o.muted, o.volume);
@@ -46,6 +49,67 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
   });
 
   app.get('/api/queues', async () => pipeline.allQueueStates());
+
+  // ---------- Moderation (Streamlabs: „Alert-Moderationsverzögerung“) ----------
+  app.post<{ Params: { id: string; itemId: string; action: 'approve' | 'reject' } }>('/api/overlays/:id/moderation/:itemId/:action', async (req, reply) => {
+    const q = pipeline.queue(req.params.id);
+    if (!q) return reply.code(404).send({ error: 'Overlay nicht gefunden' });
+    const ok = req.params.action === 'approve' ? q.approve(req.params.itemId) : req.params.action === 'reject' ? q.reject(req.params.itemId) : false;
+    if (!ok) return reply.code(404).send({ error: 'Alert wartet nicht (mehr) auf Moderation' });
+    return q.state();
+  });
+
+  // ---------- Alert-Box (Streamlabs-Struktur) ----------
+  const overlayOr404 = (id: string) => {
+    const o = store.overlays.get(db, id);
+    if (!o) throw Object.assign(new Error('Overlay nicht gefunden'), { statusCode: 404 });
+    return o;
+  };
+
+  app.get<{ Params: { id: string } }>('/api/overlays/:id/alertbox', async (req) => alertboxView(db, overlayOr404(req.params.id)));
+
+  app.post<{ Params: { id: string; key: string } }>('/api/overlays/:id/alertbox/:key/enable', async (req) =>
+    ensureDefault(db, overlayOr404(req.params.id), req.params.key));
+
+  app.post<{ Params: { id: string; key: string } }>('/api/overlays/:id/alertbox/:key/variations', async (req) => {
+    const b = z.object({
+      name: z.string().min(1).max(80), copyCurrent: z.boolean().default(true),
+      presetId: z.string().max(40).optional(), value: z.union([z.string().max(200), z.number()]).optional(),
+    }).parse(req.body);
+    return addVariation(db, overlayOr404(req.params.id), req.params.key, b);
+  });
+
+  app.delete<{ Params: { ruleId: string } }>('/api/alertbox/rules/:ruleId', async (req) => ({ ok: removeRule(db, req.params.ruleId) }));
+
+  app.post<{ Params: { id: string } }>('/api/overlays/:id/global-edit', async (req) => {
+    const b = z.object({ group: z.enum(Object.keys(GLOBAL_EDIT_GROUPS) as [GlobalEditGroup, ...GlobalEditGroup[]]), values: templateSchema.omit({ id: true, name: true }) }).parse(req.body);
+    const n = applyGlobalEdit(db, overlayOr404(req.params.id), b.group, { ...b.values, id: '', name: '' });
+    return { updated: n };
+  });
+
+  // ---------- Profile (Streamlabs: „Themen“) ----------
+  app.get<{ Params: { id: string } }>('/api/overlays/:id/profiles', async (req) => store.profiles.list(db, overlayOr404(req.params.id).id));
+  app.post<{ Params: { id: string } }>('/api/overlays/:id/profiles', async (req) => {
+    const b = z.object({ name: z.string().min(1).max(80), copy: z.boolean().default(true), activate: z.boolean().default(true) }).parse(req.body);
+    const o = overlayOr404(req.params.id);
+    const p = createProfile(db, o, b.name, b.copy);
+    if (b.activate) store.overlays.update(db, o.id, { activeProfileId: p.id });
+    return p;
+  });
+  app.patch<{ Params: { profileId: string } }>('/api/profiles/:profileId', async (req, reply) => {
+    const b = z.object({ name: z.string().min(1).max(80) }).parse(req.body);
+    if (!store.profiles.rename(db, req.params.profileId, b.name)) return reply.code(404).send({ error: 'Profil nicht gefunden' });
+    return store.profiles.get(db, req.params.profileId);
+  });
+  app.delete<{ Params: { profileId: string } }>('/api/profiles/:profileId', async (req, reply) => {
+    const p = store.profiles.get(db, req.params.profileId);
+    if (!p) return reply.code(404).send({ error: 'Profil nicht gefunden' });
+    const all = store.profiles.list(db, p.overlayId);
+    if (all.length <= 1) return reply.code(409).send({ error: 'Das letzte Profil kann nicht gelöscht werden' });
+    const o = overlayOr404(p.overlayId);
+    if (o.activeProfileId === p.id) store.overlays.update(db, o.id, { activeProfileId: all.find((x) => x.id !== p.id)!.id });
+    return { ok: store.profiles.remove(db, p.id) };
+  });
 
   app.post<{ Params: { id: string; action: string } }>('/api/overlays/:id/queue/:action', async (req, reply) => {
     const q = pipeline.queue(req.params.id);
@@ -91,8 +155,16 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
   );
 
   // ---------- Regeln ----------
-  app.get<{ Querystring: { overlayId?: string } }>('/api/rules', async (req) => store.rules.list(db, req.query.overlayId));
-  app.post('/api/rules', async (req) => store.rules.save(db, ruleSchema.parse({ ...(req.body as object), id: nanoid(10) })));
+  app.get<{ Querystring: { overlayId?: string } }>('/api/rules', async (req) => {
+    const o = req.query.overlayId ? store.overlays.get(db, req.query.overlayId) : undefined;
+    return o ? store.rules.active(db, o) : store.rules.list(db);
+  });
+  app.post('/api/rules', async (req) => {
+    const r = ruleSchema.parse({ ...(req.body as object), id: nanoid(10) });
+    r.profileId ??= store.overlays.get(db, r.overlayId)?.activeProfileId;
+    r.kind ??= r.conditions.length ? 'variation' : 'default';
+    return store.rules.save(db, r);
+  });
   app.put<{ Params: { id: string } }>('/api/rules/:id', async (req) => store.rules.save(db, ruleSchema.parse({ ...(req.body as object), id: req.params.id })));
   app.delete<{ Params: { id: string } }>('/api/rules/:id', async (req) => ({ ok: store.rules.remove(db, req.params.id) }));
 
@@ -101,7 +173,7 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
     const body = testEventSchema.parse(req.body);
     const event = toTestEvent(body);
     return store.overlays.list(db).map((o) => {
-      const m = selectRule(store.rules.list(db, o.id), event, {
+      const m = selectRule(store.rules.active(db, o), event, {
         isLive: pipeline.session.live, largestAmountThisStream: pipeline.session.largestAmount, hasPreviousFromUser: false, random: Math.random,
       });
       return { overlayId: o.id, overlay: o.name, rule: m?.rule.name ?? null, reason: m?.reason ?? 'keine passende Regel' };
@@ -134,7 +206,7 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
   // ---------- Einstellungen & Session ----------
   app.get('/api/settings', async () => store.settings.global(db));
   app.put('/api/settings', async (req) => {
-    const s = settingsSchema.parse(req.body);
+    const s = { ...store.settings.global(db), ...settingsSchema.partial().parse(req.body) };
     store.settings.set(db, 'global', s);
     return s;
   });

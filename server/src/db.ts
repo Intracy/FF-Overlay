@@ -4,6 +4,7 @@ import path from 'node:path';
 import { nanoid } from 'nanoid';
 import type {
   AlertTemplate,
+  Profile,
   EventLogEntry,
   EventStatus,
   GlobalSettings,
@@ -12,10 +13,13 @@ import type {
   Rule,
 } from './shared/types.js';
 import { randomKey } from './lib/crypto.js';
+import { withTemplateDefaults } from './templates/defaults.js';
 
 export type DB = Database.Database;
 
-const MIGRATIONS: string[] = [
+type Migration = string | ((db: Database.Database) => void);
+
+export const MIGRATIONS: Migration[] = [
   `CREATE TABLE overlays (
      id TEXT PRIMARY KEY, name TEXT NOT NULL, key TEXT NOT NULL,
      width INTEGER NOT NULL DEFAULT 1920, height INTEGER NOT NULL DEFAULT 1080,
@@ -33,6 +37,26 @@ const MIGRATIONS: string[] = [
    CREATE TABLE media (id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, url TEXT NOT NULL,
      source TEXT NOT NULL, giphy_id TEXT, created_at TEXT NOT NULL);
    CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`,
+  // v2: Overlay-Optionen (Moderation, Alert-Parry, Ereignisfilter …) und Profile („Themen“)
+  `ALTER TABLE overlays ADD COLUMN options TEXT NOT NULL DEFAULT '{}';
+   CREATE TABLE profiles (id TEXT PRIMARY KEY, overlay_id TEXT NOT NULL REFERENCES overlays(id) ON DELETE CASCADE,
+     name TEXT NOT NULL, created_at TEXT NOT NULL);`,
+  // v3: bestehende Overlays bekommen ein Standard-Profil, Regeln werden zugeordnet
+  (db) => {
+    const ovs = db.prepare('SELECT id, options FROM overlays').all() as Array<{ id: string; options: string }>;
+    for (const o of ovs) {
+      const pid = nanoid(10);
+      db.prepare('INSERT INTO profiles (id, overlay_id, name, created_at) VALUES (?,?,?,?)').run(pid, o.id, 'Standard', new Date().toISOString());
+      db.prepare('UPDATE overlays SET options=? WHERE id=?').run(JSON.stringify({ ...JSON.parse(o.options), activeProfileId: pid }), o.id);
+      const rs = db.prepare('SELECT id, data FROM rules WHERE overlay_id=?').all(o.id) as Array<{ id: string; data: string }>;
+      for (const r of rs) {
+        const rule = JSON.parse(r.data) as Rule;
+        rule.profileId = pid;
+        rule.kind = rule.conditions.length ? 'variation' : 'default';
+        db.prepare('UPDATE rules SET data=? WHERE id=?').run(JSON.stringify(rule), r.id);
+      }
+    }
+  },
 ];
 
 export function openDb(file: string): DB {
@@ -43,7 +67,9 @@ export function openDb(file: string): DB {
   const version = db.pragma('user_version', { simple: true }) as number;
   for (let i = version; i < MIGRATIONS.length; i++) {
     db.exec('BEGIN');
-    db.exec(MIGRATIONS[i]!);
+    const m = MIGRATIONS[i]!;
+    if (typeof m === 'string') db.exec(m);
+    else m(db);
     db.pragma(`user_version = ${i + 1}`);
     db.exec('COMMIT');
   }
@@ -56,11 +82,17 @@ const now = () => new Date().toISOString();
 
 interface OverlayRow {
   id: string; name: string; key: string; width: number; height: number;
-  alert_delay: number; volume: number; muted: number;
+  alert_delay: number; volume: number; muted: number; options: string;
 }
+type OverlayOptions = Pick<OverlayInfo, 'moderationDelay' | 'interruptMode' | 'interruptDelay' | 'disabledTypes' | 'activeProfileId' | 'previewBackground'>;
+const OPTION_DEFAULTS: OverlayOptions = {
+  moderationDelay: 0, interruptMode: false, interruptDelay: 500, disabledTypes: [], activeProfileId: '', previewBackground: '#2b2f36',
+};
+const OPTION_KEYS = Object.keys(OPTION_DEFAULTS) as Array<keyof OverlayOptions>;
 const toOverlay = (r: OverlayRow): OverlayInfo => ({
   id: r.id, name: r.name, key: r.key, width: r.width, height: r.height,
   alertDelay: r.alert_delay, volume: r.volume, muted: !!r.muted,
+  ...OPTION_DEFAULTS, ...JSON.parse(r.options || '{}'),
 });
 
 export const overlays = {
@@ -72,14 +104,16 @@ export const overlays = {
   create: (db: DB, name: string): OverlayInfo => {
     const id = nanoid(10);
     db.prepare('INSERT INTO overlays (id, name, key, created_at) VALUES (?, ?, ?, ?)').run(id, name, randomKey(), now());
-    return overlays.get(db, id)!;
+    const profile = profiles.create(db, id, 'Standard');
+    return overlays.update(db, id, { activeProfileId: profile.id })!;
   },
   update: (db: DB, id: string, patch: Partial<Omit<OverlayInfo, 'id' | 'key'>>) => {
     const cur = overlays.get(db, id);
     if (!cur) return undefined;
     const n = { ...cur, ...patch };
-    db.prepare('UPDATE overlays SET name=?, width=?, height=?, alert_delay=?, volume=?, muted=? WHERE id=?')
-      .run(n.name, n.width, n.height, n.alertDelay, n.volume, n.muted ? 1 : 0, id);
+    const options = Object.fromEntries(OPTION_KEYS.map((k) => [k, n[k]]));
+    db.prepare('UPDATE overlays SET name=?, width=?, height=?, alert_delay=?, volume=?, muted=?, options=? WHERE id=?')
+      .run(n.name, n.width, n.height, n.alertDelay, n.volume, n.muted ? 1 : 0, JSON.stringify(options), id);
     return overlays.get(db, id);
   },
   rotateKey: (db: DB, id: string) => {
@@ -89,16 +123,38 @@ export const overlays = {
   remove: (db: DB, id: string) => db.prepare('DELETE FROM overlays WHERE id=?').run(id).changes > 0,
 };
 
+// ---------- Profile (Streamlabs: „Themen“) ----------
+
+export const profiles = {
+  list: (db: DB, overlayId: string) =>
+    (db.prepare('SELECT id, overlay_id, name FROM profiles WHERE overlay_id=? ORDER BY created_at').all(overlayId) as Array<{ id: string; overlay_id: string; name: string }>)
+      .map((r): Profile => ({ id: r.id, overlayId: r.overlay_id, name: r.name })),
+  get: (db: DB, id: string) => {
+    const r = db.prepare('SELECT id, overlay_id, name FROM profiles WHERE id=?').get(id) as { id: string; overlay_id: string; name: string } | undefined;
+    return r ? ({ id: r.id, overlayId: r.overlay_id, name: r.name } as Profile) : undefined;
+  },
+  create: (db: DB, overlayId: string, name: string): Profile => {
+    const id = nanoid(10);
+    db.prepare('INSERT INTO profiles (id, overlay_id, name, created_at) VALUES (?,?,?,?)').run(id, overlayId, name, now());
+    return { id, overlayId, name };
+  },
+  rename: (db: DB, id: string, name: string) => db.prepare('UPDATE profiles SET name=? WHERE id=?').run(name, id).changes > 0,
+  remove: (db: DB, id: string) => {
+    for (const r of rules.list(db).filter((x) => x.profileId === id)) rules.remove(db, r.id);
+    return db.prepare('DELETE FROM profiles WHERE id=?').run(id).changes > 0;
+  },
+};
+
 // ---------- Templates ----------
 
 export const templates = {
   list: (db: DB) =>
     (db.prepare('SELECT data FROM templates ORDER BY name').all() as { data: string }[]).map(
-      (r) => JSON.parse(r.data) as AlertTemplate,
+      (r) => withTemplateDefaults(JSON.parse(r.data)),
     ),
   get: (db: DB, id: string) => {
     const r = db.prepare('SELECT data FROM templates WHERE id=?').get(id) as { data: string } | undefined;
-    return r ? (JSON.parse(r.data) as AlertTemplate) : undefined;
+    return r ? withTemplateDefaults(JSON.parse(r.data)) : undefined;
   },
   save: (db: DB, t: AlertTemplate) => {
     db.prepare(
@@ -113,6 +169,8 @@ export const templates = {
 // ---------- Rules ----------
 
 export const rules = {
+  /** Regeln des aktiven Profils eines Overlays */
+  active: (db: DB, overlay: OverlayInfo) => rules.list(db, overlay.id).filter((r) => !r.profileId || r.profileId === overlay.activeProfileId),
   list: (db: DB, overlayId?: string) => {
     const rows = (overlayId
       ? db.prepare('SELECT data FROM rules WHERE overlay_id=?').all(overlayId)
@@ -225,6 +283,10 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
   blockedUsers: [],
   badWords: [],
   badWordMode: 'censor',
+  useDefaultBadWords: false,
+  anonymizeNames: true,
+  censorEventLog: true,
+  autoResetSession: true,
 };
 
 export const settings = {

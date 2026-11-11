@@ -44,9 +44,12 @@ export function SettingsPage() {
         </div>
         <div className="card stack">
           <h2 style={{ margin: 0 }}>Schimpfwort-Filter</h2>
-          <Field label="Wörter (eines pro Zeile)" hint="Namen mit diesen Wörtern werden zu „Anonym“.">
+          <Field label="Eigene Wörter (eines pro Zeile)">
             <textarea rows={5} value={words} onChange={(e) => setWords(e.target.value)} />
           </Field>
+          <label className="check"><input type="checkbox" checked={s.useDefaultBadWords} onChange={(e) => setS({ ...s, useDefaultBadWords: e.target.checked })} /> Standardliste mit „schlimmen Wörtern“ aktivieren</label>
+          <label className="check"><input type="checkbox" checked={s.anonymizeNames} onChange={(e) => setS({ ...s, anonymizeNames: e.target.checked })} /> Namen mit inakzeptablen Wörtern anonymisieren</label>
+          <label className="check"><input type="checkbox" checked={s.censorEventLog} onChange={(e) => setS({ ...s, censorEventLog: e.target.checked })} /> Filter auf letzte Ereignisse (Event-Log) anwenden</label>
           <Field label="In Nachrichten">
             <select value={s.badWordMode} onChange={(e) => setS({ ...s, badWordMode: e.target.value as GlobalSettings['badWordMode'] })}>
               <option value="censor">durch Sternchen ersetzen</option>
@@ -57,12 +60,13 @@ export function SettingsPage() {
         <div className="card stack">
           <h2 style={{ margin: 0 }}>Stream-Session</h2>
           <p className="small muted" style={{ margin: 0 }}>
-            Für „größter Betrag dieses Streams“ und „nur wenn live“. Twitch setzt die Session beim Stream-Start automatisch zurück.
+            Für „größter Betrag dieses Streams“ und „nur wenn live“. 
           </p>
           <div className="small">
             Status: <b>{session.data?.live ? 'live' : 'offline'}</b> · größter Betrag bisher: <b>{session.data?.largestAmount ?? 0}</b>
             {session.data?.startedAt && <> · seit {new Date(session.data.startedAt).toLocaleString('de-DE')}</>}
           </div>
+          <label className="check"><input type="checkbox" checked={s.autoResetSession} onChange={(e) => setS({ ...s, autoResetSession: e.target.checked })} /> Bei Stream-Start automatisch zurücksetzen</label>
           <div><button onClick={() => run(() => api.post('/api/session/reset'), 'Session zurückgesetzt').then(session.reload)}>Session zurücksetzen</button></div>
         </div>
         <div className="card stack">

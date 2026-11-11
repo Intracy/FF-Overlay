@@ -21,7 +21,7 @@ function sampleSegments(format: string): TextSegment[] {
 }
 
 /** Zeigt ein Template auf einer skalierten 1920×1080-Bühne, mit derselben Render-Logik wie das Overlay. */
-export function TemplatePreview({ template, muted = true }: { template: AlertTemplate; muted?: boolean }) {
+export function TemplatePreview({ template, muted = true, background }: { template: AlertTemplate; muted?: boolean; background?: string }) {
   const frame = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
@@ -40,6 +40,9 @@ export function TemplatePreview({ template, muted = true }: { template: AlertTem
       itemId: `preview-${run}`, eventId: 'preview', template,
       title: sampleSegments(template.text.format),
       message: template.message.show ? SAMPLE.message : undefined,
+      messageParts: template.message.show && template.message.allowEmotes ? [{ text: 'Grüße in den Chat! ' }, { emote: '25', name: 'Kappa' }] : undefined,
+      tokens: { ...SAMPLE, messageTemplate: sampleSegments(template.text.format).map((x) => x.text).join(''), userMessage: template.message.show ? SAMPLE.message : '' },
+      tts: template.tts.enabled ? SAMPLE.message : undefined,
     };
     let playing: PlayingAlert | null = null;
     // kurze Entprellung, damit Tippen nicht bei jedem Zeichen neu startet
@@ -51,7 +54,7 @@ export function TemplatePreview({ template, muted = true }: { template: AlertTem
   }, [template, run, muted]);
 
   return (
-    <div className="preview-frame" ref={frame}>
+    <div className="preview-frame" ref={frame} style={background ? { background } : undefined}>
       <div className="preview-stage" ref={stage} style={{ transform: `scale(${scale})` }} />
     </div>
   );

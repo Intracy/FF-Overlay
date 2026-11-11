@@ -1,4 +1,4 @@
-import type { AlertTemplate, NormalizedEvent, TextSegment } from '../shared/types.js';
+import type { AlertPayload, AlertTemplate, EmotePosition, MessagePart, NormalizedEvent, TextSegment } from '../shared/types.js';
 import { nanoid } from 'nanoid';
 
 const TIER_LABEL: Record<string, string> = { '1000': 'Tier 1', '2000': 'Tier 2', '3000': 'Tier 3', prime: 'Prime' };
@@ -63,45 +63,70 @@ export function segmentsToText(segments: TextSegment[]): string {
   return segments.map((s) => s.text).join('');
 }
 
-export function buildAlert(template: AlertTemplate, event: NormalizedEvent) {
+/** Teilt eine Nachricht in Text und Twitch-Emotes (Positionen in Zeichen, inkl. Ende). */
+export function messageParts(message: string, emotes: EmotePosition[] | undefined): MessagePart[] {
+  const chars = Array.from(message);
+  const sorted = [...(emotes ?? [])].filter((e) => e.begin >= 0 && e.end < chars.length && e.begin <= e.end).sort((a, b) => a.begin - b.begin);
+  const parts: MessagePart[] = [];
+  let pos = 0;
+  for (const e of sorted) {
+    if (e.begin < pos) continue;
+    if (e.begin > pos) parts.push({ text: chars.slice(pos, e.begin).join('') });
+    parts.push({ emote: e.id, name: chars.slice(e.begin, e.end + 1).join('') });
+    pos = e.end + 1;
+  }
+  if (pos < chars.length) parts.push({ text: chars.slice(pos).join('') });
+  return parts;
+}
+
+/**
+ * Spam-Sicherheit für Text-to-Speech (Stufen wie bei Streamlabs: aus, niedrig, mittel, hoch).
+ * niedrig: Links entfernen · mittel: + Zeichen-/Wortwiederholungen kürzen · hoch: + nur Buchstaben, Ziffern, Satzzeichen
+ */
+export function sanitizeTts(text: string, security: number, repetitionBlock: number): string {
+  let t = text.normalize('NFC');
+  if (security >= 1) t = t.replace(/https?:\/\/\S+|www\.\S+/gi, '');
+  if (security >= 2) {
+    t = t.replace(/(.)\1{3,}/gu, '$1$1$1');
+    t = t.replace(/\b(\S+)(\s+\1\b){2,}/giu, '$1 $1');
+  }
+  if (security >= 3) t = t.replace(/[^\p{L}\p{N}\s.,!?;:'"€$%&()-]/gu, '');
+  if (repetitionBlock > 0) {
+    const counts = new Map<string, number>();
+    t = t.split(/(\s+)/).filter((w) => {
+      if (!w.trim()) return true;
+      const k = w.toLowerCase();
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+      return counts.get(k)! <= repetitionBlock;
+    }).join('');
+  }
+  return t.replace(/\s+/g, ' ').trim().slice(0, 300);
+}
+
+export function buildAlert(template: AlertTemplate, event: NormalizedEvent): AlertPayload {
   const title = renderFormat(template.text.format, event);
   const amount = event.amount?.value ?? 0;
-  const showMessage =
-    template.message.show && !!event.message?.trim() && (template.message.minAmount <= 0 || amount >= template.message.minAmount);
+  const msg = event.message?.trim() ?? '';
+  const showMessage = template.message.show && !!msg && (template.message.minAmount <= 0 || amount >= template.message.minAmount);
+
+  let tts: string | undefined;
+  const tt = template.tts;
+  if (tt.enabled && (tt.minAmount <= 0 || amount >= tt.minAmount)) {
+    const raw = [tt.includeTemplate ? segmentsToText(title) : '', msg].filter(Boolean).join('. ');
+    tts = sanitizeTts(raw, tt.security, tt.repetitionBlock) || undefined;
+  }
+
+  const values = tokenValues(event);
   return {
     itemId: nanoid(12),
     eventId: event.id,
     template,
     title,
-    message: showMessage ? event.message!.trim() : undefined,
+    message: showMessage ? msg : undefined,
+    messageParts: showMessage && template.message.allowEmotes && event.emotes?.length ? messageParts(msg, event.emotes) : undefined,
+    tts,
+    tokens: { ...values, messageTemplate: segmentsToText(title), userMessage: showMessage ? msg : '' },
   };
 }
 
-export function defaultTemplate(id: string, name: string, format: string): AlertTemplate {
-  return {
-    id,
-    name,
-    layout: 'above',
-    positioning: { mode: 'preset', image: { x: 50, y: 40 }, text: { x: 50, y: 75 } },
-    media: { kind: 'none', url: '', size: 60, volume: 1 },
-    sound: { url: '', volume: 0.6 },
-    text: {
-      format,
-      font: 'Poppins',
-      size: 56,
-      weight: 800,
-      color: '#ffffff',
-      highlightColor: '#ffb703',
-      strokeColor: '#000000',
-      strokeWidth: 0,
-      shadow: true,
-      intro: '',
-      letterAnimation: 'wave',
-      outro: '',
-    },
-    message: { show: true, font: 'Inter', size: 28, weight: 600, color: '#ffffff', minAmount: 0 },
-    animation: { in: 'fadeInUp', out: 'fadeOut', speedMs: 800 },
-    duration: 8000,
-    textDelay: 0,
-  };
-}
+export { defaultTemplate } from './defaults.js';

@@ -137,7 +137,7 @@ export function StatusBadge({ state }: { state: string }) {
     connected: ['ok', 'verbunden'], connecting: ['warn', 'verbindet'], disconnected: ['', 'getrennt'],
     error: ['err', 'Fehler'], not_configured: ['warn', 'nicht eingerichtet'],
     played: ['ok', 'gespielt'], queued: ['warn', 'in Queue'], filtered: ['err', 'gefiltert'], suppressed: ['', 'gebündelt'],
-    no_rule: ['', 'keine Regel'], skipped: ['', 'übersprungen'],
+    no_rule: ['', 'keine Regel'], skipped: ['', 'übersprungen'], held: ['warn', 'Moderation'], rejected: ['err', 'abgelehnt'],
   };
   const [cls, label] = map[state] ?? ['', state];
   return <span className={`badge ${cls}`}><span className="dot" />{label}</span>;

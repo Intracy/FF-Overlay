@@ -26,6 +26,7 @@ export function normalizeTwitch(subscriptionType: string, e: TwitchEvent, messag
         user: user(e.user_id, e.user_name, e.user_login), tier: e.tier,
         months: e.cumulative_months ?? undefined, streakMonths: e.streak_months ?? undefined,
         message: e.message?.text ?? undefined,
+        emotes: (e.message?.emotes ?? []).map((x: { id: string; begin: number; end: number }) => ({ id: String(x.id), begin: x.begin, end: x.end })),
       };
 
     case 'channel.subscription.gift':
@@ -56,6 +57,30 @@ export function normalizeTwitch(subscriptionType: string, e: TwitchEvent, messag
         message: e.user_input || undefined,
       };
 
+    case 'channel.bits.use': {
+      // Deckt auch normale Cheers ab – die kommen schon über channel.cheer. Hier nur Power-Ups.
+      if (e.type !== 'power_up') return null;
+      const labels: Record<string, string> = {
+        message_effect: 'Nachrichteneffekt', celebration: 'Bildschirm-Feier', gigantify_an_emote: 'Emote vergrößern',
+      };
+      const p = e.power_up ?? {};
+      return {
+        ...base, type: 'power_up', user: user(e.user_id, e.user_name, e.user_login),
+        product: labels[p.type] ?? p.type ?? 'Power-Up', count: e.bits, amount: { value: e.bits, currency: 'BITS' },
+        message: e.message?.text || undefined,
+        emotes: fragmentEmotes(e.message?.fragments),
+      };
+    }
+
+    case 'channel.charity_campaign.donate': {
+      const a = e.amount ?? {};
+      return {
+        ...base, type: 'charity', user: user(e.user_id, e.user_name, e.user_login),
+        amount: { value: Number(a.value ?? 0) / 10 ** Number(a.decimal_places ?? 0), currency: a.currency ?? 'USD' },
+        product: e.charity_name,
+      };
+    }
+
     case 'stream.online':
       return { ...base, type: 'stream_status', subtype: 'online', user: user(e.broadcaster_user_id, e.broadcaster_user_name) };
 
@@ -65,6 +90,19 @@ export function normalizeTwitch(subscriptionType: string, e: TwitchEvent, messag
     default:
       return null;
   }
+}
+
+/** Emote-Positionen aus Twitch-„fragments“ (Text + Emote-Stücke) berechnen. */
+export function fragmentEmotes(fragments: Array<{ type: string; text: string; emote?: { id: string } }> | undefined) {
+  if (!fragments?.length) return undefined;
+  const out: Array<{ id: string; begin: number; end: number }> = [];
+  let pos = 0;
+  for (const f of fragments) {
+    const len = Array.from(f.text ?? '').length;
+    if (f.type === 'emote' && f.emote?.id && len) out.push({ id: f.emote.id, begin: pos, end: pos + len - 1 });
+    pos += len;
+  }
+  return out.length ? out : undefined;
 }
 
 /** Subscriptions, die der Connector anlegt, mit Version und benötigtem Scope. */
@@ -78,6 +116,8 @@ export function twitchSubscriptions(broadcasterId: string) {
     { type: 'channel.cheer', version: '1', condition: b },
     { type: 'channel.raid', version: '1', condition: { to_broadcaster_user_id: broadcasterId } },
     { type: 'channel.channel_points_custom_reward_redemption.add', version: '1', condition: b },
+    { type: 'channel.bits.use', version: '1', condition: b },
+    { type: 'channel.charity_campaign.donate', version: '1', condition: b },
     { type: 'stream.online', version: '1', condition: b },
     { type: 'stream.offline', version: '1', condition: b },
   ];
@@ -88,4 +128,5 @@ export const TWITCH_SCOPES = [
   'channel:read:subscriptions',
   'bits:read',
   'channel:read:redemptions',
+  'channel:read:charity',
 ];

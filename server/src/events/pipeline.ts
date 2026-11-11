@@ -5,6 +5,8 @@ import type { EventStatus, GlobalSettings, NormalizedEvent, QueueState } from '.
 import { AlertQueue } from '../queue/alertQueue.js';
 import { selectRule } from '../rules/engine.js';
 import { buildAlert } from '../templates/render.js';
+import { eventCatalogKey } from '../shared/catalog.js';
+import { DEFAULT_BAD_WORDS } from '../lib/badwords.js';
 
 export interface StreamSession {
   live: boolean;
@@ -19,15 +21,18 @@ export function applyFilters(event: NormalizedEvent, s: GlobalSettings): { event
   if (event.type === 'donation' && s.minDonationAmount > 0 && (event.amount?.value ?? 0) < s.minDonationAmount)
     return { event, filtered: `Spende unter Mindestbetrag (${s.minDonationAmount})` };
 
-  const words = s.badWords.map((w) => w.trim()).filter(Boolean);
+  const words = [...s.badWords, ...(s.useDefaultBadWords ? DEFAULT_BAD_WORDS : [])].map((w) => w.trim()).filter(Boolean);
   if (!words.length) return { event };
-  const re = new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+  // ganze Wörter (Unicode-Buchstaben als Grenze), damit z. B. „Classic“ nicht zensiert wird
+  const alt = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const re = new RegExp(`(?<!\\p{L})(?:${alt})(?!\\p{L})`, 'giu');
   const next: NormalizedEvent = { ...event, user: { ...event.user } };
-  if (re.test(next.user.name)) next.user.name = 'Anonym';
+  if (s.anonymizeNames && re.test(next.user.name)) next.user.name = 'Anonym';
   re.lastIndex = 0;
   if (next.message && re.test(next.message)) {
     re.lastIndex = 0;
     next.message = s.badWordMode === 'hide' ? undefined : next.message.replace(re, (m) => '*'.repeat(m.length));
+    next.emotes = undefined; // Positionen stimmen nach dem Ersetzen nicht mehr sicher
   }
   return { event: next };
 }
@@ -50,8 +55,15 @@ export class Pipeline {
         connections: () => this.hub.overlayCount(overlayId),
         send: (msg) => this.hub.sendOverlay(overlayId, msg as never),
         alertDelay: () => store.overlays.get(this.db, overlayId)?.alertDelay ?? 2000,
+        moderationDelay: () => store.overlays.get(this.db, overlayId)?.moderationDelay ?? 0,
+        interrupt: () => {
+          const o = store.overlays.get(this.db, overlayId);
+          return { enabled: !!o?.interruptMode, delay: o?.interruptDelay ?? 500 };
+        },
         onStateChange: (state: QueueState) => this.hub.broadcastDashboard({ t: 'queue', state }),
-        onFinished: (eventId, how) => this.setStatus(eventId, how === 'played' ? 'played' : 'skipped', how === 'played' ? 'abgespielt' : 'übersprungen'),
+        onHeld: (eventId) => this.setStatus(eventId, 'held', 'wartet auf Moderation'),
+        onFinished: (eventId, how) =>
+          this.setStatus(eventId, how, how === 'played' ? 'abgespielt' : how === 'rejected' ? 'von Moderation abgelehnt' : 'übersprungen'),
       });
       q.muted = overlay.muted;
       q.volume = overlay.volume;
@@ -96,7 +108,10 @@ export class Pipeline {
     // Stream-Status pflegt nur die Session (für „größte Spende dieses Streams“ und „nur wenn live“).
     if (raw.type === 'stream_status') {
       const live = raw.subtype === 'online';
-      this.session = live ? { live: true, startedAt: raw.receivedAt, largestAmount: 0 } : { ...this.session, live: false };
+      const reset = live && store.settings.global(this.db).autoResetSession;
+      this.session = live
+        ? { live: true, startedAt: reset ? raw.receivedAt : this.session.startedAt ?? raw.receivedAt, largestAmount: reset ? 0 : this.session.largestAmount }
+        : { ...this.session, live: false };
       this.saveSession();
     }
 
@@ -110,9 +125,12 @@ export class Pipeline {
       return;
     }
 
-    const { event, filtered } = applyFilters(raw, store.settings.global(this.db));
+    const settings = store.settings.global(this.db);
+    const { event, filtered } = applyFilters(raw, settings);
+    // „Filter auf letzte Ereignisse anwenden“: sonst steht im Log das Original
+    const logged = settings.censorEventLog ? event : raw;
     if (filtered) {
-      this.log(event, 'filtered', filtered);
+      this.log(logged, 'filtered', filtered);
       return;
     }
 
@@ -128,27 +146,31 @@ export class Pipeline {
     }
 
     const reasons: string[] = [];
-    let queued = 0;
+    const jobs: Array<{ overlayId: string; alert: ReturnType<typeof buildAlert> }> = [];
+    const key = eventCatalogKey(event);
     for (const overlay of store.overlays.list(this.db)) {
-      const match = selectRule(store.rules.list(this.db, overlay.id), event, ctx);
+      if (key && overlay.disabledTypes.includes(key)) {
+        reasons.push(`${overlay.name}: Ereignistyp herausgefiltert`);
+        continue;
+      }
+      const match = selectRule(store.rules.active(this.db, overlay), event, ctx);
       if (!match) continue;
       const template = store.templates.get(this.db, match.rule.templateId);
       if (!template) {
-        reasons.push(`${overlay.name}: Template fehlt`);
+        reasons.push(`${overlay.name}: Design fehlt`);
         continue;
       }
       reasons.push(`${overlay.name}: ${match.reason}`);
-      queued++;
-      // Event zuerst loggen, dann einreihen – sonst kann „played“ vor dem Log-Eintrag eintreffen.
-      if (queued === 1) this.log(event, 'queued', '');
-      this.queue(overlay.id)!.enqueue(buildAlert(template, event));
+      jobs.push({ overlayId: overlay.id, alert: buildAlert(template, event) });
     }
 
-    if (!queued) {
-      this.log(event, 'no_rule', reasons.join('; ') || 'keine passende Regel');
+    // Erst loggen, dann einreihen – sonst können „held“/„played“ vor dem Log-Eintrag eintreffen.
+    if (!jobs.length) {
+      this.log(logged, 'no_rule', reasons.join('; ') || 'keine passende Regel');
       return;
     }
-    this.setStatus(event.id, 'queued', reasons.join('; '));
+    this.log(logged, 'queued', reasons.join('; '));
+    for (const j of jobs) this.queue(j.overlayId)!.enqueue(j.alert);
   }
 
   /** Spielt ein Event erneut ab (Replay aus dem Event-Log). */
@@ -159,10 +181,10 @@ export class Pipeline {
     let any = false;
     for (const overlay of store.overlays.list(this.db)) {
       if (overlayId && overlay.id !== overlayId) continue;
-      const match = selectRule(store.rules.list(this.db, overlay.id), { ...entry.event, isTest: true }, ctx);
+      const match = selectRule(store.rules.active(this.db, overlay), { ...entry.event, isTest: true }, ctx);
       const template = match && store.templates.get(this.db, match.rule.templateId);
       if (!template) continue;
-      this.queue(overlay.id)!.enqueue(buildAlert(template, entry.event));
+      this.queue(overlay.id)!.enqueue(buildAlert(template, entry.event), { skipModeration: true });
       any = true;
     }
     if (any) this.setStatus(eventId, 'queued', 'erneut abgespielt');

@@ -1,0 +1,239 @@
+import Database from 'better-sqlite3';
+import fs from 'node:fs';
+import path from 'node:path';
+import { nanoid } from 'nanoid';
+import type {
+  AlertTemplate,
+  EventLogEntry,
+  EventStatus,
+  GlobalSettings,
+  NormalizedEvent,
+  OverlayInfo,
+  Rule,
+} from './shared/types.js';
+import { randomKey } from './lib/crypto.js';
+
+export type DB = Database.Database;
+
+const MIGRATIONS: string[] = [
+  `CREATE TABLE overlays (
+     id TEXT PRIMARY KEY, name TEXT NOT NULL, key TEXT NOT NULL,
+     width INTEGER NOT NULL DEFAULT 1920, height INTEGER NOT NULL DEFAULT 1080,
+     alert_delay INTEGER NOT NULL DEFAULT 2000, volume REAL NOT NULL DEFAULT 1, muted INTEGER NOT NULL DEFAULT 0,
+     created_at TEXT NOT NULL);
+   CREATE TABLE templates (id TEXT PRIMARY KEY, name TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL);
+   CREATE TABLE rules (id TEXT PRIMARY KEY, overlay_id TEXT NOT NULL REFERENCES overlays(id) ON DELETE CASCADE,
+     data TEXT NOT NULL, updated_at TEXT NOT NULL);
+   CREATE INDEX rules_overlay ON rules(overlay_id);
+   CREATE TABLE events (id TEXT PRIMARY KEY, platform TEXT NOT NULL, type TEXT NOT NULL, data TEXT NOT NULL,
+     status TEXT NOT NULL, reason TEXT NOT NULL DEFAULT '', read INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+   CREATE INDEX events_created ON events(created_at);
+   CREATE TABLE connections (id TEXT PRIMARY KEY, platform TEXT NOT NULL, label TEXT NOT NULL, data TEXT NOT NULL,
+     enabled INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL);
+   CREATE TABLE media (id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, url TEXT NOT NULL,
+     source TEXT NOT NULL, giphy_id TEXT, created_at TEXT NOT NULL);
+   CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`,
+];
+
+export function openDb(file: string): DB {
+  if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
+  const db = new Database(file);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  const version = db.pragma('user_version', { simple: true }) as number;
+  for (let i = version; i < MIGRATIONS.length; i++) {
+    db.exec('BEGIN');
+    db.exec(MIGRATIONS[i]!);
+    db.pragma(`user_version = ${i + 1}`);
+    db.exec('COMMIT');
+  }
+  return db;
+}
+
+const now = () => new Date().toISOString();
+
+// ---------- Overlays ----------
+
+interface OverlayRow {
+  id: string; name: string; key: string; width: number; height: number;
+  alert_delay: number; volume: number; muted: number;
+}
+const toOverlay = (r: OverlayRow): OverlayInfo => ({
+  id: r.id, name: r.name, key: r.key, width: r.width, height: r.height,
+  alertDelay: r.alert_delay, volume: r.volume, muted: !!r.muted,
+});
+
+export const overlays = {
+  list: (db: DB) => (db.prepare('SELECT * FROM overlays ORDER BY created_at').all() as OverlayRow[]).map(toOverlay),
+  get: (db: DB, id: string) => {
+    const r = db.prepare('SELECT * FROM overlays WHERE id = ?').get(id) as OverlayRow | undefined;
+    return r ? toOverlay(r) : undefined;
+  },
+  create: (db: DB, name: string): OverlayInfo => {
+    const id = nanoid(10);
+    db.prepare('INSERT INTO overlays (id, name, key, created_at) VALUES (?, ?, ?, ?)').run(id, name, randomKey(), now());
+    return overlays.get(db, id)!;
+  },
+  update: (db: DB, id: string, patch: Partial<Omit<OverlayInfo, 'id' | 'key'>>) => {
+    const cur = overlays.get(db, id);
+    if (!cur) return undefined;
+    const n = { ...cur, ...patch };
+    db.prepare('UPDATE overlays SET name=?, width=?, height=?, alert_delay=?, volume=?, muted=? WHERE id=?')
+      .run(n.name, n.width, n.height, n.alertDelay, n.volume, n.muted ? 1 : 0, id);
+    return overlays.get(db, id);
+  },
+  rotateKey: (db: DB, id: string) => {
+    db.prepare('UPDATE overlays SET key=? WHERE id=?').run(randomKey(), id);
+    return overlays.get(db, id);
+  },
+  remove: (db: DB, id: string) => db.prepare('DELETE FROM overlays WHERE id=?').run(id).changes > 0,
+};
+
+// ---------- Templates ----------
+
+export const templates = {
+  list: (db: DB) =>
+    (db.prepare('SELECT data FROM templates ORDER BY name').all() as { data: string }[]).map(
+      (r) => JSON.parse(r.data) as AlertTemplate,
+    ),
+  get: (db: DB, id: string) => {
+    const r = db.prepare('SELECT data FROM templates WHERE id=?').get(id) as { data: string } | undefined;
+    return r ? (JSON.parse(r.data) as AlertTemplate) : undefined;
+  },
+  save: (db: DB, t: AlertTemplate) => {
+    db.prepare(
+      'INSERT INTO templates (id, name, data, updated_at) VALUES (@id, @name, @data, @at) ' +
+        'ON CONFLICT(id) DO UPDATE SET name=@name, data=@data, updated_at=@at',
+    ).run({ id: t.id, name: t.name, data: JSON.stringify(t), at: now() });
+    return t;
+  },
+  remove: (db: DB, id: string) => db.prepare('DELETE FROM templates WHERE id=?').run(id).changes > 0,
+};
+
+// ---------- Rules ----------
+
+export const rules = {
+  list: (db: DB, overlayId?: string) => {
+    const rows = (overlayId
+      ? db.prepare('SELECT data FROM rules WHERE overlay_id=?').all(overlayId)
+      : db.prepare('SELECT data FROM rules').all()) as { data: string }[];
+    return rows.map((r) => JSON.parse(r.data) as Rule).sort((a, b) => b.priority - a.priority);
+  },
+  get: (db: DB, id: string) => {
+    const r = db.prepare('SELECT data FROM rules WHERE id=?').get(id) as { data: string } | undefined;
+    return r ? (JSON.parse(r.data) as Rule) : undefined;
+  },
+  save: (db: DB, rule: Rule) => {
+    db.prepare(
+      'INSERT INTO rules (id, overlay_id, data, updated_at) VALUES (@id, @o, @data, @at) ' +
+        'ON CONFLICT(id) DO UPDATE SET overlay_id=@o, data=@data, updated_at=@at',
+    ).run({ id: rule.id, o: rule.overlayId, data: JSON.stringify(rule), at: now() });
+    return rule;
+  },
+  remove: (db: DB, id: string) => db.prepare('DELETE FROM rules WHERE id=?').run(id).changes > 0,
+  usesTemplate: (db: DB, templateId: string) => rules.list(db).some((r) => r.templateId === templateId),
+};
+
+// ---------- Events ----------
+
+interface EventRow { id: string; data: string; status: EventStatus; reason: string; read: number; created_at: string }
+const toEntry = (r: EventRow): EventLogEntry => ({
+  id: r.id, event: JSON.parse(r.data), status: r.status, reason: r.reason, read: !!r.read, createdAt: r.created_at,
+});
+
+export const events = {
+  insert: (db: DB, e: NormalizedEvent, status: EventStatus, reason: string): EventLogEntry => {
+    const at = now();
+    db.prepare('INSERT INTO events (id, platform, type, data, status, reason, created_at) VALUES (?,?,?,?,?,?,?)')
+      .run(e.id, e.platform, e.type, JSON.stringify(e), status, reason, at);
+    return { id: e.id, event: e, status, reason, read: false, createdAt: at };
+  },
+  setStatus: (db: DB, id: string, status: EventStatus, reason: string) =>
+    db.prepare('UPDATE events SET status=?, reason=? WHERE id=?').run(status, reason, id),
+  get: (db: DB, id: string) => {
+    const r = db.prepare('SELECT * FROM events WHERE id=?').get(id) as EventRow | undefined;
+    return r ? toEntry(r) : undefined;
+  },
+  list: (db: DB, opts: { limit?: number; before?: string; types?: string[]; platforms?: string[] } = {}) => {
+    const where: string[] = [];
+    const args: unknown[] = [];
+    if (opts.before) { where.push('created_at < ?'); args.push(opts.before); }
+    if (opts.types?.length) { where.push(`type IN (${opts.types.map(() => '?').join(',')})`); args.push(...opts.types); }
+    if (opts.platforms?.length) { where.push(`platform IN (${opts.platforms.map(() => '?').join(',')})`); args.push(...opts.platforms); }
+    const sql = `SELECT * FROM events ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY created_at DESC LIMIT ?`;
+    args.push(Math.min(opts.limit ?? 100, 500));
+    return (db.prepare(sql).all(...args) as EventRow[]).map(toEntry);
+  },
+  markRead: (db: DB, ids: string[] | 'all', read = true) => {
+    if (ids === 'all') db.prepare('UPDATE events SET read=?').run(read ? 1 : 0);
+    else for (const id of ids) db.prepare('UPDATE events SET read=? WHERE id=?').run(read ? 1 : 0, id);
+  },
+  /** Hat dieser Nutzer auf dieser Plattform schon einmal ein Event dieses Typs ausgelöst? */
+  hasPrevious: (db: DB, e: NormalizedEvent) =>
+    !!db.prepare(
+      `SELECT 1 FROM events WHERE platform=? AND type=? AND id<>? AND json_extract(data,'$.user.name')=? COLLATE NOCASE LIMIT 1`,
+    ).get(e.platform, e.type, e.id, e.user.name),
+  purgeOlderThan: (db: DB, days: number) =>
+    db.prepare('DELETE FROM events WHERE created_at < ?').run(new Date(Date.now() - days * 864e5).toISOString()).changes,
+};
+
+// ---------- Connections ----------
+
+export interface ConnectionRow<T = unknown> {
+  id: string; platform: string; label: string; data: T; enabled: boolean;
+}
+
+export const connections = {
+  list: (db: DB) =>
+    (db.prepare('SELECT * FROM connections').all() as Array<{ id: string; platform: string; label: string; data: string; enabled: number }>)
+      .map((r) => ({ ...r, data: JSON.parse(r.data), enabled: !!r.enabled }) as ConnectionRow),
+  get: <T = unknown>(db: DB, id: string) => connections.list(db).find((c) => c.id === id) as ConnectionRow<T> | undefined,
+  save: <T>(db: DB, c: ConnectionRow<T>) => {
+    db.prepare(
+      'INSERT INTO connections (id, platform, label, data, enabled, updated_at) VALUES (@id,@p,@l,@d,@e,@at) ' +
+        'ON CONFLICT(id) DO UPDATE SET label=@l, data=@d, enabled=@e, updated_at=@at',
+    ).run({ id: c.id, p: c.platform, l: c.label, d: JSON.stringify(c.data), e: c.enabled ? 1 : 0, at: now() });
+  },
+  remove: (db: DB, id: string) => db.prepare('DELETE FROM connections WHERE id=?').run(id).changes > 0,
+};
+
+// ---------- Media ----------
+
+export interface MediaAsset {
+  id: string; name: string; kind: 'image' | 'video' | 'audio'; url: string; source: 'upload' | 'giphy'; giphyId?: string; createdAt: string;
+}
+
+export const media = {
+  list: (db: DB) =>
+    (db.prepare('SELECT * FROM media ORDER BY created_at DESC').all() as Array<Record<string, string>>).map(
+      (r) => ({ id: r.id, name: r.name, kind: r.kind, url: r.url, source: r.source, giphyId: r.giphy_id ?? undefined, createdAt: r.created_at }) as MediaAsset,
+    ),
+  add: (db: DB, m: Omit<MediaAsset, 'id' | 'createdAt'>): MediaAsset => {
+    const asset = { ...m, id: nanoid(12), createdAt: now() };
+    db.prepare('INSERT INTO media (id, name, kind, url, source, giphy_id, created_at) VALUES (?,?,?,?,?,?,?)')
+      .run(asset.id, asset.name, asset.kind, asset.url, asset.source, asset.giphyId ?? null, asset.createdAt);
+    return asset;
+  },
+  get: (db: DB, id: string) => media.list(db).find((m) => m.id === id),
+  remove: (db: DB, id: string) => db.prepare('DELETE FROM media WHERE id=?').run(id).changes > 0,
+};
+
+// ---------- Settings ----------
+
+export const DEFAULT_SETTINGS: GlobalSettings = {
+  minDonationAmount: 0,
+  blockedUsers: [],
+  badWords: [],
+  badWordMode: 'censor',
+};
+
+export const settings = {
+  get: <T>(db: DB, key: string, fallback: T): T => {
+    const r = db.prepare('SELECT value FROM settings WHERE key=?').get(key) as { value: string } | undefined;
+    return r ? ({ ...fallback, ...JSON.parse(r.value) } as T) : fallback;
+  },
+  set: (db: DB, key: string, value: unknown) =>
+    db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value')
+      .run(key, JSON.stringify(value)),
+  global: (db: DB) => settings.get<GlobalSettings>(db, 'global', DEFAULT_SETTINGS),
+};

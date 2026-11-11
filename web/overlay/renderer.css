@@ -1,0 +1,71 @@
+@import 'animate.css/animate.min.css';
+
+.ffo-alert {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.ffo-layout-left.ffo-mode-preset {
+  flex-direction: row;
+  gap: 32px;
+  text-align: left;
+}
+
+.ffo-media {
+  display: flex;
+  justify-content: center;
+}
+.ffo-media img,
+.ffo-media video {
+  display: block;
+  max-width: calc(var(--ffo-media-size, 0.6) * var(--ffo-fw, 100vw));
+  max-height: calc(var(--ffo-media-size, 0.6) * var(--ffo-fh, 100vh));
+  object-fit: contain;
+}
+
+.ffo-text {
+  max-width: calc(0.85 * var(--ffo-fw, 100vw));
+}
+
+.ffo-title {
+  line-height: 1.15;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ffo-message {
+  margin-top: 0.6em;
+  line-height: 1.3;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Buchstaben-Animationen (dauerhaft, versetzt pro Buchstabe) ---------- */
+.ffo-letter {
+  display: inline-block;
+  animation-duration: 1.2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+.ffo-l-wave { animation-name: ffo-wave; }
+.ffo-l-bounce { animation-name: ffo-bounce; animation-duration: 1s; }
+.ffo-l-pulse { animation-name: ffo-pulse; }
+.ffo-l-rubberBand { animation-name: ffo-rubber; animation-duration: 1.6s; }
+.ffo-l-tada { animation-name: ffo-tada; animation-duration: 1.8s; }
+.ffo-l-wiggle { animation-name: ffo-wiggle; animation-duration: 0.9s; }
+.ffo-l-wobble { animation-name: ffo-wobble; animation-duration: 1.6s; }
+
+@keyframes ffo-wave { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-0.25em); } }
+@keyframes ffo-bounce { 0%, 50%, 100% { transform: translateY(0); } 25% { transform: translateY(-0.35em); } 35% { transform: translateY(0.05em); } }
+@keyframes ffo-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+@keyframes ffo-rubber { 0%, 60%, 100% { transform: scale(1, 1); } 15% { transform: scale(1.25, 0.75); } 30% { transform: scale(0.8, 1.2); } 45% { transform: scale(1.1, 0.9); } }
+@keyframes ffo-tada { 0%, 60%, 100% { transform: scale(1) rotate(0); } 10%, 20% { transform: scale(0.9) rotate(-3deg); } 30%, 50% { transform: scale(1.1) rotate(3deg); } 40% { transform: scale(1.1) rotate(-3deg); } }
+@keyframes ffo-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+@keyframes ffo-wobble { 0%, 60%, 100% { transform: translateX(0); } 15% { transform: translateX(-0.12em) rotate(-5deg); } 30% { transform: translateX(0.1em) rotate(3deg); } 45% { transform: translateX(-0.06em) rotate(-2deg); } }

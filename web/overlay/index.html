@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>FF-Overlay · Browserquelle</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+      #stage { position: fixed; inset: 0; }
+      #status {
+        position: fixed; left: 12px; bottom: 12px; padding: 6px 10px; border-radius: 6px;
+        font: 600 13px/1.2 system-ui, sans-serif; color: #fff; background: rgba(0,0,0,.6); display: none;
+      }
+      body.debug #status { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div id="status">verbinde …</div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -30,7 +30,7 @@ describe('API', () => {
     const res = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { password: 'pw' } });
     expect(res.statusCode).toBe(200);
     cookie = String(res.headers['set-cookie']).split(';')[0]!;
-    expect((await api('GET', '/api/auth/me')).json()).toEqual({ authenticated: true });
+    expect((await api('GET', '/api/auth/me')).json()).toEqual({ authenticated: true, authRequired: true });
   });
 
   it('legt beim ersten Start Overlay, Templates und Regeln an', async () => {
@@ -97,5 +97,15 @@ describe('API', () => {
     expect(ctx.pipeline).toBeTruthy();
     const ev = (await api('GET', '/api/events?limit=20')).json().find((e: { id: string }) => e.id === id);
     expect(ev.status).toBe('filtered');
+  });
+
+  it('erlaubt den Zugriff ohne Login, wenn kein Passwort gesetzt ist', async () => {
+    config.adminPassword = '';
+    try {
+      expect((await app.inject({ method: 'GET', url: '/api/overlays' })).statusCode).toBe(200);
+      expect((await app.inject({ method: 'GET', url: '/api/auth/me' })).json()).toEqual({ authenticated: true, authRequired: false });
+    } finally {
+      config.adminPassword = 'pw';
+    }
   });
 });

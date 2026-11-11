@@ -5,7 +5,11 @@ import { safeEqual } from '../lib/crypto.js';
 export const SESSION_COOKIE = 'ffo_session';
 const SESSION_VALUE = 'admin';
 
+/** Ohne ADMIN_PASSWORD ist das Dashboard ohne Login erreichbar. */
+export const authRequired = () => !!config.adminPassword;
+
 export function isAuthenticated(req: FastifyRequest): boolean {
+  if (!authRequired()) return true;
   const raw = req.cookies[SESSION_COOKIE];
   if (!raw) return false;
   const r = req.unsignCookie(raw);
@@ -21,6 +25,7 @@ const attempts = new Map<string, { count: number; until: number }>();
 
 export async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: { password?: string } }>('/api/auth/login', async (req, reply) => {
+    if (!authRequired()) return { ok: true };
     const a = attempts.get(req.ip);
     if (a && a.until > Date.now() && a.count >= 10) return reply.code(429).send({ error: 'Zu viele Versuche, bitte später erneut.' });
     if (!safeEqual(String(req.body?.password ?? ''), config.adminPassword)) {
@@ -44,5 +49,5 @@ export async function authRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.get('/api/auth/me', async (req) => ({ authenticated: isAuthenticated(req) }));
+  app.get('/api/auth/me', async (req) => ({ authenticated: isAuthenticated(req), authRequired: authRequired() }));
 }

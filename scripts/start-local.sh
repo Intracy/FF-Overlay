@@ -22,26 +22,32 @@ if [ "$NODE_MAJOR" -lt 22 ]; then
   exit 1
 fi
 
-# --- .env beim ersten Start anlegen (zufälliges Passwort und Secret) ---
+# --- .env beim ersten Start anlegen (zufälliges Secret, ohne Login-Passwort) ---
 if [ ! -f .env ]; then
   SECRET="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
-  PASSWORD="$(node -e 'console.log(require("crypto").randomBytes(6).toString("base64url"))')"
   URL="http://localhost:$PORT"
   [ "$MODE" = "--dev" ] && URL="http://localhost:5173"
   cat > .env <<EOF
 PUBLIC_URL=$URL
 PORT=$PORT
-ADMIN_PASSWORD=$PASSWORD
 APP_SECRET=$SECRET
+# Optional – Login fürs Dashboard (leer = kein Passwort):
+ADMIN_PASSWORD=
 # Optional – für Twitch-Verbindung und GIF-Suche (siehe README):
 TWITCH_CLIENT_ID=
 TWITCH_CLIENT_SECRET=
 GIPHY_API_KEY=
 EOF
-  echo "✓ .env angelegt (Passwort und Secret zufällig erzeugt)"
+  echo "✓ .env angelegt"
+else
+  # Lokaler Testbetrieb ohne Login: ein früher erzeugtes Passwort leeren
+  node -e '
+    const fs = require("fs");
+    const s = fs.readFileSync(".env", "utf8");
+    const n = s.replace(/^ADMIN_PASSWORD=.+$/m, "ADMIN_PASSWORD=");
+    if (n !== s) { fs.writeFileSync(".env", n); console.log("✓ Login-Passwort aus .env entfernt"); }
+  '
 fi
-
-PASSWORD="$(grep -E '^ADMIN_PASSWORD=' .env | cut -d= -f2-)"
 
 # --- Abhängigkeiten ---
 if [ ! -d node_modules ] || [ package-lock.json -nt node_modules ]; then
@@ -65,7 +71,6 @@ if [ "$MODE" = "--dev" ]; then
   DASH="http://localhost:5173"
   echo
   echo "  Dashboard:  $DASH"
-  echo "  Passwort:   $PASSWORD"
   echo "  (Ctrl+C beendet)"
   echo
   open_browser "$DASH" &
@@ -78,7 +83,6 @@ npm run build --silent
 DASH="http://localhost:$PORT"
 echo
 echo "  Dashboard:  $DASH"
-echo "  Passwort:   $PASSWORD"
 echo "  Overlay-URL für OBS findest du im Dashboard unter „Overlays“."
 echo "  Test-Alerts: Dashboard → Live → Test-Alerts. Daten liegen in ./data"
 echo "  (Ctrl+C beendet)"

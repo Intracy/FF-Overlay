@@ -52,7 +52,7 @@ Voraussetzung: Node.js ≥ 22 (macOS: `brew install node`).
 ./scripts/start-local.sh        # oder: npm run local
 ```
 
-Das Skript legt beim ersten Start eine `.env` mit zufälligem Passwort an, installiert die Abhängigkeiten, baut alles, startet auf http://localhost:3000 und öffnet den Browser. Das Passwort steht in der Konsole. Mit `--dev` startet es stattdessen den Entwicklungsmodus mit Hot Reload.
+Das Skript legt beim ersten Start eine `.env` an, installiert die Abhängigkeiten, baut alles, startet auf http://localhost:3000 und öffnet das Dashboard direkt – ohne Login. Mit `--dev` startet es stattdessen den Entwicklungsmodus mit Hot Reload.
 
 **Manuell:**
 
@@ -62,7 +62,7 @@ npm install
 npm run dev               # Backend :3000 + Dashboard mit Hot Reload :5173
 ```
 
-Dashboard: http://localhost:5173 (ohne `ADMIN_PASSWORD` im Dev-Modus Passwort `admin`).
+Dashboard: http://localhost:5173 (ohne `ADMIN_PASSWORD` ohne Login).
 Beim ersten Start legt FF-Overlay ein „Haupt-Overlay“ mit Standard-Designs und -Regeln an.
 
 Produktion ohne Docker:
@@ -74,7 +74,7 @@ npm run build && NODE_ENV=production npm start   # alles auf Port 3000
 ### Docker (z. B. auf dem NAS)
 
 ```bash
-cp .env.example .env      # ADMIN_PASSWORD, APP_SECRET, PUBLIC_URL setzen
+cp .env.example .env      # APP_SECRET, PUBLIC_URL und ggf. ADMIN_PASSWORD setzen
 docker compose up -d --build
 ```
 
@@ -119,7 +119,7 @@ Felder: `type` (follow, subscription, cheer, donation, raid, redemption, custom)
 | Variable | Pflicht | Bedeutung |
 | --- | --- | --- |
 | `PUBLIC_URL` | ja | Öffentliche Basis-URL (für Overlay-URLs und Twitch-OAuth) |
-| `ADMIN_PASSWORD` | in Produktion | Passwort fürs Dashboard |
+| `ADMIN_PASSWORD` | – | Passwort fürs Dashboard; leer = kein Login. Setzen, sobald das Dashboard außerhalb deines Rechners erreichbar ist |
 | `APP_SECRET` | in Produktion | ≥ 32 Zeichen; signiert Cookies und verschlüsselt OAuth-Tokens (AES-256-GCM) |
 | `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | für Twitch | Twitch-App |
 | `GIPHY_API_KEY` | für GIPHY | GIPHY-Suche |
@@ -161,7 +161,7 @@ npm run build     # dist/web + dist/server
 - **SQLite statt PostgreSQL** (abweichend vom Konzept): Single-User, eine Datei, kein zusätzlicher Dienst – ideal zum Selbsthosten auf NAS oder Mini-Server. Regeln und Designs liegen als JSON; ein späterer Wechsel auf PostgreSQL betrifft nur `db.ts`.
 - **Queue im Backend**: Pause, Skip und Replay wirken sofort, mehrere Browserquellen bleiben synchron. Kommt von einer Quelle kein „fertig“, gibt ein Timeout die Queue frei.
 - **Twitch per WebSocket statt Webhook**: kein öffentlicher HTTPS-Endpunkt nötig.
-- **Sicherheit**: Overlay-Key pro Overlay (rotierbar), Dashboard-Login mit signiertem Cookie und Rate-Limit, verschlüsselte Tokens, Medien-URLs nur `https://` oder eigene Uploads, Zuschauertexte nur als Text gerendert.
+- **Sicherheit**: Overlay-Key pro Overlay (rotierbar), optionaler Dashboard-Login (signiertes Cookie, Rate-Limit), verschlüsselte Tokens, Medien-URLs nur `https://` oder eigene Uploads, Zuschauertexte nur als Text gerendert.
 
 ## Noch offen (Phase 2/3 des Konzepts)
 

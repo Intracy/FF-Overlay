@@ -19,7 +19,7 @@ export const config = {
   dataDir,
   dbFile: path.join(dataDir, 'ff-overlay.sqlite'),
   mediaDir: path.join(dataDir, 'media'),
-  /** Passwort für das Dashboard (Single-User). */
+  /** Passwort für das Dashboard (Single-User). Leer = kein Login. */
   adminPassword: env('ADMIN_PASSWORD'),
   /** Geheimnis für Cookies und Token-Verschlüsselung. Muss in Produktion gesetzt sein. */
   appSecret: env('APP_SECRET'),
@@ -40,8 +40,6 @@ export function assertConfig(log: (msg: string) => void): void {
     log('APP_SECRET nicht gesetzt – nutze einen zufälligen Wert. Logins und gespeicherte Tokens überleben keinen Neustart.');
   }
   if (!config.adminPassword) {
-    if (config.isProduction) throw new Error('ADMIN_PASSWORD muss in Produktion gesetzt sein.');
-    config.adminPassword = 'admin';
-    log('ADMIN_PASSWORD nicht gesetzt – Entwicklungs-Passwort „admin“ aktiv.');
+    log('ADMIN_PASSWORD nicht gesetzt – Dashboard ist OHNE Passwort erreichbar. Nur im lokalen Netz verwenden.');
   }
 }

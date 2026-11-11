@@ -9,6 +9,7 @@ const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 export function SettingsPage() {
   const settings = useLoad(() => api.get<GlobalSettings>('/api/settings'));
   const session = useLoad(() => api.get<Session>('/api/session'));
+  const auth = useLoad(() => api.get<{ authRequired: boolean }>('/api/auth/me'));
   const [s, setS] = useState<GlobalSettings | null>(null);
   const [blocked, setBlocked] = useState('');
   const [words, setWords] = useState('');
@@ -66,7 +67,13 @@ export function SettingsPage() {
         </div>
         <div className="card stack">
           <h2 style={{ margin: 0 }}>Konto</h2>
-          <div><button onClick={() => api.post('/api/auth/logout').then(() => location.reload())}>Abmelden</button></div>
+          {auth.data?.authRequired ? (
+            <div><button onClick={() => api.post('/api/auth/logout').then(() => location.reload())}>Abmelden</button></div>
+          ) : (
+            <p className="small muted" style={{ margin: 0 }}>
+              Kein Passwort gesetzt – jeder im Netzwerk kann das Dashboard öffnen. Für einen Login <code>ADMIN_PASSWORD</code> in der <code>.env</code> setzen und neu starten.
+            </p>
+          )}
         </div>
       </div>
     </>

@@ -56,6 +56,7 @@ Webhooks ────────┘                                            
 **Alert-Designs**
 - GIFs und Sticker direkt über **GIPHY** suchen (Proxy, Key bleibt auf dem Server), eigene Uploads (GIF, PNG, WebP, WebM mit Transparenz, MP4, Sounds)
 - Text mit Platzhaltern `{user} {amount} {count} {months} {streak} {tier} {product} {gifter} {message}` (`{name}` funktioniert wie bei Streamlabs), Akzentfarbe für Name/Betrag, Kontur, Schatten, Google Fonts
+- **Animation Library** (Alert-Box → Animationen): 37 Text-Effekte aus [BrowserTextEffects](https://donlair.github.io/browsertexteffects/) (Beams, Decrypt, Matrix, Fireworks, Burn, VHS …) als Live-Vorschau mit dem eigenen Text, per Klick übernehmen; Schrift, Stärke, Farben, Kontur, Schatten und Emojis bleiben erhalten, Tempo und Effektfarben einstellbar
 - Ein-/Ausblend-Animationen mit Animate.css-Namen (Fade, Zoom, Bounce, Slide, Flip, Rotate, Specials), Text-Intro/-Outro und Buchstaben-Animationen (Welle, Hüpfen, Pulsieren, Gummiband, Tada, Wackeln, Schwanken)
 - Layouts (Bild über/unter Text, Bild links, nur Text) oder manuelle Positionierung in %
 - Live-Vorschau im Editor mit exakt derselben Render-Logik wie im Overlay
@@ -228,3 +229,8 @@ npm run build     # dist/web + dist/server
 - Von Streamlabs bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot-Einlösungen, Twitch-Clips bei Großspenden, Zuschauer-GIFs vor Spenden (braucht eine eigene Spendenseite)
 - Ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket); Video-Link aus betterplace-Spenden im Alert abspielen; betterplaces eigene Abstimmungsauswahl im Spendenformular (kommt nicht über den Webhook)
 - Weitere Streamlabs-Widgets, die einen Chat-Anschluss brauchen: Chat-Box, Emote-Wand, Tip-Jar, Umfragen, Chat-Highlights
+
+
+## Drittanbieter
+
+- `web/vendor/browsertexteffects`: [BrowserTextEffects](https://github.com/donlair/browsertexteffects) 1.0.0 von Don Lair, MIT-Lizenz (Port von TerminalTextEffects). Lokale Anpassungen: Tempo-Option, Emojis als ganze Zeichen, Zeichenbreite der echten Schrift, Messung auch in skalierten Vorschauen.

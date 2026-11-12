@@ -137,6 +137,12 @@ export interface AlertTemplate {
     /** Dauer-Animation pro Buchstabe: bounce, pulse, rubberBand, tada, wave, wiggle, wobble, none */
     letterAnimation: string;
     outro: string;
+    /** Animation Library: Text-Effekt (browsertexteffects), leer = keiner */
+    effect: string;
+    /** Tempo des Text-Effekts (1 = normal) */
+    effectSpeed: number;
+    /** Farben des Effekts: Originalfarben oder eigene Text-/Akzentfarbe */
+    effectColors: 'effect' | 'text';
   };
   message: { show: boolean; font: string; size: number; weight: number; color: string; minAmount: number; allowEmotes: boolean };
   /** Text-to-Speech im Overlay (Web Speech API der Browserquelle) */

@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { AlertTemplate, MediaAsset } from '../api';
 import { IN_ANIMATIONS, LETTER_ANIMATIONS, LETTER_LABEL, OUT_ANIMATIONS } from '../../../shared/animations';
 import { GiphyPicker, MediaPicker } from './Pickers';
+import { AnimationLibraryField } from './AnimationLibrary';
 import { Field, NumberInput } from '../ui';
 import { DEFAULT_CUSTOM_CSS, DEFAULT_CUSTOM_HTML } from '../../../../server/src/templates/defaults';
 
@@ -157,6 +158,7 @@ export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT
           <Field label="Text-Outro"><AnimSelect value={t.text.outro} onChange={(outro) => up('text', { outro })} groups={OUT_ANIMATIONS} allowNone /></Field>
           <Field label="Animationsdauer (ms)"><NumberInput value={t.animation.speedMs} min={100} max={5000} step={100} onChange={(speedMs) => up('animation', { speedMs })} /></Field>
         </div>
+        <AnimationLibraryField t={t} setText={(p) => up('text', p)} />
       </Section>
       )}
 

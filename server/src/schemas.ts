@@ -34,6 +34,9 @@ export const templateSchema = z.object({
     shadow: z.boolean(),
     intro: animName,
     letterAnimation: z.enum(['none', 'bounce', 'pulse', 'rubberBand', 'tada', 'wave', 'wiggle', 'wobble']),
+    effect: z.string().regex(/^[a-z]{0,20}$/),
+    effectSpeed: z.number().min(0.25).max(5),
+    effectColors: z.enum(['effect', 'text']),
     outro: animName,
   }),
   message: z.object({

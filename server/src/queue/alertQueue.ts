@@ -112,7 +112,7 @@ export class AlertQueue {
     this.current = alert;
     this.deps.send({ t: 'alert.show', alert });
     const t = alert.template;
-    const maxMs = t.duration + t.textDelay + t.animation.speedMs * 2 + 5000 + (alert.tts ? 30_000 : 0);
+    const maxMs = t.duration + t.textDelay + t.animation.speedMs * 2 + 5000 + (alert.tts ? 30_000 : 0) + (t.text.effect ? 22_000 : 0);
     this.timeout = this.setTimer(() => this.finish(alert.itemId, 'played'), maxMs);
     if (this.items.length) this.maybeInterrupt();
     this.emitState();

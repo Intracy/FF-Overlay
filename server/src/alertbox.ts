@@ -98,7 +98,7 @@ export function createProfile(db: DB, overlay: OverlayInfo, name: string, copy: 
 export const GLOBAL_EDIT_GROUPS = {
   general: (t: AlertTemplate, v: AlertTemplate) => ({ ...t, layout: v.layout, duration: v.duration, textDelay: v.textDelay }),
   animations: (t: AlertTemplate, v: AlertTemplate) => ({
-    ...t, animation: { ...v.animation }, text: { ...t.text, intro: v.text.intro, letterAnimation: v.text.letterAnimation, outro: v.text.outro },
+    ...t, animation: { ...v.animation }, text: { ...t.text, intro: v.text.intro, letterAnimation: v.text.letterAnimation, outro: v.text.outro, effect: v.text.effect, effectSpeed: v.text.effectSpeed, effectColors: v.text.effectColors },
   }),
   image: (t: AlertTemplate, v: AlertTemplate) => ({ ...t, media: { ...t.media, kind: v.media.kind, url: v.media.url, giphyId: v.media.giphyId, size: v.media.size } }),
   videoVolume: (t: AlertTemplate, v: AlertTemplate) => ({ ...t, media: { ...t.media, volume: v.media.volume } }),

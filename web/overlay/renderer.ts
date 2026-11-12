@@ -1,5 +1,6 @@
 import type { AlertPayload, AlertTemplate, PortraitLayout } from '../../server/src/shared/types';
 import './renderer.css';
+import { runTextEffect, TEXT_EFFECT_IDS, type RunningFx } from './textfx';
 
 /*
  * Rendert einen fertig aufgelösten Alert. Wird vom Overlay (Browserquelle) und von der
@@ -240,6 +241,7 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
   box.style.setProperty('--ffo-fw', `${fw}px`);
   box.style.setProperty('--ffo-fh', `${fh}px`);
 
+  let fx: RunningFx | null = null;
   let mediaEl: HTMLElement | null = null;
   let textWrap: HTMLElement | null = null;
   let title: HTMLElement | null = null;
@@ -278,6 +280,8 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
     textWrap = document.createElement('div');
     textWrap.className = 'ffo-text';
     title = buildTitle(alert);
+    // Animation Library: Titel bleibt bis zum Effekt unsichtbar (behält aber seinen Platz)
+    if (tpl.text.effect && TEXT_EFFECT_IDS.has(tpl.text.effect)) title.style.visibility = 'hidden';
     textWrap.appendChild(title);
     const message = buildMessage(alert);
     if (message) textWrap.appendChild(message);
@@ -309,6 +313,7 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
   }
 
   const cleanup = () => {
+    fx?.stop();
     audio?.pause();
     video?.pause();
     if (alert.tts) window.speechSynthesis?.cancel();
@@ -341,6 +346,12 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
       if (textWrap) textWrap.style.visibility = 'visible';
     }
     if (title && tpl.text.intro) void animate(title, tpl.text.intro, speed);
+    if (title && tpl.text.effect && TEXT_EFFECT_IDS.has(tpl.text.effect)) {
+      fx = runTextEffect(title, alert.title.map((s) => s.text).join(''), {
+        effect: tpl.text.effect, speed: tpl.text.effectSpeed || 1, colors: tpl.text.effectColors ?? 'effect',
+        color: tpl.text.color, highlightColor: tpl.text.highlightColor, zoom,
+      });
+    }
 
     // TTS startet nach dem Alert-Sound (wie bei Streamlabs) und verlängert den Alert bei Bedarf.
     let speech: Promise<void> = Promise.resolve();
@@ -353,6 +364,18 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
     await sleep(Math.max(0, tpl.duration - speed - (Date.now() - started - tpl.textDelay)));
     await speech;
     if (stopped) return cleanup();
+    // Langer Text-Effekt: Alert läuft weiter, bis er fertig ist (höchstens 20 s länger), dann kurz lesbar stehen lassen.
+    if (fx) {
+      const late = await Promise.race([fx.done.then(() => false), sleep(0).then(() => true)]);
+      if (late) {
+        await Promise.race([fx.done, sleep(20_000)]);
+        if (stopped) return cleanup();
+        await sleep(1500);
+      }
+      fx.finish();
+      await fx.done;
+      if (stopped) return cleanup();
+    }
     if (title && tpl.text.outro) await animate(title, tpl.text.outro, speed);
     await animate(box, tpl.animation.out, speed);
     cleanup();

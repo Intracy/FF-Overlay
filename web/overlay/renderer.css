@@ -84,3 +84,8 @@
 /* ---------- Emotes & eigener Code ---------- */
 .ffo-emote { height: 1.35em; vertical-align: middle; margin: 0 0.08em; }
 .ffo-custom { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; color-scheme: normal; }
+
+/* ---------- Animation Library (Text-Effekte) ---------- */
+.ffo-fx-wrap { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); visibility: visible; white-space: pre; pointer-events: none; }
+.ffo-fx-wrap.left { left: 0; transform: translateY(-50%); }
+.ffo-fx { line-height: 1.15; }

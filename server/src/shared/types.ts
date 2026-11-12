@@ -12,6 +12,7 @@ export type EventType =
   | 'redemption'
   | 'power_up'
   | 'charity'
+  | 'milestone'
   | 'stream_status'
   | 'custom';
 
@@ -45,6 +46,8 @@ export interface NormalizedEvent {
   isTest?: boolean;
   /** Emotes in `message` (nur Twitch) */
   emotes?: EmotePosition[];
+  /** Von Spender*innen freigegebenes Video (betterplace „streaming_shareable_media“, nur moderierte Aktionen) */
+  media?: { videoUrl: string; videoStart: number };
   receivedAt: string;
   raw?: unknown;
 }
@@ -233,6 +236,8 @@ export interface GlobalSettings {
   censorEventLog: boolean;
   /** Session (größte Spende) bei Stream-Start automatisch zurücksetzen */
   autoResetSession: boolean;
+  /** betterplace-Widgets zeigen Beispieldaten (wie der Test-Modus bei betterplace) */
+  betterplaceTestMode: boolean;
 }
 
 /** Nachrichten Backend → Overlay */

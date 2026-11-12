@@ -1,8 +1,13 @@
 import type { DB } from '../db.js';
 import * as store from '../db.js';
 import type { Hub } from '../ws/hub.js';
-import type { EventLogEntry } from '../shared/types.js';
-import type { BossState, TimerState, Widget, WidgetData, WidgetSettingsMap } from '../shared/widgets.js';
+import type { EventLogEntry, NormalizedEvent } from '../shared/types.js';
+import {
+  isBpType, type BossState, type BpData, type BpWidgetType, type MilestonesState, type PollState, type TimerState, type Widget, type WidgetData,
+  type WidgetSettingsMap,
+} from '../shared/widgets.js';
+import { betterplaceSource } from '../connectors/betterplace.js';
+import { buildBpData, logToDonation, mergeDonations, milestoneView, newlyReached, pollResults, sampleBpData } from './betterplace.js';
 import { formatAmount } from '../templates/render.js';
 import { eventCatalogKey } from '../shared/catalog.js';
 import {
@@ -16,7 +21,105 @@ export class WidgetService {
   private pending = new Map<string, NodeJS.Timeout>();
   private lastAdded = new Map<string, { seconds: number; reason: string; at: number }>();
 
-  constructor(private db: DB, private hub: Hub, private session: () => Session) {}
+  constructor(
+    private db: DB,
+    private hub: Hub,
+    private session: () => Session,
+    /** Erzeugt Events (Milestone erreicht) – läuft durch die normale Pipeline in die Alert-Box */
+    private emit: (event: NormalizedEvent) => void = () => undefined,
+  ) {}
+
+  // ---------- betterplace ----------
+
+  private bpCache: { at: number; data: BpData; donations: ReturnType<typeof mergeDonations> } | null = null;
+
+  /** Gemeinsame betterplace-Daten (kurz zwischengespeichert, da mehrere Widgets sie gleichzeitig brauchen) */
+  bpBase() {
+    if (this.bpCache && Date.now() - this.bpCache.at < 100) return this.bpCache;
+    const { stats, recent } = betterplaceSource(this.db);
+    const donations = mergeDonations(store.events.donations(this.db).map(logToDonation), recent);
+    this.bpCache = { at: Date.now(), data: buildBpData(stats, donations), donations };
+    return this.bpCache;
+  }
+
+  private bpTestMode() {
+    return store.settings.global(this.db).betterplaceTestMode;
+  }
+
+  bpData(w: Widget, preview = false): BpData {
+    const sample = preview || this.bpTestMode();
+    const base = this.bpBase();
+    const data: BpData = sample ? sampleBpData() : { ...base.data };
+    if (w.type === 'bp_poll') {
+      const s = w.settings as WidgetSettingsMap['bp_poll'];
+      const st = w.state as PollState | null;
+      data.poll = sample
+        ? { title: s.title, active: true, started: true, total: 300, winnerAt: st?.winnerAt ?? 0, leader: 0,
+            options: s.options.map((o, i) => ({ text: o.text, value: i === 0 ? 200 : 100 / Math.max(1, s.options.length - 1), percent: i === 0 ? 66.7 : Math.round(333 / Math.max(1, s.options.length - 1)) / 10 })) }
+        : pollResults(s, base.donations, st);
+    }
+    if (w.type === 'bp_milestones') {
+      data.milestones = milestoneView(w.settings as WidgetSettingsMap['bp_milestones'], w.state as MilestonesState | null, data.total);
+    }
+    // Feeds sind groß – nur mitschicken, wer sie braucht
+    if (w.type !== 'bp_feed') data.feed = [];
+    return data;
+  }
+
+  /** Neuer Spendenstand von der API: Widgets auffrischen, Milestones prüfen */
+  onBetterplaceStats() {
+    this.bpCache = null;
+    this.checkMilestones(false);
+    for (const w of store.widgets.list(this.db)) if (isBpType(w.type)) this.push(w.id);
+  }
+
+  /** Feiert neu erreichte Milestones über die Alert-Box (Event-Typ „milestone“). */
+  checkMilestones(fromTest: boolean) {
+    for (const w of store.widgets.list(this.db)) {
+      if (w.type !== 'bp_milestones') continue;
+      const s = w.settings as WidgetSettingsMap['bp_milestones'];
+      const st = w.state as MilestonesState | null;
+      const total = this.bpBase().data.total;
+      const fresh = newlyReached(s, st, total);
+      if (!fresh.length) continue;
+      store.widgets.setState(this.db, w.id, { reached: [...(st?.reached ?? []), ...fresh.map((m) => m.amount)] } satisfies MilestonesState);
+      for (const m of fresh) {
+        this.emit({
+          id: `ms_${w.id}_${m.amount}_${Date.now()}`, platform: fromTest ? 'test' : 'betterplace', type: 'milestone', isTest: fromTest || undefined,
+          user: { name: 'Community' }, amount: { value: m.amount, currency: 'EUR' }, product: m.text, message: m.text, receivedAt: new Date().toISOString(),
+        });
+      }
+      this.push(w.id);
+    }
+  }
+
+  /** Nach dem Bearbeiten: bereits erreichte Milestones still als gefeiert markieren (kein Alert für Vergangenes) */
+  syncMilestones(id: string) {
+    const w = store.widgets.get(this.db, id);
+    if (!w || w.type !== 'bp_milestones') return;
+    this.bpCache = null;
+    const s = w.settings as WidgetSettingsMap['bp_milestones'];
+    const total = this.bpBase().data.total;
+    store.widgets.setState(this.db, id, { reached: s.milestones.filter((m) => m.amount <= total).map((m) => m.amount) } satisfies MilestonesState);
+  }
+
+  resetMilestones(id: string) {
+    const w = store.widgets.get(this.db, id);
+    if (!w || w.type !== 'bp_milestones') return false;
+    store.widgets.setState(this.db, id, { reached: [] } satisfies MilestonesState);
+    this.push(id);
+    return true;
+  }
+
+  pollWinner(id: string) {
+    const w = store.widgets.get(this.db, id);
+    if (!w || w.type !== 'bp_poll') return false;
+    store.widgets.setState(this.db, id, { winnerAt: Date.now() } satisfies PollState);
+    this.push(id);
+    this.hub.sendWidget(id, { t: 'poll.winner' });
+    this.hub.sendWidget(`${id}:preview`, { t: 'poll.winner' });
+    return true;
+  }
 
   /** Beginn eines Zeitraums für Labels */
   periodStart(period: 'session' | 'today' | 'week' | 'month'): string {
@@ -31,8 +134,9 @@ export class WidgetService {
     return (w.state as T | null) ?? init();
   }
 
-  data(w: Widget): WidgetData {
+  data(w: Widget, preview = false): WidgetData {
     const now = Date.now();
+    if (isBpType(w.type)) return { type: w.type as BpWidgetType, bp: this.bpData(w, preview), serverNow: now };
     switch (w.type) {
       case 'event_list': {
         const s = w.settings as WidgetSettingsMap['event_list'];
@@ -76,9 +180,9 @@ export class WidgetService {
     }
   }
 
-  snapshot(w: Widget) {
+  snapshot(w: Widget, preview = false) {
     const { key: _k, state: _s, ...pub } = w;
-    return { t: 'snapshot' as const, widget: pub, data: this.data(w) };
+    return { t: 'snapshot' as const, widget: pub, data: this.data(w, preview) };
   }
 
   /** Update an alle Quellen dieses Widgets (gebündelt, damit Event-Serien nicht flackern). */
@@ -87,7 +191,10 @@ export class WidgetService {
     this.pending.set(id, setTimeout(() => {
       this.pending.delete(id);
       const w = store.widgets.get(this.db, id);
-      if (w) this.hub.sendWidget(id, this.snapshot(w));
+      if (!w) return;
+      this.hub.sendWidget(id, this.snapshot(w));
+      // Quellen mit &preview=1 (Beispieldaten)
+      if (this.hub.widgetCount(`${id}:preview`)) this.hub.sendWidget(`${id}:preview`, this.snapshot(w, true));
     }, 150));
   }
 
@@ -103,6 +210,10 @@ export class WidgetService {
     }
     const e = entry.event;
     const now = Date.now();
+    if (e.type === 'donation' && (e.platform === 'betterplace' || e.platform === 'test')) {
+      this.bpCache = null;
+      this.checkMilestones(e.platform === 'test');
+    }
     for (const w of store.widgets.list(this.db)) {
       if (w.type === 'timer') {
         const s = w.settings as WidgetSettingsMap['timer'];

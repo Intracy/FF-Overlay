@@ -241,6 +241,9 @@ export const events = {
   /** Neueste Events (neueste zuerst), ohne gefilterte und gebündelte */
   recentVisible: (db: DB, limit: number) =>
     (db.prepare(`SELECT * FROM events WHERE status NOT IN ('filtered','suppressed','rejected') AND type <> 'stream_status' ORDER BY created_at DESC LIMIT ?`).all(limit) as EventRow[]).map(toEntry),
+  /** Spenden von betterplace und Test-Spenden (neueste zuerst) */
+  donations: (db: DB, limit = 2000) =>
+    (db.prepare(`SELECT * FROM events WHERE type = 'donation' AND platform IN ('betterplace','test') AND status NOT IN ('filtered','suppressed','rejected') ORDER BY created_at DESC LIMIT ?`).all(limit) as EventRow[]).map(toEntry),
   removeTestData: (db: DB) => db.prepare(`DELETE FROM events WHERE platform = 'test'`).run().changes,
   purgeOlderThan: (db: DB, days: number) =>
     db.prepare('DELETE FROM events WHERE created_at < ?').run(new Date(Date.now() - days * 864e5).toISOString()).changes,
@@ -335,6 +338,7 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
   anonymizeNames: true,
   censorEventLog: true,
   autoResetSession: true,
+  betterplaceTestMode: false,
 };
 
 export const settings = {

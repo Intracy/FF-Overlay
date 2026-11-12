@@ -208,6 +208,7 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
   app.put('/api/settings', async (req) => {
     const s = { ...store.settings.global(db), ...settingsSchema.partial().parse(req.body) };
     store.settings.set(db, 'global', s);
+    ctx.widgets.pushAll();
     return s;
   });
   app.get('/api/session', async () => pipeline.session);
@@ -225,6 +226,7 @@ function toTestEvent(b: ReturnType<typeof testEventSchema.parse>): NormalizedEve
   if (b.count != null) overrides.count = b.count;
   if (b.months != null) overrides.months = b.months;
   if (b.message != null) overrides.message = b.message;
+  if (b.product != null) overrides.product = b.product;
   if (b.type === 'subscription' && b.subtype === 'gift' && b.user) overrides.gifter = b.user;
   return sampleEvent(b.type, b.subtype, overrides);
 }

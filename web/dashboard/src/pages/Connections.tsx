@@ -50,7 +50,7 @@ export function ConnectionsPage() {
 
         <div className="card stack">
           <h2 style={{ margin: 0 }}>betterplace</h2>
-          <p className="small muted" style={{ margin: 0 }}>Spenden einer Spendenaktion (Public API v4, Abfrage alle 20 s). Bereits vorhandene Spenden lösen keinen Alert aus.</p>
+          <p className="small muted" style={{ margin: 0 }}>Spenden einer Spendenaktion: sofort per Spenden-Webhook (URL erscheint nach dem Hinzufügen) oder per API-Abfrage alle 20 s. Bereits vorhandene Spenden lösen keinen Alert aus. Alle Alerts dazu: Alert-Box → Spenden (betterplace).</p>
           <form className="row" onSubmit={(e) => { e.preventDefault(); void run(() => api.post('/api/connections/betterplace', { input: bp }), 'Spendenaktion verbunden').then(() => { setBp(''); data.reload(); }); }}>
             <input value={bp} onChange={(e) => setBp(e.target.value)} placeholder="Link oder ID der Spendenaktion" style={{ flex: 1, width: 'auto' }} />
             <button className="primary" type="submit" disabled={!bp.trim()}>Hinzufügen</button>
@@ -82,6 +82,7 @@ export function ConnectionsPage() {
                     <td className="small" style={{ maxWidth: 420 }}>
                       {st?.detail && <div className="muted">{st.detail}</div>}
                       {c.platform === 'webhook' && <CopyField value={c.data.url} secret />}
+                      {c.platform === 'betterplace' && c.data.webhookUrl && <div className="stack" style={{ gap: 4 }}><span className="muted">Spenden-Webhook für betterplace:</span><CopyField value={c.data.webhookUrl} secret /></div>}
                     </td>
                     <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                       {c.platform !== 'webhook' && <button className="small" onClick={() => run(() => api.post(`/api/connections/${c.id}/restart`), 'Neu gestartet')}>Neu verbinden</button>}{' '}

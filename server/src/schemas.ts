@@ -74,7 +74,7 @@ export const templateSchema = z.object({
   textDelay: z.number().min(0).max(60000),
 });
 
-const eventType = z.enum(['follow', 'subscription', 'cheer', 'donation', 'raid', 'redemption', 'power_up', 'charity', 'stream_status', 'custom']);
+const eventType = z.enum(['follow', 'subscription', 'cheer', 'donation', 'raid', 'redemption', 'power_up', 'charity', 'milestone', 'stream_status', 'custom']);
 
 export const ruleSchema = z.object({
   id: z.string().min(1).max(40),
@@ -111,6 +111,7 @@ export const settingsSchema = z.object({
   anonymizeNames: z.boolean(),
   censorEventLog: z.boolean(),
   autoResetSession: z.boolean(),
+  betterplaceTestMode: z.boolean(),
 });
 
 export const overlayPatchSchema = z.object({
@@ -136,4 +137,5 @@ export const testEventSchema = z.object({
   count: z.number().optional(),
   months: z.number().optional(),
   message: z.string().max(500).optional(),
+  product: z.string().max(100).optional(),
 });

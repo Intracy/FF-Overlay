@@ -1,12 +1,13 @@
 import { Children, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { api } from '../api';
 import { CopyField, Field, NumberInput, useAction, useLoad } from '../ui';
-import { AnimSelect, FontInput, Section } from '../components/DesignFields';
+import { AnimSelect, Section } from '../components/DesignFields';
+import { Color, fromLocalInput, TextFields, toLocalInput, Toggle, TypeChecks } from '../components/WidgetFields';
+import { bpSections, BP_ICON } from './BpWidgetForms';
 import { IN_ANIMATIONS, OUT_ANIMATIONS } from '../../../shared/animations';
-import { CATALOG } from '../../../../server/src/shared/catalog';
 import {
-  LABEL_KINDS, LIST_STYLES, WIDGET_INFO, type BossSettings, type BossState, type CreditsSettings, type EventListSettings,
-  type GoalSettings, type LabelSettings, type TextStyle, type TickerSettings, type TimerSettings, type TimerState, type Widget,
+  isBpType, LABEL_KINDS, LIST_STYLES, WIDGET_INFO, type BossSettings, type BpData, type BossState, type CreditsSettings, type EventListSettings,
+  type GoalSettings, type LabelSettings, type TickerSettings, type TimerSettings, type TimerState, type Widget,
   type WidgetData, type WidgetSettingsMap, type WidgetType,
 } from '../../../../server/src/shared/widgets';
 
@@ -19,67 +20,11 @@ type W = Widget & { url: string };
 type Detail = W & { data: WidgetData };
 
 const TYPES = Object.keys(WIDGET_INFO) as WidgetType[];
-const ICON: Record<WidgetType, string> = { event_list: '☰', goal: '▰', label: 'Aa', timer: '⏱', credits: '🎬', boss: '⚔', ticker: '⇆' };
-
-// ---------- kleine Feld-Bausteine ----------
-
-function Color({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <Field label={label}>
-      <div className="row" style={{ flexWrap: 'nowrap' }}>
-        <input type="color" value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#000000'} onChange={(e) => onChange(e.target.value)} style={{ width: 44, padding: 2 }} />
-        <input value={value} onChange={(e) => onChange(e.target.value)} />
-      </div>
-    </Field>
-  );
-}
-
-function Toggle({ label, value, onChange, hint }: { label: string; value: boolean; onChange: (v: boolean) => void; hint?: string }) {
-  return (
-    <label className="row" style={{ gap: 8, alignItems: 'center' }} title={hint}>
-      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} /> {label}
-      {hint && <span className="small muted">{hint}</span>}
-    </label>
-  );
-}
-
-function TextFields({ t, onChange, title = 'Schrift' }: { t: TextStyle; onChange: (t: TextStyle) => void; title?: string }) {
-  return (
-    <Section title={title} open={false} badge={`${t.font} · ${t.size}px`}>
-      <div className="fields">
-        <Field label="Schriftart"><FontInput value={t.font} onChange={(font) => onChange({ ...t, font })} /></Field>
-        <Field label={`Größe ${t.size}px`}><input type="range" min={10} max={200} value={t.size} onChange={(e) => onChange({ ...t, size: Number(e.target.value) })} /></Field>
-        <Field label="Stärke">
-          <select value={t.weight} onChange={(e) => onChange({ ...t, weight: Number(e.target.value) })}>
-            {[300, 400, 500, 600, 700, 800, 900].map((w) => <option key={w} value={w}>{w}</option>)}
-          </select>
-        </Field>
-        <Color label="Farbe" value={t.color} onChange={(color) => onChange({ ...t, color })} />
-      </div>
-    </Section>
-  );
-}
-
-function TypeChecks({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  return (
-    <div className="row" style={{ flexWrap: 'wrap', gap: 12 }}>
-      {CATALOG.map((c) => (
-        <Toggle key={c.key} label={c.label} value={value.includes(c.key)} onChange={(on) => onChange(on ? [...value, c.key] : value.filter((k) => k !== c.key))} />
-      ))}
-    </div>
-  );
-}
-
-const toLocalInput = (iso: string) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-};
-const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : '');
-
-// ---------- Einstellungen je Typ ----------
+export const ICON: Record<WidgetType, string> = { event_list: '☰', goal: '▰', label: 'Aa', timer: '⏱', credits: '🎬', boss: '⚔', ticker: '⇆', ...BP_ICON };
 
 type SetS<T> = (patch: Partial<T>) => void;
+
+// ---------- Einstellungen je Typ ----------
 
 function EventListForm({ s, set }: { s: EventListSettings; set: SetS<EventListSettings> }) {
   return (
@@ -365,6 +310,7 @@ function settingsSections(type: WidgetType, s: WidgetSettingsMap[WidgetType], se
       case 'credits': return CreditsForm({ s: s as CreditsSettings, set });
       case 'boss': return BossForm({ s: s as BossSettings, set });
       case 'ticker': return TickerForm({ s: s as TickerSettings, set });
+      default: return bpSections(type, s, set);
     }
   };
   return Children.toArray(form().props.children);
@@ -372,7 +318,7 @@ function settingsSections(type: WidgetType, s: WidgetSettingsMap[WidgetType], se
 
 // ---------- Vorschau & Steuerung ----------
 
-function WidgetPreview({ w, background }: { w: W; background: string }) {
+function WidgetPreview({ w, background, sample }: { w: W; background: string; sample?: boolean }) {
   const info = WIDGET_INFO[w.type];
   const wrap = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
@@ -387,7 +333,7 @@ function WidgetPreview({ w, background }: { w: W; background: string }) {
     <div ref={wrap} className="widget-preview" style={{ height: info.height * scale, background }}>
       <iframe
         title="Widget-Vorschau"
-        src={`${w.url.replace(/^https?:\/\/[^/]+/, '')}${w.type === 'credits' ? '&play=1' : ''}`}
+        src={`${w.url.replace(/^https?:\/\/[^/]+/, '')}${w.type === 'credits' ? '&play=1' : ''}${sample ? '&preview=1' : ''}`}
         style={{ width: info.width, height: info.height, transform: `scale(${scale})`, colorScheme: 'light' }}
       />
     </div>
@@ -441,12 +387,39 @@ function Controls({ w, data, onChange }: { w: W; data: WidgetData; onChange: () 
     );
   }
   if (w.type === 'label') return <div className="muted">Aktuell: <b>{(data as { text: string }).text}</b></div>;
+  if (isBpType(w.type)) {
+    const bp = (data as { bp: BpData }).bp;
+    const money = (v: number) => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+    return (
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <span className="muted">
+          {bp.preview ? 'Test-Modus aktiv (Beispieldaten) · ' : ''}Spendenstand <b>{money(bp.total)}</b> · {bp.count} Spenden{bp.target ? ` · Ziel ${money(bp.target)}` : ''}
+        </span>
+        {w.type === 'bp_poll' && <button className="primary" onClick={() => post('poll/winner', undefined, 'Gewinnanimation ausgelöst')}>🎉 Gewinnanimation auslösen</button>}
+        {w.type === 'bp_milestones' && (
+          <button onClick={() => confirm('Alle Milestones wieder scharf schalten? Bereits erreichte lösen dann bei der nächsten Spende erneut einen Alert aus.') && post('milestones/reset', undefined, 'Milestones zurückgesetzt')}>↺ Milestones zurücksetzen</button>
+        )}
+      </div>
+    );
+  }
   return null;
 }
 
-function TestButtons() {
+function TestButtons({ betterplace }: { betterplace?: boolean }) {
   const run = useAction();
   const fire = (body: object, label: string) => void run(() => api.post('/api/events/test', body), `Test: ${label}`);
+  if (betterplace) {
+    return (
+      <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+        <span className="small muted">Testspende:</span>
+        <button className="small" onClick={() => fire({ type: 'donation', amount: 5, user: 'Maxi H.', message: 'Weiter so!' }, '5 €')}>5 €</button>
+        <button className="small" onClick={() => fire({ type: 'donation', amount: 25, user: 'rubber duck', message: '#1 für die erste Option' }, '25 € für #1')}>25 € für #1</button>
+        <button className="small" onClick={() => fire({ type: 'donation', amount: 50, user: 'Unicorn<3', message: '#2' }, '50 € für #2')}>50 € für #2</button>
+        <button className="small" onClick={() => fire({ type: 'donation', amount: 250, user: 'Maxi M.' }, '250 €')}>250 € ohne Kommentar</button>
+        <button className="small ghost" onClick={() => confirm('Alle Test-Events aus Log und Widgets entfernen?') && void run(() => api.del('/api/events/test'), 'Testdaten entfernt')}>Testdaten entfernen</button>
+      </div>
+    );
+  }
   return (
     <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
       <span className="small muted">Test:</span>
@@ -461,13 +434,14 @@ function TestButtons() {
   );
 }
 
-function Editor({ id, onDeleted, onRenamed }: { id: string; onDeleted: () => void; onRenamed: () => void }) {
+export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDeleted: () => void; onRenamed: () => void }) {
   const detail = useLoad(() => api.get<Detail>(`/api/widgets/${id}`), [id]);
   const run = useAction();
   const [draft, setDraft] = useState<object | null>(null);
   const [name, setName] = useState('');
   const [bg, setBg] = useState('');
   const [live, setLive] = useState<WidgetData | null>(null);
+  const [sample, setSample] = useState(false);
   const w = detail.data;
 
   // Entwurf nur nach (Neu-)Laden übernehmen, nicht bei jeder Live-Aktualisierung
@@ -531,9 +505,10 @@ function Editor({ id, onDeleted, onRenamed }: { id: string; onDeleted: () => voi
               <h3 style={{ margin: 0 }}>Vorschau</h3>
               <label className="row small" style={{ gap: 6 }}>Hintergrund <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} style={{ width: 40, padding: 2 }} /></label>
             </div>
-            <WidgetPreview key={w.url} w={w} background={bg} />
+            <WidgetPreview key={`${w.url}:${sample}`} w={w} background={bg} sample={sample} />
             <Controls w={w} data={live ?? w.data} onChange={refresh} />
-            <TestButtons />
+            {isBpType(w.type) && <Toggle label="Beispieldaten in der Vorschau (wie &preview=true bei betterplace)" value={sample} onChange={setSample} />}
+            <TestButtons betterplace={isBpType(w.type)} />
           </div>
           {sections.slice(half)}
         </div>
@@ -581,7 +556,17 @@ export function WidgetsPage() {
           </div>
           <div className="card stack" style={{ gap: 6 }}>
             <h3 style={{ margin: 0 }}>Neues Widget</h3>
-            {TYPES.map((t) => (
+            {TYPES.filter((t) => !isBpType(t)).map((t) => (
+              <button key={t} className="widget-type" onClick={() => void create(t)}>
+                <b>{ICON[t]} {WIDGET_INFO[t].label}</b>
+                <span className="small muted">{WIDGET_INFO[t].description}</span>
+              </button>
+            ))}
+          </div>
+          <div className="card stack" style={{ gap: 6 }}>
+            <h3 style={{ margin: 0 }}>betterplace</h3>
+            <p className="small muted" style={{ margin: 0 }}>Wie die Livestream-Alerts von betterplace – auch unter Alert-Box → Spenden (betterplace).</p>
+            {TYPES.filter(isBpType).map((t) => (
               <button key={t} className="widget-type" onClick={() => void create(t)}>
                 <b>{ICON[t]} {WIDGET_INFO[t].label}</b>
                 <span className="small muted">{WIDGET_INFO[t].description}</span>
@@ -591,7 +576,7 @@ export function WidgetsPage() {
         </div>
         <div>
           {current
-            ? <Editor key={current} id={current} onDeleted={() => { setSelected(null); list.reload(); }} onRenamed={list.reload} />
+            ? <WidgetEditor key={current} id={current} onDeleted={() => { setSelected(null); list.reload(); }} onRenamed={list.reload} />
             : <Hint>Lege links ein Widget an, z. B. ein Spendenziel oder einen Subathon-Timer.</Hint>}
         </div>
       </div>

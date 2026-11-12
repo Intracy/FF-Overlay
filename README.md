@@ -15,7 +15,7 @@ Webhooks ────────┘                                            
 
 **Quellen**
 - **Twitch** über EventSub-WebSocket (funktioniert hinter NAT, kein öffentlicher Webhook nötig): Follow, Sub, Resub (Monate, Streak, Nachricht), Gift-Subs inkl. anonym, Bits, Raids, Kanalpunkte, Stream online/offline. OAuth mit automatischem Token-Refresh, Reconnect nach Twitch-Vorgaben.
-- **betterplace** Spendenaktionen über die Public API v4 (Polling ≥ 15 s mit ETag, Duplikat-Filter; vorhandene Spenden lösen beim Einrichten keinen Alert aus).
+- **betterplace** Spendenaktionen: sofort per **Spenden-Webhook** (Format `donation_announced` v0.2) oder über die Public API v4 (Polling ≥ 15 s mit ETag, Duplikat-Filter; vorhandene Spenden lösen beim Einrichten keinen Alert aus). Kommt der erste Webhook an, stellt FF-Overlay automatisch um – ohne doppelte Alerts. Spendenstand, Zielbetrag und Logos der Organisationen kommen immer über die API.
 - **Eigene Webhooks** für Ko-fi, Streamer.bot, Zapier oder eigene Tools.
 
 **Alert-Box im Aufbau von Streamlabs** (Menüpunkt „Alert-Box“)
@@ -27,6 +27,14 @@ Webhooks ────────┘                                            
 - **Globale Bearbeitung**: Allgemein, Animationen, Bild, Video-Lautstärke, Positionierung, Sound, Schrift, Nachrichtenschrift und TTS mit „Auf alle Alerts anwenden“
 - Pro Alert: **Text-in-Sprache** (Stimme, Sprache, Mindestbetrag, Spam-Sicherheit aus/niedrig/mittel/hoch, Wiederholungssperre, Lautstärke, Vorlage mitlesen), **Twitch-Emotes** in Nachrichten, **eigenes HTML/CSS/JS** mit eigenen Feldern in einem abgeschotteten Sandbox-Frame
 - Zusätzliche Twitch-Events: **Power-Ups** und **Charity-Spenden**
+
+**Spenden (betterplace)** – alle Livestream-Alerts von betterplace, in der Alert-Box unter „Spenden (betterplace)“
+- **Spendenalert mit GIFs & Sounds** und **Milestone erreicht** als Alerts mit Varianten, GIF, Sound, TTS
+- **All-Inclusive-Alert** (Spendenstand, letzte Spende, Top-Spende; Themes Standard, Pixel, Sakura, Pride oder selbst gestaltet)
+- **Abstimmung mit Spenden** (Antworten per `#1`, `#2` oder Stichwort im Spendenkommentar, nach Betrag oder Anzahl, Gewinnanimation)
+- **Spendenstand**, **Letzte Spende**, **Top-Spende** (Liste oder rotierend), **Leaderboard der Spender*innen**, **Fortschrittsbalken** (Zielbetrag der Aktion oder eigener), **Letzter Kommentar**, **Logos der Organisationen**, **Milestones** („Nächster Milestone“-Anzeige + Alert oder nur Alert), **Live Spenden-Feed** (auch als OBS-Dock)
+- Schrift, Größe, Stärke und Farbe je Textart wie bei betterplace, Textausrichtung, ein- oder mehrzeilig
+- **Test-Modus** für alle betterplace-Widgets oder `&preview=true` pro Quelle
 
 **Widgets wie bei Streamlabs** (Menüpunkt „Widgets“, jedes mit eigener Browserquellen-URL)
 - **Ereignisliste**: die letzten Events im Stream, 10 Stile (Carbon, Chevrons, Crisscross, Slick, Fiber, Hearts, Honeycomb, Retro, Solid, Stripes), Themenfarbe, Event-Typen, Mindest-Bits/-Raider, max. Einträge, Ausblendzeit, Spiegeln, Ein-/Ausblend-Animation
@@ -122,6 +130,12 @@ Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern** → URL 
 Benötigte Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`.
 Wer Twitch vor dem Update verbunden hat, muss einmal **neu verbinden**, damit Charity-Spenden ankommen.
 
+### betterplace-Webhook
+1. Dashboard → **Alert-Box → Spenden (betterplace) → Verbindung & Webhook** (oder **Verbindungen**): Spendenaktion verbinden, Webhook-URL kopieren.
+2. betterplace → Spendenaktion → **Alerts für deinen Charity Stream → Spenden-Webhook → Webhook einrichten**: URL einfügen, „Übernehmen“, Webhook **an**, „Testspende senden“.
+
+betterplace ruft die Adresse aus dem Internet auf. `PUBLIC_URL` muss deshalb öffentlich erreichbar sein (z. B. `cloudflared tunnel --url http://localhost:3000` oder Reverse-Proxy auf dem NAS) – mit `localhost` kommen Spenden weiterhin über die API-Abfrage (alle 20 s). Der Webhook liefert Anzeigename, Betrag (beide können verborgen sein), Kommentar, laufende Nummer und bei moderierten Aktionen einen Video-Link.
+
 ### Text-in-Sprache
 TTS nutzt die Sprachausgabe der Browserquelle (Web Speech API). Welche Stimmen es gibt, hängt vom Rechner ab, auf dem OBS läuft (macOS und Windows bringen deutsche Stimmen mit). Die Stimmenliste im Dashboard zeigt die Stimmen des Rechners, auf dem das Dashboard offen ist; fehlt die gewählte Stimme in OBS, wird die Standardstimme der Sprache genutzt.
 
@@ -166,8 +180,8 @@ server/src/
   rules/engine.ts           Bedingungen, Priorität, Gewichtung, Begründung
   queue/alertQueue.ts       Warteschlange pro Overlay (Pause, Skip, Timeout)
   templates/render.ts       Platzhalter → Text-Segmente (Overlay setzt nur Text, kein HTML)
-  widgets/                  Berechnung (Ziele, Labels, Credits, Timer, Boss), Service mit Live-Updates, Validierung
-  shared/widgets.ts         Widget-Typen und Standardwerte
+  widgets/                  Berechnung (Ziele, Labels, Credits, Timer, Boss, betterplace), Service mit Live-Updates, Validierung
+  shared/widgets.ts         Widget-Typen und Standardwerte (betterplace: shared/bpWidgets.ts)
   routes/                   auth, api, connections (+ Twitch-OAuth, Webhooks), media (+ GIPHY-Proxy), widgets, ws
   db.ts                     SQLite-Schema & Zugriff
 server/test/                Vitest: Engine, Normalisierung, Queue, Widgets, API inkl. WebSocket-Ende-zu-Ende
@@ -199,5 +213,5 @@ npm run build     # dist/web + dist/server
 - YouTube Live (Super Chat, Mitglieder), Cloud-Stimmen für TTS (z. B. Amazon Polly wie bei Streamlabs)
 - Safe Mode gegen Hate-Raids
 - Von Streamlabs bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot-Einlösungen, Twitch-Clips bei Großspenden, Zuschauer-GIFs vor Spenden (braucht eine eigene Spendenseite)
-- betterplace-Webhook-Connector, ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket)
+- Ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket); Video-Link aus betterplace-Spenden im Alert abspielen; betterplaces eigene Abstimmungsauswahl im Spendenformular (kommt nicht über den Webhook)
 - Weitere Streamlabs-Widgets, die einen Chat-Anschluss brauchen: Chat-Box, Emote-Wand, Tip-Jar, Umfragen, Chat-Highlights

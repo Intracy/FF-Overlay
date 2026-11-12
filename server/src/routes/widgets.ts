@@ -4,7 +4,7 @@ import type { AppContext } from '../context.js';
 import * as store from '../db.js';
 import { config } from '../config.js';
 import { requireAuth } from './auth.js';
-import { WIDGET_INFO, type Widget } from '../shared/widgets.js';
+import { WIDGET_INFO, type Widget, type WidgetSettingsMap } from '../shared/widgets.js';
 import { mergeSettings, widgetCreateSchema, widgetPatchSchema } from '../widgets/schemas.js';
 
 export const widgetUrl = (w: { id: string; key: string }) => `${config.publicUrl}/widget/?id=${w.id}&key=${w.key}`;
@@ -31,14 +31,23 @@ export async function widgetRoutes(app: FastifyInstance, ctx: AppContext) {
     const w = store.widgets.get(db, req.params.id);
     if (!w) return reply.code(404).send({ error: 'Widget nicht gefunden' });
     const patch = widgetPatchSchema.parse(req.body);
-    const settings = patch.settings ? mergeSettings(w.type, w.settings, patch.settings) : undefined;
-    const next = store.widgets.update(db, w.id, { name: patch.name, previewBackground: patch.previewBackground, settings })!;
+    let settings = patch.settings ? mergeSettings(w.type, w.settings, patch.settings) : undefined;
+    // Abstimmung: Start/Ende beim Aktivieren bzw. Deaktivieren festhalten
+    if (settings && w.type === 'bp_poll') {
+      const before = w.settings as WidgetSettingsMap['bp_poll'];
+      const after = settings as unknown as WidgetSettingsMap['bp_poll'];
+      if (after.active && !before.active) settings = { ...after, startedAt: new Date().toISOString(), endedAt: '' };
+      if (!after.active && before.active) settings = { ...after, endedAt: new Date().toISOString() };
+    }
+    const next = store.widgets.update(db, w.id, { name: patch.name, previewBackground: patch.previewBackground, settings: settings as unknown as Widget['settings'] | undefined })!;
+    if (settings && w.type === 'bp_milestones') service.syncMilestones(w.id);
     service.push(w.id);
     return view(next);
   });
 
   app.delete<{ Params: { id: string } }>('/api/widgets/:id', async (req, reply) => {
     hub.closeWidget(req.params.id, 'Widget gelöscht');
+    hub.closeWidget(`${req.params.id}:preview`, 'Widget gelöscht');
     if (!store.widgets.remove(db, req.params.id)) return reply.code(404).send({ error: 'Widget nicht gefunden' });
     return { ok: true };
   });
@@ -47,6 +56,7 @@ export async function widgetRoutes(app: FastifyInstance, ctx: AppContext) {
     const w = store.widgets.rotateKey(db, req.params.id);
     if (!w) return reply.code(404).send({ error: 'Widget nicht gefunden' });
     hub.closeWidget(w.id, 'Neuer Key');
+    hub.closeWidget(`${w.id}:preview`, 'Neuer Key');
     return view(w);
   });
 
@@ -79,6 +89,16 @@ export async function widgetRoutes(app: FastifyInstance, ctx: AppContext) {
     if (!w || w.type !== 'credits') return reply.code(404).send({ error: 'Kein Credits-Widget' });
     hub.sendWidget(w.id, { t: 'credits.roll' });
     return { ok: true, sources: hub.widgetCount(w.id) };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/widgets/:id/poll/winner', async (req, reply) => {
+    if (!service.pollWinner(req.params.id)) return reply.code(404).send({ error: 'Keine Abstimmung' });
+    return { ok: true };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/widgets/:id/milestones/reset', async (req, reply) => {
+    if (!service.resetMilestones(req.params.id)) return reply.code(404).send({ error: 'Kein Milestone-Widget' });
+    return { ok: true };
   });
 
   /** Test-Events (Testknöpfe) aus Log und Widgets entfernen */

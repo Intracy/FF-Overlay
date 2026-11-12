@@ -109,7 +109,7 @@ export const CATALOG: CatalogEntry[] = [
     presets: [random, num('min_amount', 'Betrag mindestens <x>', 'amount.value', 'gte'), num('exact_amount', 'Betrag genau <x>', 'amount.value', 'eq')],
   },
   {
-    key: 'donation', group: 'Spenden', label: 'Spenden (betterplace & Webhooks)', trigger: { type: 'donation' },
+    key: 'donation', group: 'Spenden', label: 'Spendenalert mit GIFs & Sounds', trigger: { type: 'donation' },
     defaultFormat: '{user} spendet {amount}!', sample: { amount: { value: 10, currency: 'EUR' }, message: 'Für den guten Zweck!' },
     presets: [
       random,
@@ -117,6 +117,16 @@ export const CATALOG: CatalogEntry[] = [
       num('exact_amount', 'Spendenbetrag genau <x>', 'amount.value', 'eq'),
       { id: 'largest', label: 'Größte Spende dieses Streams', value: null, build: () => [{ field: '', op: 'largestOfStream' }] },
       { id: 'message', label: 'Nachricht enthält <x>', value: 'text', build: (v) => [{ field: 'message', op: 'contains', value: String(v) }] },
+    ],
+  },
+  {
+    key: 'milestone', group: 'Spenden', label: 'Milestone erreicht', trigger: { type: 'milestone' },
+    defaultFormat: 'Milestone {amount} erreicht: {product}!', sample: { amount: { value: 500, currency: 'EUR' }, product: 'Bonus-Song', user: { name: 'Community' } },
+    presets: [
+      random,
+      num('min_amount', 'Milestone-Betrag mindestens <x>', 'amount.value', 'gte'),
+      num('exact_amount', 'Milestone-Betrag genau <x>', 'amount.value', 'eq'),
+      { id: 'text', label: 'Milestone-Text enthält <x>', value: 'text', build: (v) => [{ field: 'product', op: 'contains', value: String(v) }] },
     ],
   },
   {

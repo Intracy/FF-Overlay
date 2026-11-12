@@ -10,5 +10,7 @@ export interface Connector {
 export interface ConnectorEnv {
   emit: (event: NormalizedEvent) => void;
   onStatus: () => void;
+  /** Neuer Spendenstand von betterplace (Widgets aktualisieren, Milestones prüfen) */
+  onBetterplaceStats?: () => void;
   log: { info: (o: unknown, msg?: string) => void; warn: (o: unknown, msg?: string) => void; error: (o: unknown, msg?: string) => void };
 }

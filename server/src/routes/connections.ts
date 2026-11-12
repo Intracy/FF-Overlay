@@ -7,7 +7,10 @@ import { encrypt, randomKey, safeEqual } from '../lib/crypto.js';
 import { isAuthenticated, requireAuth } from './auth.js';
 import { authorizeUrl, exchangeCode, validateToken } from '../connectors/twitch/auth.js';
 import type { TwitchConnectionData } from '../connectors/twitch/eventsub.js';
-import { parseFundraisingEventId, type BetterplaceConnectionData } from '../connectors/betterplace.js';
+import {
+  betterplaceWebhookBody, isBetterplaceWebhook, normalizeBetterplaceWebhook, parseFundraisingEventId,
+  type BetterplaceConnectionData, type BetterplaceConnector,
+} from '../connectors/betterplace.js';
 import { normalizeWebhook, webhookBody, type WebhookConnectionData } from '../connectors/webhook.js';
 
 /** Entfernt Geheimnisse, bevor Verbindungsdaten ans Dashboard gehen. */
@@ -15,7 +18,13 @@ function publicConnection(c: store.ConnectionRow) {
   const d = c.data as Record<string, unknown>;
   const safe: Record<string, unknown> = {};
   if (c.platform === 'twitch') Object.assign(safe, { login: d.login, scopes: d.scopes });
-  if (c.platform === 'betterplace') Object.assign(safe, { fundraisingEventId: d.fundraisingEventId });
+  if (c.platform === 'betterplace')
+    Object.assign(safe, {
+      fundraisingEventId: d.fundraisingEventId,
+      webhookUrl: d.webhookToken ? `${config.publicUrl}/hooks/${d.webhookToken}` : '',
+      webhookSeenAt: d.webhookSeenAt ?? null,
+      stats: d.stats ?? null,
+    });
   if (c.platform === 'webhook') Object.assign(safe, { url: `${config.publicUrl}/hooks/${d.token}` });
   return { id: c.id, platform: c.platform, label: c.label, enabled: c.enabled, data: safe };
 }
@@ -27,10 +36,32 @@ export async function connectionRoutes(app: FastifyInstance, ctx: AppContext) {
 
   // ---------- Öffentlich: eingehende Webhooks ----------
   app.post<{ Params: { token: string } }>('/hooks/:token', async (req, reply) => {
-    const conn = store.connections
-      .list(db)
-      .find((c) => c.platform === 'webhook' && c.enabled && safeEqual(String((c.data as unknown as WebhookConnectionData).token), req.params.token));
+    const token = req.params.token;
+    const conn = store.connections.list(db).find((c) => {
+      if (!c.enabled) return false;
+      const d = c.data as unknown as WebhookConnectionData & BetterplaceConnectionData;
+      if (c.platform === 'webhook') return safeEqual(String(d.token), token);
+      if (c.platform === 'betterplace') return !!d.webhookToken && safeEqual(String(d.webhookToken), token);
+      return false;
+    });
     if (!conn) return reply.code(404).send({ error: 'unbekannter Webhook' });
+
+    // Spenden-Webhook von betterplace (Format donation_announced) – an jeder Webhook-URL erkannt
+    if (isBetterplaceWebhook(req.body)) {
+      const parsed = betterplaceWebhookBody.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: 'ungültiger betterplace-Webhook', issues: parsed.error.issues });
+      const event = normalizeBetterplaceWebhook(parsed.data, conn.id);
+      if (conn.platform === 'betterplace') {
+        const c = store.connections.get<BetterplaceConnectionData>(db, conn.id)!;
+        c.data = { ...c.data, webhookSeenAt: new Date().toISOString() };
+        store.connections.save(db, c);
+        (connectors.get(conn.id) as BetterplaceConnector | undefined)?.refreshStatsSoon?.();
+      }
+      pipeline.ingest(event);
+      return { ok: true, id: event.id };
+    }
+
+    if (conn.platform !== 'webhook') return reply.code(400).send({ error: 'Erwartet wird ein betterplace-Spenden-Webhook (donation_announced)' });
     const parsed = webhookBody.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'ungültiger Body', issues: parsed.error.issues });
     const event = normalizeWebhook(parsed.data, conn.id);
@@ -91,11 +122,22 @@ export async function connectionRoutes(app: FastifyInstance, ctx: AppContext) {
     r.post<{ Body: { input: string; label?: string } }>('/api/connections/betterplace', async (req, reply) => {
       const id = parseFundraisingEventId(String(req.body?.input ?? ''));
       if (!id) return reply.code(400).send({ error: 'Keine Spendenaktions-ID erkannt' });
-      const data: BetterplaceConnectionData = { fundraisingEventId: id, seen: [], primed: false };
+      const data: BetterplaceConnectionData = { fundraisingEventId: id, seen: [], primed: false, webhookToken: randomKey(24) };
       const conn = { id: nanoid(10), platform: 'betterplace', label: req.body.label?.slice(0, 80) || `betterplace #${id}`, data: data as never, enabled: true };
       store.connections.save(db, conn);
       await connectors.restart(conn.id);
       return publicConnection(conn);
+    });
+
+    /** Webhook-URL für eine betterplace-Verbindung erzeugen bzw. erneuern; mode=poll schaltet zurück auf Abfrage */
+    r.post<{ Params: { id: string }; Body: { action: 'rotate' | 'poll' } }>('/api/connections/:id/betterplace', async (req, reply) => {
+      const c = store.connections.get<BetterplaceConnectionData>(db, req.params.id);
+      if (!c || c.platform !== 'betterplace') return reply.code(404).send({ error: 'betterplace-Verbindung nicht gefunden' });
+      if (req.body?.action === 'rotate') c.data = { ...c.data, webhookToken: randomKey(24) };
+      if (req.body?.action === 'poll') c.data = { ...c.data, webhookSeenAt: undefined };
+      store.connections.save(db, c);
+      await connectors.restart(c.id);
+      return publicConnection(c);
     });
 
     r.post<{ Body: { label?: string } }>('/api/connections/webhook', async (req) => {

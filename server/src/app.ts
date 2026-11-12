@@ -41,9 +41,10 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
   const connectors: ConnectorManager = new ConnectorManager(db, {
     emit: (event) => pipeline.ingest(event),
     onStatus: () => hub.broadcastDashboard({ t: 'connectors', status: connectors.statuses() }),
+    onBetterplaceStats: () => widgets.onBetterplaceStats(),
     log: app.log,
   });
-  const widgets = new WidgetService(db, hub, () => pipeline.session);
+  const widgets: WidgetService = new WidgetService(db, hub, () => pipeline.session, (event) => pipeline.ingest(event));
   pipeline.listeners.push((entry) => widgets.onEvent(entry));
   const ctx: AppContext = { db, hub, pipeline, connectors, widgets };
 

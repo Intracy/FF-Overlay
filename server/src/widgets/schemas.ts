@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { WidgetType } from '../shared/widgets.js';
-import { LABEL_KINDS, LIST_STYLES } from '../shared/widgets.js';
+import { LABEL_KINDS, LIST_STYLES, WIDGET_INFO } from '../shared/widgets.js';
 
 const color = z.string().regex(/^#[0-9a-fA-F]{3,8}$|^rgba?\([\d\s.,%]+\)$|^transparent$/, 'Ungültige Farbe');
 const str = (max = 200) => z.string().max(max);
@@ -55,12 +55,50 @@ const ticker = z.object({
   types: catalogKeys, maxItems: num(1, 50), format: str(200), speed: num(10, 1000), text, amountColor: color, separator: str(10),
 });
 
+// ---------- betterplace ----------
+const align = z.enum(['left', 'center', 'right']);
+const headed = { headlineText: str(120), align, headline: text };
+const pct = num(0, 100);
+const isoOrEmpty2 = isoOrEmpty;
+
+const bpAll = z.object({
+  designMode: z.enum(['default', 'custom']), theme: z.enum(['standard', 'pixel', 'sakura', 'pride']),
+  labels: z.object({ total: str(60), last: str(60), top: str(60) }), headline: text, data: text,
+});
+const bpPoll = z.object({
+  title: str(200), options: z.array(z.object({ text: str(100), keywords: str(200) })).min(2).max(10), active: z.boolean(),
+  startedAt: isoOrEmpty2, endedAt: isoOrEmpty2, countBy: z.enum(['amount', 'count']), progressColor: color, baseColor: color, baseOpacity: pct,
+  headline: text, option: text, data: text,
+});
+const bpTotal = z.object({ ...headed, lines: z.enum(['single', 'multi']), data: text });
+const bpLast = z.object({ ...headed, lines: z.enum(['single', 'multi']), showComment: z.boolean(), name: text, amount: text, comment: text });
+const bpTop = z.object({
+  ...headed, count: num(1, 25), display: z.enum(['list', 'loop']), rotateSeconds: num(1, 120), showComment: z.boolean(), name: text, amount: text, comment: text,
+});
+const bpLeaderboard = z.object({ ...headed, count: num(1, 25), display: z.enum(['list', 'loop']), rotateSeconds: num(1, 120), name: text, amount: text });
+const bpProgress = z.object({
+  ...headed, display: z.enum(['both', 'bar', 'text']), target: num(0, 1e9), barHeight: num(4, 200), progressColor: color, baseColor: color, baseOpacity: pct, data: text,
+});
+const bpComment = z.object({ ...headed, count: num(1, 25), rotateSeconds: num(1, 120), name: text, amount: text, comment: text });
+const bpLogos = z.object({
+  duration: num(1, 120), align, showNames: z.boolean(),
+  extraLogos: z.string().max(4000).refine((v) => v.split('\n').every((l) => !l.trim() || /^(https:\/\/|\/media\/)/.test(l.trim())), 'Nur https://-Adressen oder eigene Uploads'),
+  logoHeight: num(20, 1000), name: text,
+});
+const bpMilestones = z.object({
+  milestones: z.array(z.object({ amount: num(0, 1e9), text: str(200) })).max(50), mode: z.enum(['display_and_alert', 'alert_only']),
+  headlineText: str(120), progressColor: color, baseColor: color, text, amount: text,
+});
+const bpFeed = z.object({ sort: z.enum(['newest', 'highest']), showComments: z.boolean(), onlyWithAmount: z.boolean(), max: num(5, 200), name: text, amount: text, comment: text });
+
 export const WIDGET_SCHEMAS: Record<WidgetType, z.ZodObject> = {
   event_list: eventList, goal, label, timer, credits, boss, ticker,
+  bp_all: bpAll, bp_poll: bpPoll, bp_total: bpTotal, bp_last: bpLast, bp_top: bpTop, bp_leaderboard: bpLeaderboard,
+  bp_progress: bpProgress, bp_comment: bpComment, bp_logos: bpLogos, bp_milestones: bpMilestones, bp_feed: bpFeed,
 };
 
 export const widgetCreateSchema = z.object({
-  type: z.enum(['event_list', 'goal', 'label', 'timer', 'credits', 'boss', 'ticker']),
+  type: z.enum(Object.keys(WIDGET_INFO) as [WidgetType, ...WidgetType[]]),
   name: str(80).optional(),
 });
 

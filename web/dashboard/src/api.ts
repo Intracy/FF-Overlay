@@ -53,6 +53,7 @@ export const EVENT_TYPES: Array<{ type: EventType; subtype?: string; label: stri
   { type: 'power_up', label: 'Power-Up', icon: '⚡' },
   { type: 'charity', label: 'Charity-Spende', icon: '♥' },
   { type: 'donation', label: 'Spende', icon: '€' },
+  { type: 'milestone', label: 'Milestone', icon: '⚑' },
   { type: 'custom', label: 'Eigenes Event', icon: '✱' },
 ];
 

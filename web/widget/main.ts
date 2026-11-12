@@ -1,8 +1,10 @@
 import './widget.css';
 import type {
-  BossSettings, CreditsSettings, EventListSettings, GoalSettings, LabelSettings, ListEntry, ServerToWidget, TextStyle, TickerSettings,
-  TimerSettings, Widget, WidgetData,
+  BossSettings, CreditsSettings, EventListSettings, GoalSettings, LabelSettings, ListEntry, ServerToWidget, TickerSettings,
+  TimerSettings, WidgetData,
 } from '../../server/src/shared/widgets';
+import { animate, applyText, fmtNumber, h, type PubWidget, type Renderer } from './util';
+import { BP_RENDERERS } from './betterplace';
 
 /*
  * Widget-Browserquelle für OBS & Co.
@@ -10,7 +12,6 @@ import type {
  * Das Backend schickt bei jeder Änderung einen vollständigen Snapshot; diese Seite zeichnet nur.
  */
 
-type PubWidget = Omit<Widget, 'key' | 'state'>;
 type Snap<T extends WidgetData['type']> = Extract<WidgetData, { type: T }>;
 
 const params = new URLSearchParams(location.search);
@@ -20,59 +21,8 @@ const root = document.getElementById('root')!;
 const statusEl = document.getElementById('status')!;
 if (params.get('debug') === '1') document.body.classList.add('debug');
 
-// ---------- Hilfen ----------
-
-const loadedFonts = new Set<string>();
-function loadFont(family: string, weight: number) {
-  const fam = family.trim();
-  if (!fam || /^(sans-serif|serif|monospace|system-ui)$/i.test(fam) || loadedFonts.has(`${fam}:${weight}`)) return;
-  loadedFonts.add(`${fam}:${weight}`);
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fam).replace(/%20/g, '+')}:wght@${weight}&display=block`;
-  document.head.appendChild(link);
-}
-
-function applyText(el: HTMLElement, t: TextStyle) {
-  loadFont(t.font, t.weight);
-  el.classList.add('w-text');
-  el.style.setProperty('--font', `'${t.font.replace(/'/g, '')}'`);
-  el.style.setProperty('--size', `${t.size}px`);
-  el.style.setProperty('--weight', String(t.weight));
-  el.style.setProperty('--color', t.color);
-}
-
-function h(tag: string, cls = '', text?: string): HTMLElement {
-  const el = document.createElement(tag);
-  if (cls) el.className = cls;
-  if (text !== undefined) el.textContent = text;
-  return el;
-}
-
-function animate(el: HTMLElement, name: string, ms: number): Promise<void> {
-  if (!name) return Promise.resolve();
-  return new Promise((resolve) => {
-    el.style.setProperty('--animate-duration', `${ms}ms`);
-    el.classList.add('animate__animated', `animate__${name}`);
-    const done = () => {
-      el.classList.remove(`animate__${name}`);
-      resolve();
-    };
-    el.addEventListener('animationend', done, { once: true });
-    setTimeout(done, ms + 200);
-  });
-}
-
-const fmtNumber = (v: number, currency = '') =>
-  currency ? new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(v) : new Intl.NumberFormat('de-DE').format(v);
-
 // ---------- Renderer je Typ ----------
 
-interface Renderer {
-  update(w: PubWidget, d: WidgetData): void;
-  message?(m: ServerToWidget): void;
-  dispose(): void;
-}
 
 const ICONS: Record<string, string> = {
   follow: '♥', sub: '★', resub: '★', gift: '🎁', cheer: '◆', power_up: '⚡', raid: '⚑', redemption: '●', charity: '✚', donation: '€', custom: '✦',
@@ -418,6 +368,7 @@ function ticker(): Renderer {
 
 const FACTORIES: Record<WidgetData['type'], () => Renderer> = {
   event_list: eventList, goal, label, timer, boss, credits, ticker,
+  ...BP_RENDERERS(root),
 };
 
 // ---------- Verbindung ----------
@@ -435,7 +386,9 @@ function connect() {
     return;
   }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws/widget/${encodeURIComponent(id)}?key=${encodeURIComponent(key)}`);
+  // &preview=1 bzw. &preview=true (wie bei betterplace) zeigt Beispieldaten
+  const preview = /^(1|true)$/.test(params.get('preview') ?? '') ? '&preview=1' : '';
+  ws = new WebSocket(`${proto}://${location.host}/ws/widget/${encodeURIComponent(id)}?key=${encodeURIComponent(key)}${preview}`);
   statusEl.textContent = 'verbinde …';
   ws.onopen = () => {
     retry = 0;

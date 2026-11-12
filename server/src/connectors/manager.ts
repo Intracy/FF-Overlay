@@ -18,6 +18,10 @@ export class ConnectorManager {
     return null; // Webhooks brauchen keinen laufenden Prozess
   }
 
+  get(id: string) {
+    return this.running.get(id);
+  }
+
   async startAll() {
     for (const c of store.connections.list(this.db)) if (c.enabled) await this.restart(c.id);
   }

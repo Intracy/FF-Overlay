@@ -7,7 +7,7 @@ export function seedIfEmpty(db: DB) {
   if (store.overlays.list(db).length) return;
   const overlay = store.overlays.create(db, 'Haupt-Overlay');
 
-  for (const key of ['follow', 'sub', 'resub', 'gift', 'cheer', 'raid', 'redemption', 'donation']) ensureDefault(db, overlay, key);
+  for (const key of ['follow', 'sub', 'resub', 'gift', 'cheer', 'raid', 'redemption', 'donation', 'milestone']) ensureDefault(db, overlay, key);
 
   // Ein paar Akzente wie bei den Streamlabs-Vorlagen
   const tweak = (key: string, patch: (t: NonNullable<ReturnType<typeof store.templates.get>>) => void) => {

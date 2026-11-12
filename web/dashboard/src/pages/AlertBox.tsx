@@ -5,6 +5,9 @@ import { CATALOG, detectPreset, FREQUENCIES, TIERS, type CatalogEntry, type Vari
 import { DesignFields, Section } from '../components/DesignFields';
 import { TemplatePreview } from '../components/Preview';
 import { CopyField, Field, Link, Modal, NumberInput, useAction, useLoad, useToast } from '../ui';
+import { BP_TYPES, WIDGET_INFO, type BpWidgetType } from '../../../../server/src/shared/widgets';
+import { BetterplaceSetup, BpWidgetPanel } from './BetterplacePanel';
+import { BP_ICON } from './BpWidgetForms';
 
 /*
  * Alert-Box im Aufbau der Streamlabs-Alert-Box:
@@ -18,9 +21,18 @@ interface View {
   profiles: Profile[];
   entries: Array<{ key: string; default: Item | null; variations: Item[] }>;
 }
-type Selection = { kind: 'general' } | { kind: 'global' } | { kind: 'entry'; key: string; ruleId?: string };
+type Selection =
+  | { kind: 'general' }
+  | { kind: 'global' }
+  | { kind: 'entry'; key: string; ruleId?: string }
+  | { kind: 'bpsetup' }
+  | { kind: 'bpwidget'; type: BpWidgetType };
 
 const GROUPS: Array<CatalogEntry['group']> = ['Twitch', 'Spenden', 'Sonstiges'];
+/** Reihenfolge wie auf der betterplace-Seite „Alerts für deinen Charity Stream“ (bp_… = Widget, sonst Alert) */
+const BP_ORDER = ['bp_all', 'bp_poll', 'bp_total', 'donation', 'bp_last', 'bp_top', 'bp_leaderboard', 'bp_progress', 'bp_comment', 'bp_logos', 'bp_milestones', 'milestone', 'bp_feed'];
+
+const GROUP_LABELS: Record<CatalogEntry['group'], string> = { Twitch: 'Twitch', Spenden: 'Spenden (betterplace)', Sonstiges: 'Sonstiges' };
 
 // ---------- Kopfzeile: Thema, Widget-URL, Ereignisfilter, Test ----------
 
@@ -55,7 +67,7 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
     if (!name) return;
     const copy = confirm('Aktuelle Einstellungen übernehmen?\nOK = Kopie des aktuellen Themas, Abbrechen = leeres Thema mit Standard-Alerts');
     const p = await run(() => api.post<Profile>(`/api/overlays/${o.id}/profiles`, { name, copy }), 'Thema angelegt');
-    if (p && !copy) for (const key of ['follow', 'sub', 'resub', 'gift', 'cheer', 'raid', 'redemption', 'donation']) await api.post(`/api/overlays/${o.id}/alertbox/${key}/enable`);
+    if (p && !copy) for (const key of ['follow', 'sub', 'resub', 'gift', 'cheer', 'raid', 'redemption', 'donation', 'milestone']) await api.post(`/api/overlays/${o.id}/alertbox/${key}/enable`);
     reload();
   };
 
@@ -87,7 +99,7 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
         <Dropdown label={`Ereignisse filtern${o.disabledTypes.length ? ` (${o.disabledTypes.length} aus)` : ''}`}>
           {() => GROUPS.map((g) => (
             <div key={g}>
-              <div className="grp">{g}</div>
+              <div className="grp">{GROUP_LABELS[g]}</div>
               {CATALOG.filter((c) => c.group === g).map((c) => (
                 <label key={c.key}><input type="checkbox" checked={!o.disabledTypes.includes(c.key)} onChange={() => toggleType(c.key)} /> {c.label}</label>
               ))}
@@ -97,7 +109,7 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
         <Dropdown label="Test">
           {(close) => GROUPS.map((g) => (
             <div key={g}>
-              <div className="grp">{g}</div>
+              <div className="grp">{GROUP_LABELS[g]}</div>
               {CATALOG.filter((c) => c.group === g).map((c) => (
                 <button key={c.key} onClick={() => { close(); void run(() => api.post('/api/events/test', { type: c.trigger.type, subtype: c.trigger.subtype }), `Test: ${c.label}`); }}>{c.label}</button>
               ))}
@@ -427,6 +439,29 @@ export function AlertBoxPage() {
   if (!view.data || !overlay) return <div className="empty">Lade Alert-Box …</div>;
   const v = view.data;
 
+  const entryItem = (c: CatalogEntry) => {
+    const e = entries.get(c.key);
+    const off = !e?.default || !e.default.rule.enabled || v.overlay.disabledTypes.includes(c.key);
+    const activeEntry = sel.kind === 'entry' && sel.key === c.key;
+    return (
+      <div key={c.key}>
+        <button className={`item ${activeEntry && !sel.ruleId ? 'active' : ''} ${off ? 'off' : ''}`} onClick={() => setSel({ kind: 'entry', key: c.key })} title={off ? 'deaktiviert oder herausgefiltert' : ''}>
+          {c.label}
+        </button>
+        {activeEntry && (
+          <>
+            {e?.variations.map((x) => (
+  <button key={x.rule.id} className={`item sub ${sel.ruleId === x.rule.id ? 'active' : ''} ${x.rule.enabled ? '' : 'off'}`} onClick={() => setSel({ kind: 'entry', key: c.key, ruleId: x.rule.id })}>{x.rule.name}</button>
+            ))}
+            {e?.default && <button className="add" onClick={() => setDialog({ kind: 'add', key: c.key })}>+ Variation hinzufügen</button>}
+            {!!e?.variations.length && <button className="add" onClick={() => setDialog({ kind: 'manage', key: c.key })}>⚙ Variationen verwalten</button>}
+          </>
+        )}
+      </div>
+    );
+  };
+
+
   return (
     <>
       <div className="page-head">
@@ -447,34 +482,29 @@ export function AlertBoxPage() {
           <button className={`item ${sel.kind === 'global' ? 'active' : ''}`} onClick={() => setSel({ kind: 'global' })}>▦ Globale Bearbeitung</button>
           {GROUPS.map((g) => (
             <div key={g}>
-              <div className="grp">{g}</div>
-              {CATALOG.filter((c) => c.group === g).map((c) => {
-                const e = entries.get(c.key);
-                const off = !e?.default || !e.default.rule.enabled || v.overlay.disabledTypes.includes(c.key);
-                const activeEntry = sel.kind === 'entry' && sel.key === c.key;
-                return (
-                  <div key={c.key}>
-                    <button className={`item ${activeEntry && !sel.ruleId ? 'active' : ''} ${off ? 'off' : ''}`} onClick={() => setSel({ kind: 'entry', key: c.key })} title={off ? 'deaktiviert oder herausgefiltert' : ''}>
-                      {c.label}
-                    </button>
-                    {activeEntry && (
-                      <>
-                        {e?.variations.map((x) => (
-                          <button key={x.rule.id} className={`item sub ${sel.ruleId === x.rule.id ? 'active' : ''} ${x.rule.enabled ? '' : 'off'}`} onClick={() => setSel({ kind: 'entry', key: c.key, ruleId: x.rule.id })}>{x.rule.name}</button>
-                        ))}
-                        {e?.default && <button className="add" onClick={() => setDialog({ kind: 'add', key: c.key })}>+ Variation hinzufügen</button>}
-                        {!!e?.variations.length && <button className="add" onClick={() => setDialog({ kind: 'manage', key: c.key })}>⚙ Variationen verwalten</button>}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="grp">{GROUP_LABELS[g]}</div>
+              {g === 'Spenden' ? (
+                <>
+                  <button className={`item ${sel.kind === 'bpsetup' ? 'active' : ''}`} onClick={() => setSel({ kind: 'bpsetup' })}>⚙ Verbindung & Webhook</button>
+                  {BP_ORDER.map((k) => {
+                    if (k.startsWith('bp_')) {
+                      const t = k as BpWidgetType;
+                      return <button key={t} className={`item ${sel.kind === 'bpwidget' && sel.type === t ? 'active' : ''}`} onClick={() => setSel({ kind: 'bpwidget', type: t })}>{BP_ICON[t]} {WIDGET_INFO[t].label}</button>;
+                    }
+                    const c = CATALOG.find((x) => x.key === k);
+                    return c ? entryItem(c) : null;
+                  })}
+                  {CATALOG.filter((c) => c.group === g && !BP_ORDER.includes(c.key)).map(entryItem)}
+                </>
+              ) : CATALOG.filter((c) => c.group === g).map(entryItem)}
             </div>
           ))}
         </nav>
 
         <div className="stack" style={{ minWidth: 0 }}>
           <TopBar view={v} overlayUrl={overlay.url} reload={reload} />
+          {sel.kind === 'bpsetup' && <BetterplaceSetup />}
+          {sel.kind === 'bpwidget' && <BpWidgetPanel key={sel.type} type={sel.type} />}
           {sel.kind === 'general' && <GeneralSettings overlay={v.overlay} sample={v.entries.find((e) => e.default?.template)?.default?.template ?? undefined} reload={reload} />}
           {sel.kind === 'global' && <GlobalEdit view={v} reload={view.reload} />}
           {sel.kind === 'entry' && selectedEntry && !data?.default && (

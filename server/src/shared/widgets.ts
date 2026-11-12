@@ -1,8 +1,11 @@
 import { BRAND_COLOR } from './brand.js';
+import { BP_DEFAULTS, BP_INFO, type BpData, type BpSettingsMap, type BpWidgetType } from './bpWidgets.js';
+export * from './bpWidgets.js';
 // Widgets nach dem Vorbild der Streamlabs-Widgets, die auf dieselben Events reagieren wie die Alert-Box.
 // Reine Daten und Typen – Backend, Dashboard und Widget-Seite benutzen diese Datei.
 
-export type WidgetType = 'event_list' | 'goal' | 'label' | 'timer' | 'credits' | 'boss' | 'ticker';
+export type StreamWidgetType = 'event_list' | 'goal' | 'label' | 'timer' | 'credits' | 'boss' | 'ticker';
+export type WidgetType = StreamWidgetType | BpWidgetType;
 
 export interface TextStyle {
   font: string;
@@ -159,7 +162,7 @@ export interface TickerSettings {
   separator: string;
 }
 
-export interface WidgetSettingsMap {
+export interface WidgetSettingsMap extends BpSettingsMap {
   event_list: EventListSettings;
   goal: GoalSettings;
   label: LabelSettings;
@@ -200,17 +203,20 @@ export type WidgetData =
   | { type: 'timer'; state: TimerState; lastAdded: { seconds: number; reason: string; at: number } | null; serverNow: number }
   | { type: 'credits'; sections: Array<{ key: string; heading: string; lines: string[] }> }
   | { type: 'boss'; state: BossState; serverNow: number }
-  | { type: 'ticker'; items: Array<{ id: string; name: string; amount: string; message: string; type: string }> };
+  | { type: 'ticker'; items: Array<{ id: string; name: string; amount: string; message: string; type: string }> }
+  | { type: BpWidgetType; bp: BpData; serverNow: number };
 
 export type ServerToWidget =
   | { t: 'snapshot'; widget: Omit<Widget, 'key' | 'state'>; data: WidgetData }
   | { t: 'credits.roll' }
+  | { t: 'poll.winner' }
   | { t: 'reload' };
 
 const text = (size: number, weight = 700): TextStyle => ({ font: 'Poppins', size, weight, color: '#ffffff' });
 const ALL_TYPES = ['follow', 'sub', 'resub', 'gift', 'cheer', 'power_up', 'raid', 'redemption', 'charity', 'donation', 'custom'];
 
 export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } = {
+  ...BP_DEFAULTS,
   event_list: () => ({
     style: 'crisscross', themeColor: BRAND_COLOR, text: text(32, 600), types: ALL_TYPES.filter((t) => t !== 'raid' && t !== 'custom'),
     minBits: 0, minRaiders: 0, maxEvents: 4, flipX: false, flipY: false, keepHistory: true, fadeTime: 0,
@@ -242,6 +248,7 @@ export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } 
 };
 
 export const WIDGET_INFO: Record<WidgetType, { label: string; description: string; width: number; height: number }> = {
+  ...BP_INFO,
   event_list: { label: 'Ereignisliste', description: 'Die neuesten Events deines Kanals im Stream', width: 500, height: 400 },
   goal: { label: 'Ziel', description: 'Fortschrittsbalken für Spenden, Follower, Subs, Bits oder Charity', width: 800, height: 160 },
   label: { label: 'Stream-Label', description: 'Text wie letzter Follower, Top-Spender oder Spendensumme', width: 600, height: 80 },

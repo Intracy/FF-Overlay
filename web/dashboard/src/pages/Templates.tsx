@@ -3,7 +3,7 @@ import { api, type AlertTemplate, type Overlay } from '../api';
 import { CATALOG } from '../../../../server/src/shared/catalog';
 import { TemplatePreview } from '../components/Preview';
 import { DesignFields } from '../components/DesignFields';
-import { useAction, useLoad } from '../ui';
+import { Field, useAction, useLoad } from '../ui';
 
 function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overlays: Overlay[]; onSaved: (t: AlertTemplate) => void }) {
   const [t, setT] = useState(initial);
@@ -25,20 +25,34 @@ function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overla
 
   return (
     <div className="stack">
-      <div className="card stack">
-        <div className="row between">
-          <input value={t.name} onChange={(e) => setT({ ...t, name: e.target.value })} style={{ maxWidth: 320, fontWeight: 700 }} aria-label="Name des Designs" />
-          <div className="row">
-            <select value={testType} onChange={(e) => setTestType(e.target.value)} style={{ width: 'auto' }} aria-label="Beispiel-Event für Test">
-              {CATALOG.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
-            </select>
-            {overlays.map((o) => <button key={o.id} className="small" onClick={() => testOn(o.id)}>Auf „{o.name}“ testen</button>)}
-            <button className="primary" onClick={save} disabled={!dirty}>Speichern</button>
-          </div>
+      <div className="split-head">
+        <h2 style={{ margin: 0 }}>{t.name || 'Design'}</h2>
+        <div className="row">
+          <button disabled={!dirty} onClick={() => setT(initial)}>Verwerfen</button>
+          <button className="primary" onClick={save} disabled={!dirty}>Speichern</button>
         </div>
-        <TemplatePreview template={t} />
       </div>
-      <DesignFields t={t} setT={setT} />
+      <div className="split">
+        <div className="col">
+          <div className="card stack">
+            <Field label="Name des Designs"><input value={t.name} onChange={(e) => setT({ ...t, name: e.target.value })} /></Field>
+          </div>
+          <DesignFields part="left" t={t} setT={setT} />
+        </div>
+        <div className="col aside">
+          <div className="card stack preview-card">
+            <h3 style={{ margin: 0 }}>Vorschau</h3>
+            <TemplatePreview template={t} />
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <select value={testType} onChange={(e) => setTestType(e.target.value)} style={{ width: 'auto' }} aria-label="Beispiel-Event für Test">
+                {CATALOG.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+              </select>
+              {overlays.map((o) => <button key={o.id} className="small" onClick={() => testOn(o.id)}>Auf „{o.name}“ testen</button>)}
+            </div>
+          </div>
+          <DesignFields part="right" t={t} setT={setT} />
+        </div>
+      </div>
     </div>
   );
 }

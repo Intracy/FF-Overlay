@@ -10,5 +10,5 @@
     "types": ["vite/client"],
     "noEmit": true
   },
-  "include": ["dashboard/src", "overlay", "shared"]
+  "include": ["dashboard/src", "overlay", "widget", "shared"]
 }

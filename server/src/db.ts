@@ -14,6 +14,7 @@ import type {
 } from './shared/types.js';
 import { randomKey } from './lib/crypto.js';
 import { withTemplateDefaults } from './templates/defaults.js';
+import { WIDGET_DEFAULTS, type Widget, type WidgetType } from './shared/widgets.js';
 
 export type DB = Database.Database;
 
@@ -57,6 +58,9 @@ export const MIGRATIONS: Migration[] = [
       }
     }
   },
+  // v4: Widgets (Ereignisliste, Ziele, Labels, Timer, Credits, Boss, Ticker)
+  `CREATE TABLE widgets (id TEXT PRIMARY KEY, type TEXT NOT NULL, name TEXT NOT NULL, key TEXT NOT NULL,
+     settings TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'null', preview_bg TEXT NOT NULL DEFAULT '#2b2f36', created_at TEXT NOT NULL);`,
 ];
 
 export function openDb(file: string): DB {
@@ -231,6 +235,13 @@ export const events = {
     !!db.prepare(
       `SELECT 1 FROM events WHERE platform=? AND type=? AND id<>? AND json_extract(data,'$.user.name')=? COLLATE NOCASE LIMIT 1`,
     ).get(e.platform, e.type, e.id, e.user.name),
+  /** Events seit einem Zeitpunkt (älteste zuerst), ohne gefilterte und gebündelte */
+  since: (db: DB, iso: string, limit = 5000) =>
+    (db.prepare(`SELECT * FROM events WHERE created_at >= ? AND status NOT IN ('filtered','suppressed','rejected') ORDER BY created_at ASC LIMIT ?`).all(iso, limit) as EventRow[]).map(toEntry),
+  /** Neueste Events (neueste zuerst), ohne gefilterte und gebündelte */
+  recentVisible: (db: DB, limit: number) =>
+    (db.prepare(`SELECT * FROM events WHERE status NOT IN ('filtered','suppressed','rejected') AND type <> 'stream_status' ORDER BY created_at DESC LIMIT ?`).all(limit) as EventRow[]).map(toEntry),
+  removeTestData: (db: DB) => db.prepare(`DELETE FROM events WHERE platform = 'test'`).run().changes,
   purgeOlderThan: (db: DB, days: number) =>
     db.prepare('DELETE FROM events WHERE created_at < ?').run(new Date(Date.now() - days * 864e5).toISOString()).changes,
 };
@@ -274,6 +285,43 @@ export const media = {
   },
   get: (db: DB, id: string) => media.list(db).find((m) => m.id === id),
   remove: (db: DB, id: string) => db.prepare('DELETE FROM media WHERE id=?').run(id).changes > 0,
+};
+
+// ---------- Widgets ----------
+
+interface WidgetRow { id: string; type: WidgetType; name: string; key: string; settings: string; state: string; preview_bg: string }
+const toWidget = (r: WidgetRow): Widget => ({
+  id: r.id, type: r.type, name: r.name, key: r.key,
+  // neue Felder späterer Versionen werden mit den Standardwerten ergänzt
+  settings: { ...WIDGET_DEFAULTS[r.type](), ...JSON.parse(r.settings) },
+  state: JSON.parse(r.state), previewBackground: r.preview_bg,
+});
+
+export const widgets = {
+  list: (db: DB) => (db.prepare('SELECT * FROM widgets ORDER BY created_at').all() as WidgetRow[]).map(toWidget),
+  get: (db: DB, id: string) => {
+    const r = db.prepare('SELECT * FROM widgets WHERE id=?').get(id) as WidgetRow | undefined;
+    return r ? toWidget(r) : undefined;
+  },
+  create: (db: DB, type: WidgetType, name: string): Widget => {
+    const id = nanoid(10);
+    db.prepare('INSERT INTO widgets (id, type, name, key, settings, created_at) VALUES (?,?,?,?,?,?)')
+      .run(id, type, name, randomKey(), JSON.stringify(WIDGET_DEFAULTS[type]()), now());
+    return widgets.get(db, id)!;
+  },
+  update: (db: DB, id: string, patch: { name?: string; settings?: unknown; previewBackground?: string }) => {
+    const cur = widgets.get(db, id);
+    if (!cur) return undefined;
+    db.prepare('UPDATE widgets SET name=?, settings=?, preview_bg=? WHERE id=?')
+      .run(patch.name ?? cur.name, JSON.stringify(patch.settings ?? cur.settings), patch.previewBackground ?? cur.previewBackground, id);
+    return widgets.get(db, id);
+  },
+  setState: (db: DB, id: string, state: unknown) => db.prepare('UPDATE widgets SET state=? WHERE id=?').run(JSON.stringify(state), id),
+  rotateKey: (db: DB, id: string) => {
+    db.prepare('UPDATE widgets SET key=? WHERE id=?').run(randomKey(), id);
+    return widgets.get(db, id);
+  },
+  remove: (db: DB, id: string) => db.prepare('DELETE FROM widgets WHERE id=?').run(id).changes > 0,
 };
 
 // ---------- Settings ----------

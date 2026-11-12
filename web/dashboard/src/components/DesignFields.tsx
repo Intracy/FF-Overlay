@@ -18,7 +18,7 @@ const FONTS = [
 
 export const TOKENS = ['{user}', '{amount}', '{count}', '{months}', '{streak}', '{tier}', '{product}', '{gifter}', '{message}'];
 
-function AnimSelect({ value, onChange, groups, allowNone }: { value: string; onChange: (v: string) => void; groups: Record<string, string[]>; allowNone?: boolean }) {
+export function AnimSelect({ value, onChange, groups, allowNone }: { value: string; onChange: (v: string) => void; groups: Record<string, string[]>; allowNone?: boolean }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}>
       {allowNone && <option value="">Keine</option>}
@@ -29,7 +29,7 @@ function AnimSelect({ value, onChange, groups, allowNone }: { value: string; onC
   );
 }
 
-function FontInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function FontInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <>
       <input list="ffo-fonts" value={value} onChange={(e) => onChange(e.target.value)} />

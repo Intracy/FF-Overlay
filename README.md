@@ -28,6 +28,16 @@ Webhooks ────────┘                                            
 - Pro Alert: **Text-in-Sprache** (Stimme, Sprache, Mindestbetrag, Spam-Sicherheit aus/niedrig/mittel/hoch, Wiederholungssperre, Lautstärke, Vorlage mitlesen), **Twitch-Emotes** in Nachrichten, **eigenes HTML/CSS/JS** mit eigenen Feldern in einem abgeschotteten Sandbox-Frame
 - Zusätzliche Twitch-Events: **Power-Ups** und **Charity-Spenden**
 
+**Widgets wie bei Streamlabs** (Menüpunkt „Widgets“, jedes mit eigener Browserquellen-URL)
+- **Ereignisliste**: die letzten Events im Stream, 10 Stile (Carbon, Chevrons, Crisscross, Slick, Fiber, Hearts, Honeycomb, Retro, Solid, Stripes), Themenfarbe, Event-Typen, Mindest-Bits/-Raider, max. Einträge, Ausblendzeit, Spiegeln, Ein-/Ausblend-Animation
+- **Ziel**: Fortschrittsbalken für Spenden, Charity, Bits, Follower oder Subs (Subs/Resubs/Gifts wählbar), Startwert, Start- und Enddatum, Standard- oder Kompakt-Layout, Farben; „Neu starten“
+- **Stream-Label**: 20 Labels wie letzter Follower/Sub/Spender, höchste Spende, Top-Spender, Top-Sub-Schenker, Spendensumme, Bits gesamt – für Session, heute, 7 oder 30 Tage, mit eigenem Format
+- **Subathon-Timer**: Startzeit, Obergrenze, Sekunden je Follow/Sub/Resub/Gift-Sub/100 Bits/1 €/Raid/Kanalpunkte, zeigt hinzugefügte Zeit; Start, Pause, Zurücksetzen und Zeit ± im Dashboard
+- **End-Credits**: Abspann der Session (Follower, Abonnenten, Sub-Schenker, Spender, Charity, Bits, Raids) als Klassisch, Weltraum-Crawl oder Sternenhimmel; Dauer oder Tempo, Schleife, Start per Knopf, beim Laden oder wenn die Quelle in OBS sichtbar wird
+- **Stream-Boss**: Zuschauer machen mit Follows, Subs, Bits, Spenden und Raids Schaden; wer den Boss besiegt, wird neuer Boss (feste, steigende oder Overkill-HP), Selbstheilung, Besiegt-Animation
+- **Spenden-Ticker**: Laufband mit den letzten Spenden und Cheers
+- Test-Knöpfe direkt am Widget und „Testdaten entfernen“, damit Tests nicht in Zielen und Credits bleiben
+
 **Regeln** (mehr als Streamlabs: beliebig viele UND-Bedingungen pro Regel; unter „Regeln (erweitert)“)
 - Auslöser: Event-Typ + optional Subtyp (Sub/Resub/Gift) und Plattform
 - Bedingungen: mindestens, höchstens, genau, nicht, zwischen, enthält, Regex, leer/nicht leer, **größter Betrag dieses Streams**, **erstes Event dieses Users**, **Zufall in %**
@@ -100,6 +110,9 @@ Daten (SQLite-Datenbank + Uploads) liegen in `./data`. Backup = diesen Ordner si
 
 Ist der Key einmal sichtbar geworden: **Key erneuern** – alte Quellen werden sofort getrennt.
 
+### Widgets in OBS
+Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern** → URL kopieren und als eigene Browserquelle einfügen (die passende Größe steht unter der URL). Änderungen erscheinen sofort in OBS, ohne die Quelle neu zu laden. Für die End-Credits in den Eigenschaften der Browserquelle „Quelle beim Ausblenden herunterfahren“ **aus** lassen; mit „Abspielen, wenn die Quelle sichtbar wird“ starten sie beim Szenenwechsel.
+
 ### Twitch
 1. App anlegen unter https://dev.twitch.tv/console/apps
 2. OAuth-Redirect-URL: `<PUBLIC_URL>/auth/twitch/callback` (z. B. `http://localhost:3000/auth/twitch/callback`)
@@ -153,12 +166,15 @@ server/src/
   rules/engine.ts           Bedingungen, Priorität, Gewichtung, Begründung
   queue/alertQueue.ts       Warteschlange pro Overlay (Pause, Skip, Timeout)
   templates/render.ts       Platzhalter → Text-Segmente (Overlay setzt nur Text, kein HTML)
-  routes/                   auth, api, connections (+ Twitch-OAuth, Webhooks), media (+ GIPHY-Proxy), ws
+  widgets/                  Berechnung (Ziele, Labels, Credits, Timer, Boss), Service mit Live-Updates, Validierung
+  shared/widgets.ts         Widget-Typen und Standardwerte
+  routes/                   auth, api, connections (+ Twitch-OAuth, Webhooks), media (+ GIPHY-Proxy), widgets, ws
   db.ts                     SQLite-Schema & Zugriff
-server/test/                Vitest: Engine, Normalisierung, Queue, API inkl. WebSocket-Ende-zu-Ende
+server/test/                Vitest: Engine, Normalisierung, Queue, Widgets, API inkl. WebSocket-Ende-zu-Ende
 web/
   index.html, dashboard/    React-Dashboard
   overlay/                  Browserquelle + gemeinsamer Renderer (auch für die Editor-Vorschau)
+  widget/                   Browserquelle für alle Widgets
   shared/animations.ts      Animationslisten
 ```
 
@@ -173,6 +189,7 @@ npm run build     # dist/web + dist/server
 ## Entscheidungen
 
 - **SQLite statt PostgreSQL** (abweichend vom Konzept): Single-User, eine Datei, kein zusätzlicher Dienst – ideal zum Selbsthosten auf NAS oder Mini-Server. Regeln und Designs liegen als JSON; ein späterer Wechsel auf PostgreSQL betrifft nur `db.ts`.
+- **Widgets rechnen aus dem Event-Log**: Ziele, Labels, Credits, Liste und Ticker werden bei jeder Änderung neu aus dem Log berechnet (keine doppelte Zählung, Testdaten lassen sich sauber entfernen). Nur Timer und Boss haben eigenen Zustand.
 - **Queue im Backend**: Pause, Skip und Replay wirken sofort, mehrere Browserquellen bleiben synchron. Kommt von einer Quelle kein „fertig“, gibt ein Timeout die Queue frei.
 - **Twitch per WebSocket statt Webhook**: kein öffentlicher HTTPS-Endpunkt nötig.
 - **Sicherheit**: Overlay-Key pro Overlay (rotierbar), optionaler Dashboard-Login (signiertes Cookie, Rate-Limit), verschlüsselte Tokens, Medien-URLs nur `https://` oder eigene Uploads, Zuschauertexte nur als Text gerendert.
@@ -183,4 +200,4 @@ npm run build     # dist/web + dist/server
 - Safe Mode gegen Hate-Raids
 - Von Streamlabs bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot-Einlösungen, Twitch-Clips bei Großspenden, Zuschauer-GIFs vor Spenden (braucht eine eigene Spendenseite)
 - betterplace-Webhook-Connector, ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket)
-- Weitere Widgets (Spendenziel, Event-Liste, Abspann)
+- Weitere Streamlabs-Widgets, die einen Chat-Anschluss brauchen: Chat-Box, Emote-Wand, Tip-Jar, Umfragen, Chat-Highlights

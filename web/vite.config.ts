@@ -26,6 +26,7 @@ export default defineConfig({
       input: {
         dashboard: fileURLToPath(new URL('./index.html', import.meta.url)),
         overlay: fileURLToPath(new URL('./overlay/index.html', import.meta.url)),
+        widget: fileURLToPath(new URL('./widget/index.html', import.meta.url)),
       },
     },
   },

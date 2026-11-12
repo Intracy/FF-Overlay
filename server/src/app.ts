@@ -20,6 +20,8 @@ import { apiRoutes } from './routes/api.js';
 import { connectionRoutes } from './routes/connections.js';
 import { mediaRoutes } from './routes/media.js';
 import { wsRoutes } from './routes/ws.js';
+import { widgetRoutes } from './routes/widgets.js';
+import { WidgetService } from './widgets/service.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** Gebautes Frontend: dist/web (relativ zu dist/server bzw. server/src) */
@@ -41,7 +43,9 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
     onStatus: () => hub.broadcastDashboard({ t: 'connectors', status: connectors.statuses() }),
     log: app.log,
   });
-  const ctx: AppContext = { db, hub, pipeline, connectors };
+  const widgets = new WidgetService(db, hub, () => pipeline.session);
+  pipeline.listeners.push((entry) => widgets.onEvent(entry));
+  const ctx: AppContext = { db, hub, pipeline, connectors, widgets };
 
   await app.register(fastifyCookie, { secret: config.appSecret });
   await app.register(fastifyMultipart);
@@ -61,6 +65,7 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
   await app.register(async (i) => apiRoutes(i, ctx));
   await app.register(async (i) => mediaRoutes(i, ctx));
   await app.register(async (i) => wsRoutes(i, ctx));
+  await app.register(async (i) => widgetRoutes(i, ctx));
 
   fs.mkdirSync(config.mediaDir, { recursive: true });
   await app.register(fastifyStatic, { root: config.mediaDir, prefix: '/media/', decorateReply: false, maxAge: '7d' });
@@ -70,7 +75,7 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
     // SPA-Fallback fürs Dashboard (Client-Routing)
     app.setNotFoundHandler((req, reply) => {
       const p = req.url.split('?')[0]!;
-      if (req.method === 'GET' && !/^\/(api|ws|hooks|auth|media|overlay)\b/.test(p)) return reply.sendFile('index.html');
+      if (req.method === 'GET' && !/^\/(api|ws|hooks|auth|media|overlay|widget)\b/.test(p)) return reply.sendFile('index.html');
       return reply.code(404).send({ error: 'Nicht gefunden' });
     });
   } else {
@@ -83,6 +88,7 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
   const purgeTimer = setInterval(purge, 6 * 3600_000);
   app.addHook('onClose', async () => {
     clearInterval(purgeTimer);
+    widgets.dispose();
     await connectors.stopAll();
     db.close();
   });

@@ -172,3 +172,15 @@ textarea.code { font-family: var(--mono); font-size: 12.5px; line-height: 1.5; t
 .dropdown-menu button, .dropdown-menu label { width: 100%; display: flex; gap: 8px; background: transparent; border: 0; padding: 6px 8px; font-weight: 500; border-radius: 6px; }
 .dropdown-menu button:hover, .dropdown-menu label:hover { background: var(--panel-2); }
 .held { border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); background: color-mix(in srgb, var(--warn) 7%, transparent); border-radius: 8px; padding: 8px 10px; }
+
+/* ---------- Widgets ---------- */
+.widgets-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .widgets-layout { grid-template-columns: 1fr; } }
+.widget-type { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; white-space: normal; }
+.widget-preview {
+  position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line);
+  background-image: linear-gradient(45deg, rgba(255,255,255,.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.04) 75%),
+    linear-gradient(45deg, rgba(255,255,255,.04) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.04) 75%);
+  background-size: 20px 20px; background-position: 0 0, 10px 10px;
+}
+.widget-preview iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: transparent; }

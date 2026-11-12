@@ -37,6 +37,21 @@ export async function wsRoutes(app: FastifyInstance, ctx: AppContext) {
     });
   });
 
+  /** Widget-Browserquelle (Ereignisliste, Ziel, Label, Timer, …) */
+  app.get<{ Params: { id: string }; Querystring: { key?: string } }>('/ws/widget/:id', { websocket: true }, (socket, req) => {
+    const widget = store.widgets.get(db, req.params.id);
+    if (!widget || !safeEqual(String(req.query.key ?? ''), widget.key)) {
+      socket.close(4001, 'Ungültiger Widget-Key');
+      return;
+    }
+    hub.addWidget(widget.id, socket);
+    socket.send(JSON.stringify(ctx.widgets.snapshot(widget)));
+    socket.on('message', (buf) => {
+      if (buf.toString() === '{"t":"ping"}') socket.send('{"t":"pong"}');
+    });
+    socket.on('close', () => hub.removeWidget(widget.id, socket));
+  });
+
   /** Dashboard: Live-Feed, Queue-Status, Connector-Status. Authentifiziert über das Session-Cookie. */
   app.get('/ws/dashboard', { websocket: true }, (socket, req) => {
     if (!isAuthenticated(req)) {

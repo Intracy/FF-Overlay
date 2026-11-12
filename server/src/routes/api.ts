@@ -213,6 +213,7 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
   app.get('/api/session', async () => pipeline.session);
   app.post('/api/session/reset', async () => {
     pipeline.resetSession();
+    ctx.widgets.pushAll();
     return pipeline.session;
   });
 }

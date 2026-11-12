@@ -1,7 +1,7 @@
 import type { DB } from '../db.js';
 import * as store from '../db.js';
 import type { Hub } from '../ws/hub.js';
-import type { EventStatus, GlobalSettings, NormalizedEvent, QueueState } from '../shared/types.js';
+import type { EventLogEntry, EventStatus, GlobalSettings, NormalizedEvent, QueueState } from '../shared/types.js';
 import { AlertQueue } from '../queue/alertQueue.js';
 import { selectRule } from '../rules/engine.js';
 import { buildAlert } from '../templates/render.js';
@@ -40,6 +40,8 @@ export function applyFilters(event: NormalizedEvent, s: GlobalSettings): { event
 export class Pipeline {
   private queues = new Map<string, AlertQueue>();
   session: StreamSession;
+  /** Wird für jedes geloggte Event aufgerufen (z. B. Widgets). */
+  listeners: Array<(entry: EventLogEntry) => void> = [];
 
   constructor(private db: DB, private hub: Hub) {
     this.session = store.settings.get<StreamSession>(db, 'session', { live: false, startedAt: null, largestAmount: 0 });
@@ -194,5 +196,12 @@ export class Pipeline {
   private log(event: NormalizedEvent, status: EventStatus, reason: string) {
     const entry = store.events.insert(this.db, event, status, reason);
     this.hub.broadcastDashboard({ t: 'event', entry });
+    for (const l of this.listeners) {
+      try {
+        l(entry);
+      } catch {
+        /* ein fehlerhafter Listener darf die Pipeline nicht stoppen */
+      }
+    }
   }
 }

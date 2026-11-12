@@ -5,6 +5,7 @@ import type { ConnectorStatus } from '../shared/types.js';
 import type { Connector, ConnectorEnv } from './types.js';
 import { TwitchConnector } from './twitch/eventsub.js';
 import { BetterplaceConnector } from './betterplace.js';
+import { YouTubeConnector } from './youtube/connector.js';
 
 /** Startet und verwaltet alle Connectoren aus der Tabelle `connections`. */
 export class ConnectorManager {
@@ -14,6 +15,7 @@ export class ConnectorManager {
 
   private create(id: string, platform: string): Connector | null {
     if (platform === 'twitch') return new TwitchConnector(this.db, id, this.env);
+    if (platform === 'youtube') return new YouTubeConnector(this.db, id, this.env);
     if (platform === 'betterplace') return new BetterplaceConnector(this.db, id, this.env, config.betterplacePollSeconds);
     return null; // Webhooks brauchen keinen laufenden Prozess
   }

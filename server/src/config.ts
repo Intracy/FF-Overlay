@@ -27,6 +27,13 @@ export const config = {
     clientId: env('TWITCH_CLIENT_ID'),
     clientSecret: env('TWITCH_CLIENT_SECRET'),
   },
+  /** Google-OAuth-Client vom Typ „Fernseher und Geräte mit begrenzter Eingabe“ (YouTube) */
+  google: {
+    clientId: env('GOOGLE_CLIENT_ID'),
+    clientSecret: env('GOOGLE_CLIENT_SECRET'),
+  },
+  /** Mindestabstand der YouTube-Chat-Abfrage in Sekunden (Kontingent: 5 Einheiten pro Abfrage, 10.000 pro Tag) */
+  youtubeChatPollSeconds: Number(env('YOUTUBE_CHAT_POLL_SECONDS', '8')),
   giphyApiKey: env('GIPHY_API_KEY'),
   betterplacePollSeconds: Number(env('BETTERPLACE_POLL_SECONDS', '20')),
   eventRetentionDays: Number(env('EVENT_RETENTION_DAYS', '30')),

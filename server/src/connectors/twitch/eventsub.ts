@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import type { DB } from '../../db.js';
 import * as store from '../../db.js';
-import { config } from '../../config.js';
+import { twitchApp } from '../../apps.js';
 import { decrypt, encrypt } from '../../lib/crypto.js';
 import type { ConnectorStatus } from '../../shared/types.js';
 import type { Connector, ConnectorEnv } from '../types.js';
@@ -15,6 +15,8 @@ export interface TwitchConnectionData {
   refreshToken: string; // verschlüsselt
   expiresAt: number;
   scopes: string[];
+  /** Client-ID, mit der die Tokens ausgestellt wurden (für die Erneuerung) */
+  clientId?: string;
 }
 
 const EVENTSUB_URL = 'wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30';
@@ -37,6 +39,13 @@ export class TwitchConnector implements Connector {
 
   constructor(private db: DB, readonly id: string, private env: ConnectorEnv) {}
 
+  /** App der Verbindung: gespeicherte Client-ID, Secret nur, wenn es zur selben App gehört */
+  private app() {
+    const current = twitchApp(this.db);
+    const id = this.data()?.clientId ?? current.clientId;
+    return { clientId: id, clientSecret: id === current.clientId ? current.clientSecret : '' };
+  }
+
   private data() {
     return store.connections.get<TwitchConnectionData>(this.db, this.id)?.data;
   }
@@ -54,7 +63,7 @@ export class TwitchConnector implements Connector {
 
   async start() {
     this.stopped = false;
-    if (!config.twitch.clientId) return this.setState('not_configured', 'TWITCH_CLIENT_ID fehlt');
+    if (!this.app().clientId) return this.setState('not_configured', 'Twitch-App fehlt (Verbindungen → App-Zugangsdaten)');
     this.connect(EVENTSUB_URL, false);
   }
 
@@ -71,7 +80,13 @@ export class TwitchConnector implements Connector {
     const conn = store.connections.get<TwitchConnectionData>(this.db, this.id);
     if (!conn) throw new Error('Twitch-Verbindung fehlt');
     if (conn.data.expiresAt - Date.now() > 60_000) return decrypt(conn.data.accessToken);
-    const t: TwitchTokens = await refreshTokens(decrypt(conn.data.refreshToken));
+    let t: TwitchTokens;
+    try {
+      t = await refreshTokens(this.app(), decrypt(conn.data.refreshToken));
+    } catch (err) {
+      this.setState('error', 'Anmeldung abgelaufen – bitte unter Verbindungen neu mit Twitch verbinden');
+      throw err;
+    }
     conn.data = { ...conn.data, accessToken: encrypt(t.accessToken), refreshToken: encrypt(t.refreshToken), expiresAt: t.expiresAt, scopes: t.scopes };
     store.connections.save(this.db, conn);
     return t.accessToken;
@@ -81,7 +96,7 @@ export class TwitchConnector implements Connector {
     const token = await this.accessToken();
     const res = await fetch(`https://api.twitch.tv/helix${path}`, {
       ...init,
-      headers: { 'Client-Id': config.twitch.clientId, Authorization: `Bearer ${token}`, 'content-type': 'application/json', ...init.headers },
+      headers: { 'Client-Id': this.app().clientId, Authorization: `Bearer ${token}`, 'content-type': 'application/json', ...init.headers },
     });
     if (res.status === 401 && !retried) {
       const conn = store.connections.get<TwitchConnectionData>(this.db, this.id)!;

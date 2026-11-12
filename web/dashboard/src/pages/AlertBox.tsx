@@ -28,11 +28,11 @@ type Selection =
   | { kind: 'bpsetup' }
   | { kind: 'bpwidget'; type: BpWidgetType };
 
-const GROUPS: Array<CatalogEntry['group']> = ['Twitch', 'Spenden', 'Sonstiges'];
+const GROUPS: Array<CatalogEntry['group']> = ['Twitch', 'YouTube', 'Spenden', 'Sonstiges'];
 /** Reihenfolge wie auf der betterplace-Seite „Alerts für deinen Charity Stream“ (bp_… = Widget, sonst Alert) */
 const BP_ORDER = ['bp_all', 'bp_poll', 'bp_total', 'donation', 'bp_last', 'bp_top', 'bp_leaderboard', 'bp_progress', 'bp_comment', 'bp_logos', 'bp_milestones', 'milestone', 'bp_feed'];
 
-const GROUP_LABELS: Record<CatalogEntry['group'], string> = { Twitch: 'Twitch', Spenden: 'Spenden (betterplace)', Sonstiges: 'Sonstiges' };
+const GROUP_LABELS: Record<CatalogEntry['group'], string> = { Twitch: 'Twitch', YouTube: 'YouTube', Spenden: 'Spenden (betterplace)', Sonstiges: 'Sonstiges' };
 
 // ---------- Kopfzeile: Thema, Widget-URL, Ereignisfilter, Test ----------
 

@@ -16,7 +16,7 @@ export interface VariationPreset {
 
 export interface CatalogEntry {
   key: string;
-  group: 'Twitch' | 'Spenden' | 'Sonstiges';
+  group: 'Twitch' | 'YouTube' | 'Spenden' | 'Sonstiges';
   label: string;
   trigger: { type: EventType; subtype?: string };
   defaultFormat: string;
@@ -109,6 +109,42 @@ export const CATALOG: CatalogEntry[] = [
     presets: [random, num('min_amount', 'Betrag mindestens <x>', 'amount.value', 'gte'), num('exact_amount', 'Betrag genau <x>', 'amount.value', 'eq')],
   },
   {
+    key: 'yt_superchat', group: 'YouTube', label: 'Super Chats', trigger: { type: 'superchat', subtype: 'chat' },
+    defaultFormat: '{user} schickt einen Super Chat über {amount}!', sample: { amount: { value: 10, currency: 'EUR' }, message: 'Grüße aus Nürnberg!', tier: '3' },
+    presets: [
+      random,
+      num('min_amount', 'Betrag mindestens <x>', 'amount.value', 'gte'),
+      num('exact_amount', 'Betrag genau <x>', 'amount.value', 'eq'),
+      { id: 'largest', label: 'Größter Betrag dieses Streams', value: null, build: () => [{ field: '', op: 'largestOfStream' }] },
+      { id: 'message', label: 'Nachricht enthält <x>', value: 'text', build: (v) => [{ field: 'message', op: 'contains', value: String(v) }] },
+    ],
+  },
+  {
+    key: 'yt_supersticker', group: 'YouTube', label: 'Super Sticker', trigger: { type: 'superchat', subtype: 'sticker' },
+    defaultFormat: '{user} schickt einen Super Sticker ({amount})!', sample: { amount: { value: 5, currency: 'EUR' }, product: 'Winkende Katze' },
+    presets: [random, num('min_amount', 'Betrag mindestens <x>', 'amount.value', 'gte')],
+  },
+  {
+    key: 'yt_member', group: 'YouTube', label: 'Neue Mitglieder', trigger: { type: 'membership', subtype: 'new' },
+    defaultFormat: '{user} ist jetzt Mitglied ({tier})!', sample: { tier: 'Mitglied', product: 'Mitglied' },
+    presets: [random, { id: 'level', label: 'Mitgliedsstufe ist <x>', value: 'text', build: (v) => [{ field: 'tier', op: 'eq', value: String(v) }] }],
+  },
+  {
+    key: 'yt_milestone', group: 'YouTube', label: 'Mitglieds-Meilensteine', trigger: { type: 'membership', subtype: 'milestone' },
+    defaultFormat: '{user} ist seit {months} Monaten Mitglied!', sample: { months: 12, tier: 'Mitglied', message: 'Ein Jahr schon!' },
+    presets: [random, num('min_months', 'Monate mindestens <x>', 'months', 'gte'), num('exact_months', 'Monate genau <x>', 'months', 'eq')],
+  },
+  {
+    key: 'yt_gift', group: 'YouTube', label: 'Verschenkte Mitgliedschaften', trigger: { type: 'membership', subtype: 'gift' },
+    defaultFormat: '{user} verschenkt {count} Mitgliedschaften!', sample: { count: 5, tier: 'Mitglied' },
+    presets: [random, num('min_gifts', 'Mindestens <x> auf einmal verschenkt', 'count', 'gte')],
+  },
+  {
+    key: 'yt_subscriber', group: 'YouTube', label: 'Abonnent:innen', trigger: { type: 'subscriber' },
+    defaultFormat: '{user} hat abonniert!', sample: {},
+    presets: [random],
+  },
+  {
     key: 'donation', group: 'Spenden', label: 'Spendenalert mit GIFs & Sounds', trigger: { type: 'donation' },
     defaultFormat: '{user} spendet {amount}!', sample: { amount: { value: 10, currency: 'EUR' }, message: 'Für den guten Zweck!' },
     presets: [
@@ -143,7 +179,8 @@ export const catalogKey = (trigger: { type: string; subtype?: string }) =>
 /** Ordnet ein Event dem Katalog zu (für den Ereignisfilter). Gift-Empfänger zählen zu „gift“. */
 export function eventCatalogKey(e: Pick<NormalizedEvent, 'type' | 'subtype'>): string | undefined {
   if (e.type === 'subscription') return e.subtype === 'resub' ? 'resub' : e.subtype === 'sub' ? 'sub' : 'gift';
-  return catalogKey({ type: e.type });
+  if (e.type === 'membership' && e.subtype === 'gift_recipient') return 'yt_gift';
+  return catalogKey({ type: e.type, subtype: e.subtype });
 }
 
 /** Erkennt, mit welchem Preset eine Variante gebaut wurde (für die Bearbeitung). */

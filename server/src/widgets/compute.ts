@@ -39,6 +39,12 @@ export function eventLine(e: NormalizedEvent): { name: string; detail: string } 
     case 'redemption': return { name, detail: e.product ?? 'Kanalpunkte' };
     case 'donation':
     case 'charity': return { name, detail: formatAmount(e) };
+    case 'superchat': return { name, detail: `${e.subtype === 'sticker' ? 'Super Sticker' : 'Super Chat'} · ${formatAmount(e)}` };
+    case 'membership':
+      if (e.subtype === 'gift') return { name, detail: `${e.count ?? 1}× Mitgliedschaft` };
+      if (e.subtype === 'milestone') return { name, detail: `Mitglied · ${e.months ?? ''} Monate` };
+      return { name, detail: 'Neues Mitglied' };
+    case 'subscriber': return { name, detail: 'YouTube-Abo' };
     default: return { name, detail: e.message ?? '' };
   }
 }

@@ -54,6 +54,12 @@ export const EVENT_TYPES: Array<{ type: EventType; subtype?: string; label: stri
   { type: 'charity', label: 'Charity-Spende', icon: '♥' },
   { type: 'donation', label: 'Spende', icon: '€' },
   { type: 'milestone', label: 'Milestone', icon: '⚑' },
+  { type: 'superchat', subtype: 'chat', label: 'Super Chat', icon: '▶' },
+  { type: 'superchat', subtype: 'sticker', label: 'Super Sticker', icon: '▶' },
+  { type: 'membership', subtype: 'new', label: 'YouTube-Mitglied', icon: '▶' },
+  { type: 'membership', subtype: 'milestone', label: 'Mitglieds-Meilenstein', icon: '▶' },
+  { type: 'membership', subtype: 'gift', label: 'Mitgliedschaften verschenkt', icon: '▶' },
+  { type: 'subscriber', label: 'YouTube-Abo', icon: '▶' },
   { type: 'custom', label: 'Eigenes Event', icon: '✱' },
 ];
 

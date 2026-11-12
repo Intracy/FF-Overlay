@@ -213,7 +213,7 @@ export type ServerToWidget =
   | { t: 'reload' };
 
 const text = (size: number, weight = 700): TextStyle => ({ font: 'Poppins', size, weight, color: '#ffffff' });
-const ALL_TYPES = ['follow', 'sub', 'resub', 'gift', 'cheer', 'power_up', 'raid', 'redemption', 'charity', 'donation', 'custom'];
+const ALL_TYPES = ['follow', 'sub', 'resub', 'gift', 'cheer', 'power_up', 'raid', 'redemption', 'charity', 'yt_superchat', 'yt_supersticker', 'yt_member', 'yt_milestone', 'yt_gift', 'yt_subscriber', 'donation', 'custom'];
 
 export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } = {
   ...BP_DEFAULTS,
@@ -244,7 +244,7 @@ export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } 
     damagePerFollow: 5, damagePerSub: 300, damagePerBit: 1, damagePerDonationUnit: 200, damagePerRaider: 0, bossHeal: true,
     initialName: 'Streamer', barColor: BRAND_COLOR, barBgColor: '#241a35', barTextColor: '#ffffff', text: text(24, 700), killAnimation: 'hinge',
   }),
-  ticker: () => ({ types: ['donation', 'charity', 'cheer'], maxItems: 10, format: '{name}: {amount}', speed: 80, text: text(32, 700), amountColor: BRAND_COLOR, separator: '•' }),
+  ticker: () => ({ types: ['donation', 'charity', 'cheer', 'yt_superchat'], maxItems: 10, format: '{name}: {amount}', speed: 80, text: text(32, 700), amountColor: BRAND_COLOR, separator: '•' }),
 };
 
 export const WIDGET_INFO: Record<WidgetType, { label: string; description: string; width: number; height: number }> = {

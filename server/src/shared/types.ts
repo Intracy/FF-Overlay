@@ -1,7 +1,7 @@
 // Gemeinsame Typen für Backend, Dashboard und Overlay.
 // Das Dashboard importiert diese Datei nur als Typen (kein Laufzeitcode).
 
-export type Platform = 'twitch' | 'betterplace' | 'webhook' | 'test';
+export type Platform = 'twitch' | 'youtube' | 'betterplace' | 'webhook' | 'test';
 
 export type EventType =
   | 'follow'
@@ -13,6 +13,12 @@ export type EventType =
   | 'power_up'
   | 'charity'
   | 'milestone'
+  /** YouTube: Super Chat (subtype chat) und Super Sticker (subtype sticker) */
+  | 'superchat'
+  /** YouTube-Mitgliedschaften: new, milestone, gift, gift_recipient */
+  | 'membership'
+  /** Neue:r YouTube-Abonnent:in (nur öffentliche Abos) */
+  | 'subscriber'
   | 'stream_status'
   | 'custom';
 

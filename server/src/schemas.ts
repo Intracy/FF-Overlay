@@ -74,7 +74,7 @@ export const templateSchema = z.object({
   textDelay: z.number().min(0).max(60000),
 });
 
-const eventType = z.enum(['follow', 'subscription', 'cheer', 'donation', 'raid', 'redemption', 'power_up', 'charity', 'milestone', 'stream_status', 'custom']);
+const eventType = z.enum(['follow', 'subscription', 'cheer', 'donation', 'raid', 'redemption', 'power_up', 'charity', 'milestone', 'superchat', 'membership', 'subscriber', 'stream_status', 'custom']);
 
 export const ruleSchema = z.object({
   id: z.string().min(1).max(40),

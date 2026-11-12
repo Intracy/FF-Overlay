@@ -122,7 +122,7 @@ export class Pipeline {
 
     // Gift-Bündelung: Twitch meldet pro verschenktem Sub zusätzlich ein Sub-Event des Empfängers.
     // Das Gift-Event deckt sie ab, deshalb erscheinen sie nur im Log.
-    if (raw.type === 'subscription' && raw.subtype === 'gift_recipient') {
+    if ((raw.type === 'subscription' || raw.type === 'membership') && raw.subtype === 'gift_recipient') {
       this.log(raw, 'suppressed', 'durch Gift-Event abgedeckt');
       return;
     }

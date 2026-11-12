@@ -14,7 +14,8 @@ Webhooks ────────┘                                            
 ## Funktionen
 
 **Quellen**
-- **Twitch** über EventSub-WebSocket (funktioniert hinter NAT, kein öffentlicher Webhook nötig): Follow, Sub, Resub (Monate, Streak, Nachricht), Gift-Subs inkl. anonym, Bits, Raids, Kanalpunkte, Stream online/offline. OAuth mit automatischem Token-Refresh, Reconnect nach Twitch-Vorgaben.
+- **Twitch** über EventSub-WebSocket (funktioniert hinter NAT, kein öffentlicher Webhook nötig): Follow, Sub, Resub (Monate, Streak, Nachricht), Gift-Subs inkl. anonym, Bits, Raids, Kanalpunkte, Stream online/offline. Anmeldung per Klick und Gerätecode, automatischer Token-Refresh, Reconnect nach Twitch-Vorgaben.
+- **YouTube** Live über die Data API v3: Super Chats, Super Sticker, neue Mitglieder, Mitglieds-Meilensteine, verschenkte Mitgliedschaften, neue öffentliche Abos, Stream online/offline. Anmeldung per Klick und Gerätecode.
 - **betterplace** Spendenaktionen: sofort per **Spenden-Webhook** (Format `donation_announced` v0.2) oder über die Public API v4 (Polling ≥ 15 s mit ETag, Duplikat-Filter; vorhandene Spenden lösen beim Einrichten keinen Alert aus). Kommt der erste Webhook an, stellt FF-Overlay automatisch um – ohne doppelte Alerts. Spendenstand, Zielbetrag und Logos der Organisationen kommen immer über die API.
 - **Eigene Webhooks** für Ko-fi, Streamer.bot, Zapier oder eigene Tools.
 
@@ -121,14 +122,17 @@ Ist der Key einmal sichtbar geworden: **Key erneuern** – alte Quellen werden s
 ### Widgets in OBS
 Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern** → URL kopieren und als eigene Browserquelle einfügen (die passende Größe steht unter der URL). Änderungen erscheinen sofort in OBS, ohne die Quelle neu zu laden. Für die End-Credits in den Eigenschaften der Browserquelle „Quelle beim Ausblenden herunterfahren“ **aus** lassen; mit „Abspielen, wenn die Quelle sichtbar wird“ starten sie beim Szenenwechsel.
 
-### Twitch
-1. App anlegen unter https://dev.twitch.tv/console/apps
-2. OAuth-Redirect-URL: `<PUBLIC_URL>/auth/twitch/callback` (z. B. `http://localhost:3000/auth/twitch/callback`)
-3. `TWITCH_CLIENT_ID` und `TWITCH_CLIENT_SECRET` in `.env` eintragen, neu starten
-4. Dashboard → **Verbindungen** → „Mit Twitch verbinden“ (mit dem Broadcaster-Account)
+### Twitch & YouTube verbinden
+Dashboard → **Verbindungen** → „Mit Twitch verbinden“ bzw. „Mit YouTube verbinden“. Es erscheint ein kurzer Code; auf `twitch.tv/activate` bzw. `google.com/device` (auch am Handy) anmelden, Code eingeben, fertig. Das funktioniert ohne Weiterleitungs-URL – also auch mit `localhost`, im Heimnetz oder auf dem NAS.
 
-Benötigte Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`.
-Wer Twitch vor dem Update verbunden hat, muss einmal **neu verbinden**, damit Charity-Spenden ankommen.
+Einmalig braucht jede Installation eigene, kostenlose App-Zugangsdaten (Twitch und Google geben Zugriff nur an registrierte Apps). Eintragen unter **Verbindungen → App-Zugangsdaten** oder in der `.env`:
+
+- **Twitch:** https://dev.twitch.tv/console/apps → App registrieren (Zwei-Faktor-Anmeldung nötig), Redirect-URL `http://localhost`, **Client-Typ „Öffentlich“** → Client-ID eintragen. Ein Secret braucht es dann nicht.
+- **YouTube:** Google-Cloud-Projekt anlegen, **YouTube Data API v3** aktivieren, OAuth-Zustimmungsbildschirm „Extern“ und **veröffentlichen** (im Testmodus läuft die Anmeldung nach 7 Tagen ab), Client vom Typ **„Fernseher und Geräte mit begrenzter Eingabe“** anlegen → Client-ID und Secret eintragen.
+
+Twitch-Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`. Anmeldungen per Gerätecode verfallen, wenn FF-Overlay 30 Tage lang nicht läuft – dann einmal neu verbinden. Die bisherige Anmeldung per Weiterleitung (`/auth/twitch/start`, braucht Client-Secret und Redirect-URL `<PUBLIC_URL>/auth/twitch/callback`) funktioniert weiterhin.
+
+**YouTube-Kontingent:** Super Chats & Mitgliedschaften gibt es nur über den Live-Chat der Data API. FF-Overlay prüft jede Minute, ob ein Stream läuft, und liest dann den Chat mindestens alle `YOUTUBE_CHAT_POLL_SECONDS` (Standard 8 s). Eine Chat-Abfrage kostet 5 von 10.000 Einheiten pro Tag – das reicht für gut 4 Stunden Livestream täglich. Mehr Kontingent lässt sich in der Google Cloud Console kostenlos beantragen. Neue Abos erscheinen nur, wenn das Abo öffentlich ist.
 
 ### betterplace-Webhook
 1. Dashboard → **Alert-Box → Spenden (betterplace) → Verbindung & Webhook** (oder **Verbindungen**): Spendenaktion verbinden, Webhook-URL kopieren.
@@ -162,7 +166,9 @@ Felder: `type` (follow, subscription, cheer, donation, raid, redemption, custom)
 | `PUBLIC_URL` | ja | Öffentliche Basis-URL (für Overlay-URLs und Twitch-OAuth) |
 | `ADMIN_PASSWORD` | – | Passwort fürs Dashboard; leer = kein Login. Setzen, sobald das Dashboard außerhalb deines Rechners erreichbar ist |
 | `APP_SECRET` | in Produktion | ≥ 32 Zeichen; signiert Cookies und verschlüsselt OAuth-Tokens (AES-256-GCM) |
-| `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | für Twitch | Twitch-App |
+| `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | optional | Twitch-App (alternativ im Dashboard; Secret nur bei vertraulichem Client) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | optional | Google-Client für YouTube (alternativ im Dashboard) |
+| `YOUTUBE_CHAT_POLL_SECONDS` | `8` | Mindestabstand der YouTube-Chat-Abfrage |
 | `GIPHY_API_KEY` | für GIPHY | GIPHY-Suche |
 | `PORT` | – | Standard 3000 |
 | `DATA_DIR` | – | Standard `./data` |
@@ -210,7 +216,7 @@ npm run build     # dist/web + dist/server
 
 ## Noch offen (Phase 2/3 des Konzepts)
 
-- YouTube Live (Super Chat, Mitglieder), Cloud-Stimmen für TTS (z. B. Amazon Polly wie bei Streamlabs)
+- YouTube-Chat per streamList (gRPC, schneller und sparsamer), Cloud-Stimmen für TTS (z. B. Amazon Polly wie bei Streamlabs)
 - Safe Mode gegen Hate-Raids
 - Von Streamlabs bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot-Einlösungen, Twitch-Clips bei Großspenden, Zuschauer-GIFs vor Spenden (braucht eine eigene Spendenseite)
 - Ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket); Video-Link aus betterplace-Spenden im Alert abspielen; betterplaces eigene Abstimmungsauswahl im Spendenformular (kommt nicht über den Webhook)

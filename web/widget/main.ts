@@ -26,6 +26,7 @@ if (params.get('debug') === '1') document.body.classList.add('debug');
 
 const ICONS: Record<string, string> = {
   follow: '♥', sub: '★', resub: '★', gift: '🎁', cheer: '◆', power_up: '⚡', raid: '⚑', redemption: '●', charity: '✚', donation: '€', custom: '✦',
+  yt_superchat: '▶', yt_supersticker: '▶', yt_member: '▶', yt_milestone: '▶', yt_gift: '🎁', yt_subscriber: '▶', milestone: '⚑',
 };
 
 function eventList(): Renderer {

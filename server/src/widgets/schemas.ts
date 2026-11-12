@@ -6,7 +6,7 @@ const color = z.string().regex(/^#[0-9a-fA-F]{3,8}$|^rgba?\([\d\s.,%]+\)$|^trans
 const str = (max = 200) => z.string().max(max);
 const num = (min: number, max: number) => z.number().min(min).max(max);
 const anim = z.string().regex(/^[a-zA-Z]{0,40}$/);
-const catalogKeys = z.array(z.string().regex(/^[a-z_]{1,30}$/)).max(20);
+const catalogKeys = z.array(z.string().regex(/^[a-z_]{1,30}$/)).max(40);
 const isoOrEmpty = z.union([z.literal(''), z.string().datetime({ offset: true })]);
 
 const text = z.object({ font: str(80), size: num(6, 300), weight: num(100, 900), color });

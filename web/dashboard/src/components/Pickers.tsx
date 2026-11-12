@@ -9,6 +9,7 @@ export function GiphyPicker({ onPick, onClose }: { onPick: (m: MediaAsset) => vo
   const [items, setItems] = useState<GiphyItem[]>([]);
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState('');
+  const [key, setKey] = useState('');
   const run = useAction();
 
   const search = async (o = 0) => {
@@ -39,7 +40,14 @@ export function GiphyPicker({ onPick, onClose }: { onPick: (m: MediaAsset) => vo
         </select>
         <button className="primary" type="submit">Suchen</button>
       </form>
-      {error && <div className="empty">{error}{error.includes('GIPHY_API_KEY') && <> – trage einen Key in der <code>.env</code> ein (siehe README).</>}</div>}
+      {error && !/GIPHY-Key/.test(error) && <div className="empty">{error}</div>}
+      {/GIPHY-Key/.test(error) && (
+        <form className="card stack" style={{ marginBottom: 12 }} onSubmit={(e) => { e.preventDefault(); void run(() => api.put('/api/apps', { giphyApiKey: key }), 'GIPHY-Key gespeichert').then(() => { setKey(''); void search(0); }); }}>
+          <b>GIPHY-Key fehlt</b>
+          <span className="small muted">Key von <a href="https://developers.giphy.com/dashboard/" target="_blank" rel="noreferrer">developers.giphy.com</a> einfügen (API- oder SDK-Key). Er wird verschlüsselt auf deinem Server gespeichert und nie an den Browser zurückgegeben.</span>
+          <div className="row"><input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="GIPHY-Key" autoComplete="off" style={{ flex: 1, width: 'auto' }} /><button className="primary" type="submit" disabled={!key.trim()}>Speichern & suchen</button></div>
+        </form>
+      )}
       <div className="giphy-grid">
         {items.map((g) => (
           <button key={g.id} title={g.title} onClick={() => pick(g)}><img src={g.preview} alt={g.title} loading="lazy" /></button>

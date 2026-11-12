@@ -4,7 +4,7 @@ import { useLive } from '../live';
 import { CopyField, Field, Modal, StatusBadge, useAction, useLoad, useRouter, useToast } from '../ui';
 import { Section } from '../components/DesignFields';
 
-interface AppsView { twitch: { clientId: string; hasSecret: boolean; fromEnv: boolean }; google: { clientId: string; hasSecret: boolean; fromEnv: boolean } }
+interface AppsView { twitch: { clientId: string; hasSecret: boolean; fromEnv: boolean }; google: { clientId: string; hasSecret: boolean; fromEnv: boolean }; giphy: { hasKey: boolean; fromEnv: boolean; hint: string } }
 interface ConnectionsResponse { connections: Connection[]; status: ConnectorStatus[]; apps: AppsView; twitchRedirectUri: string }
 interface Flow { id: string; provider: 'twitch' | 'youtube'; userCode: string; verificationUri: string; expiresAt: number; status: 'pending' | 'done' | 'error'; error?: string; label?: string }
 
@@ -160,7 +160,8 @@ function AppCredentials({ apps, onSaved }: { apps: AppsView; onSaved: () => void
   const [tsecret, setTsecret] = useState('');
   const [gid, setGid] = useState(apps.google.clientId);
   const [gsecret, setGsecret] = useState('');
-  const missing = !apps.twitch.clientId || !apps.google.clientId;
+  const [giphy, setGiphy] = useState('');
+  const missing = !apps.twitch.clientId || !apps.google.clientId || !apps.giphy.hasKey;
   const save = (body: object) => run(() => api.put('/api/apps', body), 'App-Zugangsdaten gespeichert').then(onSaved);
   return (
     <div style={{ marginTop: 16 }}>
@@ -201,6 +202,21 @@ function AppCredentials({ apps, onSaved }: { apps: AppsView; onSaved: () => void
                   <input type="password" value={gsecret} onChange={(e) => setGsecret(e.target.value)} autoComplete="off" />
                 </Field>
                 <div><button className="primary" onClick={() => save({ googleClientId: gid, ...(gsecret ? { googleClientSecret: gsecret } : {}) })}>Speichern</button></div>
+              </>
+            )}
+          </div>
+          <div className="card stack">
+            <h3 style={{ margin: 0 }}>GIPHY</h3>
+            <p className="small muted" style={{ margin: 0 }}>Für die GIF- und Sticker-Suche in den Alert-Designs. Key unter <a href="https://developers.giphy.com/dashboard/" target="_blank" rel="noreferrer">developers.giphy.com</a> (API- oder SDK-Key, beide funktionieren).</p>
+            {apps.giphy.fromEnv ? <div className="small muted">Aus der .env: <code>GIPHY_API_KEY</code></div> : (
+              <>
+                <Field label="GIPHY-Key" hint={apps.giphy.hasKey ? `gespeichert (${apps.giphy.hint}) – leer lassen, um ihn zu behalten` : 'wird verschlüsselt gespeichert'}>
+                  <input type="password" value={giphy} onChange={(e) => setGiphy(e.target.value)} autoComplete="off" />
+                </Field>
+                <div className="row">
+                  <button className="primary" disabled={!giphy.trim()} onClick={() => save({ giphyApiKey: giphy }).then(() => setGiphy(''))}>Speichern</button>
+                  {apps.giphy.hasKey && <button className="ghost" onClick={() => confirm('GIPHY-Key löschen?') && save({ giphyApiKey: '' })}>Löschen</button>}
+                </div>
               </>
             )}
           </div>

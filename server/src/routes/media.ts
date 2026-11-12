@@ -7,6 +7,7 @@ import { z } from 'zod';
 import type { AppContext } from '../context.js';
 import * as store from '../db.js';
 import { config } from '../config.js';
+import { giphyKey } from '../apps.js';
 import { requireAuth } from './auth.js';
 
 const ALLOWED: Record<string, { ext: string; kind: 'image' | 'video' | 'audio' }> = {
@@ -80,11 +81,12 @@ export async function mediaRoutes(app: FastifyInstance, ctx: AppContext) {
 
   // GIPHY-Proxy: der API-Key bleibt auf dem Server.
   app.get<{ Querystring: { q?: string; kind?: string; offset?: string } }>('/api/giphy/search', async (req, reply) => {
-    if (!config.giphyApiKey) return reply.code(501).send({ error: 'GIPHY_API_KEY ist nicht gesetzt' });
+    const giphy = giphyKey(db).key;
+    if (!giphy) return reply.code(501).send({ error: 'Kein GIPHY-Key hinterlegt (Verbindungen → App-Zugangsdaten)' });
     const kind = req.query.kind === 'stickers' ? 'stickers' : 'gifs';
     const q = (req.query.q ?? '').trim().slice(0, 50);
     const u = new URL(`https://api.giphy.com/v1/${kind}/${q ? 'search' : 'trending'}`);
-    u.searchParams.set('api_key', config.giphyApiKey);
+    u.searchParams.set('api_key', giphy);
     if (q) u.searchParams.set('q', q);
     u.searchParams.set('limit', '24');
     u.searchParams.set('offset', String(Math.min(Number(req.query.offset ?? 0) || 0, 499)));

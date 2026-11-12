@@ -152,7 +152,7 @@ betterplace ruft die Adresse aus dem Internet auf. `PUBLIC_URL` muss deshalb öf
 TTS nutzt die Sprachausgabe der Browserquelle (Web Speech API). Welche Stimmen es gibt, hängt vom Rechner ab, auf dem OBS läuft (macOS und Windows bringen deutsche Stimmen mit). Die Stimmenliste im Dashboard zeigt die Stimmen des Rechners, auf dem das Dashboard offen ist; fehlt die gewählte Stimme in OBS, wird die Standardstimme der Sprache genutzt.
 
 ### GIPHY
-Key unter https://developers.giphy.com/dashboard/ anlegen und als `GIPHY_API_KEY` setzen. Neue Keys sind Beta-Keys (100 Aufrufe/Stunde); für mehr ein Production-Upgrade beantragen. Die Kennzeichnung „Powered By GIPHY“ ist im Picker enthalten.
+Key unter https://developers.giphy.com/dashboard/ anlegen (API- oder SDK-Key) und unter **Verbindungen → App-Zugangsdaten → GIPHY** eintragen (wird verschlüsselt gespeichert) – oder als `GIPHY_API_KEY` in der `.env`. Fehlt der Key, fragt die GIF-Suche direkt danach. Neue Keys sind Beta-Keys (100 Aufrufe/Stunde); für mehr ein Production-Upgrade beantragen. Die Kennzeichnung „Powered By GIPHY“ ist im Picker enthalten.
 
 ### betterplace
 Dashboard → **Verbindungen** → Link oder ID der Spendenaktion einfügen. Die Public API ist laut betterplace auf dem Weg zur Deprecation; für Charity-Streams bietet betterplace auch Spenden-Webhooks an (charitystream@betterplace.org) – die lassen sich später als eigener Connector ergänzen.

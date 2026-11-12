@@ -14,6 +14,7 @@ interface StoredApps {
   twitchClientSecret?: string; // verschlüsselt
   googleClientId?: string;
   googleClientSecret?: string; // verschlüsselt
+  giphyApiKey?: string; // verschlüsselt
 }
 
 export interface AppCredentials {
@@ -46,23 +47,32 @@ export function googleApp(db: DB): AppCredentials {
   return { clientId: s.googleClientId ?? '', clientSecret: dec(s.googleClientSecret), fromEnv: false };
 }
 
+/** GIPHY-Key (API- oder SDK-Key) – .env hat Vorrang, sonst im Dashboard hinterlegt */
+export function giphyKey(db: DB): { key: string; fromEnv: boolean } {
+  if (config.giphyApiKey) return { key: config.giphyApiKey, fromEnv: true };
+  return { key: dec(read(db).giphyApiKey), fromEnv: false };
+}
+
 /** Für das Dashboard: nie die Secrets selbst herausgeben */
 export function appsView(db: DB) {
   const t = twitchApp(db);
   const g = googleApp(db);
+  const gk = giphyKey(db);
   return {
     twitch: { clientId: t.clientId, hasSecret: !!t.clientSecret, fromEnv: t.fromEnv },
     google: { clientId: g.clientId, hasSecret: !!g.clientSecret, fromEnv: g.fromEnv },
+    giphy: { hasKey: !!gk.key, fromEnv: gk.fromEnv, hint: gk.key ? `…${gk.key.slice(-4)}` : '' },
   };
 }
 
 /** undefined = unverändert lassen, '' = löschen */
-export function saveApps(db: DB, patch: { twitchClientId?: string; twitchClientSecret?: string; googleClientId?: string; googleClientSecret?: string }) {
+export function saveApps(db: DB, patch: { twitchClientId?: string; twitchClientSecret?: string; googleClientId?: string; googleClientSecret?: string; giphyApiKey?: string }) {
   const s = read(db);
   const next: StoredApps = { ...s };
   if (patch.twitchClientId !== undefined) next.twitchClientId = patch.twitchClientId.trim();
   if (patch.twitchClientSecret !== undefined) next.twitchClientSecret = patch.twitchClientSecret.trim() ? encrypt(patch.twitchClientSecret.trim()) : '';
   if (patch.googleClientId !== undefined) next.googleClientId = patch.googleClientId.trim();
   if (patch.googleClientSecret !== undefined) next.googleClientSecret = patch.googleClientSecret.trim() ? encrypt(patch.googleClientSecret.trim()) : '';
+  if (patch.giphyApiKey !== undefined) next.giphyApiKey = patch.giphyApiKey.trim() ? encrypt(patch.giphyApiKey.trim()) : '';
   store.settings.set(db, KEY, next);
 }

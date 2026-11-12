@@ -157,6 +157,7 @@ export async function connectionRoutes(app: FastifyInstance, ctx: AppContext) {
           twitchClientSecret: z.string().max(200).optional(),
           googleClientId: z.string().max(200).regex(/^[a-z0-9.\-_]*$/i, 'Ungültige Client-ID').optional(),
           googleClientSecret: z.string().max(200).optional(),
+          giphyApiKey: z.string().max(100).regex(/^[A-Za-z0-9]*$/, 'Ungültiger GIPHY-Key').optional(),
         })
         .parse(req.body);
       saveApps(db, b);

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { api, type AlertTemplate, type Overlay } from '../api';
 import { CATALOG } from '../../../../server/src/shared/catalog';
-import { TemplatePreview } from '../components/Preview';
+import { FormatToggle, TemplatePreview, usePreviewFormat } from '../components/Preview';
 import { DesignFields } from '../components/DesignFields';
 import { Field, useAction, useLoad } from '../ui';
 
 function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overlays: Overlay[]; onSaved: (t: AlertTemplate) => void }) {
   const [t, setT] = useState(initial);
   const [testType, setTestType] = useState('donation');
+  const [format, setFormat] = usePreviewFormat();
   const run = useAction();
   useEffect(() => setT(initial), [initial]);
   const dirty = JSON.stringify(t) !== JSON.stringify(initial);
@@ -41,8 +42,11 @@ function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overla
         </div>
         <div className="col aside">
           <div className="card stack preview-card">
-            <h3 style={{ margin: 0 }}>Vorschau</h3>
-            <TemplatePreview template={t} />
+            <div className="row between">
+              <h3 style={{ margin: 0 }}>Vorschau {format === 'portrait' ? '9:16' : '16:9'}</h3>
+              <FormatToggle value={format} onChange={setFormat} />
+            </div>
+            <TemplatePreview template={t} portrait={format === 'portrait' ? overlays[0]?.portrait : undefined} />
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <select value={testType} onChange={(e) => setTestType(e.target.value)} style={{ width: 'auto' }} aria-label="Beispiel-Event für Test">
                 {CATALOG.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}

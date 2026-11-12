@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { AlertPayload, AlertTemplate, TextSegment } from '../../../../server/src/shared/types';
+import type { AlertPayload, AlertTemplate, PortraitLayout, TextSegment } from '../../../../server/src/shared/types';
 import { playAlert, type PlayingAlert } from '../../../overlay/renderer';
 
 const SAMPLE = { user: 'TestViewer', amount: '25,00 €', months: '14', count: '5', tier: 'Tier 1', product: 'Hydrate!', gifter: 'TestViewer', streak: '6', reward: 'Hydrate!', name: 'TestViewer', platform: 'twitch', message: 'Grüße in den Chat!' };
@@ -20,8 +20,12 @@ function sampleSegments(format: string): TextSegment[] {
   return out;
 }
 
-/** Zeigt ein Template auf einer skalierten 1920×1080-Bühne, mit derselben Render-Logik wie das Overlay. */
-export function TemplatePreview({ template, muted = true, background }: { template: AlertTemplate; muted?: boolean; background?: string }) {
+/**
+ * Zeigt ein Template auf einer skalierten 1920×1080-Bühne (bzw. 1080×1920 im Hochformat),
+ * mit derselben Render-Logik wie das Overlay.
+ */
+export function TemplatePreview({ template, muted = true, background, portrait }: { template: AlertTemplate; muted?: boolean; background?: string; portrait?: PortraitLayout }) {
+  const stageW = portrait ? 1080 : 1920;
   const frame = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
@@ -29,10 +33,10 @@ export function TemplatePreview({ template, muted = true, background }: { templa
 
   useEffect(() => {
     if (!frame.current) return;
-    const ro = new ResizeObserver(([e]) => setScale(e!.contentRect.width / 1920));
+    const ro = new ResizeObserver(([e]) => setScale(e!.contentRect.width / stageW));
     ro.observe(frame.current);
     return () => ro.disconnect();
-  }, []);
+  }, [stageW]);
 
   useEffect(() => {
     if (!stage.current) return;
@@ -47,15 +51,46 @@ export function TemplatePreview({ template, muted = true, background }: { templa
     let playing: PlayingAlert | null = null;
     // kurze Entprellung, damit Tippen nicht bei jedem Zeichen neu startet
     const t = setTimeout(() => {
-      playing = playAlert(stage.current!, alert, { volume: 1, muted });
+      playing = playAlert(stage.current!, alert, { volume: 1, muted, portrait });
       void playing.finished.then(() => setTimeout(() => setRun((r) => r + 1), 900));
     }, 250);
     return () => { clearTimeout(t); playing?.stop(); };
-  }, [template, run, muted]);
+  }, [template, run, muted, portrait]);
 
   return (
-    <div className="preview-frame" ref={frame} style={background ? { background } : undefined}>
-      <div className="preview-stage" ref={stage} style={{ transform: `scale(${scale})` }} />
+    <div className={`preview-frame${portrait ? ' portrait' : ''}`} ref={frame} style={background ? { background } : undefined}>
+      <div className="preview-stage" ref={stage} style={{ transform: `scale(${scale})`, width: stageW, height: portrait ? 1920 : 1080 }} />
+    </div>
+  );
+}
+
+export type PreviewFormat = 'landscape' | 'portrait';
+
+/** Gemerktes Vorschauformat (pro Browser) */
+export function usePreviewFormat(): [PreviewFormat, (f: PreviewFormat) => void] {
+  const [f, setF] = useState<PreviewFormat>(() => {
+    try {
+      return localStorage.getItem('ffo-preview-format') === 'portrait' ? 'portrait' : 'landscape';
+    } catch {
+      return 'landscape';
+    }
+  });
+  const set = (v: PreviewFormat) => {
+    setF(v);
+    try {
+      localStorage.setItem('ffo-preview-format', v);
+    } catch {
+      /* egal */
+    }
+  };
+  return [f, set];
+}
+
+export function FormatToggle({ value, onChange }: { value: PreviewFormat; onChange: (f: PreviewFormat) => void }) {
+  return (
+    <div className="seg" role="group" aria-label="Vorschauformat">
+      <button className={value === 'landscape' ? 'on' : ''} onClick={() => onChange('landscape')} title="Querformat 1920 × 1080">16:9</button>
+      <button className={value === 'portrait' ? 'on' : ''} onClick={() => onChange('portrait')} title="Hochformat 1080 × 1920">9:16</button>
     </div>
   );
 }

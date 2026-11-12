@@ -18,6 +18,12 @@
   text-align: left;
 }
 
+.ffo-portrait-stack.ffo-layout-left.ffo-mode-preset {
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+}
+
 .ffo-media {
   display: flex;
   justify-content: center;
@@ -48,6 +54,11 @@
 }
 
 /* ---------- Buchstaben-Animationen (dauerhaft, versetzt pro Buchstabe) ---------- */
+.ffo-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .ffo-letter {
   display: inline-block;
   animation-duration: 1.2s;

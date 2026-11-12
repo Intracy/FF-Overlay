@@ -88,16 +88,21 @@ interface OverlayRow {
   id: string; name: string; key: string; width: number; height: number;
   alert_delay: number; volume: number; muted: number; options: string;
 }
-type OverlayOptions = Pick<OverlayInfo, 'moderationDelay' | 'interruptMode' | 'interruptDelay' | 'disabledTypes' | 'activeProfileId' | 'previewBackground'>;
+type OverlayOptions = Pick<OverlayInfo, 'moderationDelay' | 'interruptMode' | 'interruptDelay' | 'disabledTypes' | 'activeProfileId' | 'previewBackground' | 'portrait'>;
+export const PORTRAIT_DEFAULTS: OverlayInfo['portrait'] = { scale: 160, align: 'top', safeTop: 12, safeBottom: 22, stackSideBySide: true };
 const OPTION_DEFAULTS: OverlayOptions = {
   moderationDelay: 0, interruptMode: false, interruptDelay: 500, disabledTypes: [], activeProfileId: '', previewBackground: '#2b2f36',
+  portrait: PORTRAIT_DEFAULTS,
 };
 const OPTION_KEYS = Object.keys(OPTION_DEFAULTS) as Array<keyof OverlayOptions>;
-const toOverlay = (r: OverlayRow): OverlayInfo => ({
-  id: r.id, name: r.name, key: r.key, width: r.width, height: r.height,
-  alertDelay: r.alert_delay, volume: r.volume, muted: !!r.muted,
-  ...OPTION_DEFAULTS, ...JSON.parse(r.options || '{}'),
-});
+const toOverlay = (r: OverlayRow): OverlayInfo => {
+  const opts = JSON.parse(r.options || '{}') as Partial<OverlayOptions>;
+  return {
+    id: r.id, name: r.name, key: r.key, width: r.width, height: r.height,
+    alertDelay: r.alert_delay, volume: r.volume, muted: !!r.muted,
+    ...OPTION_DEFAULTS, ...opts, portrait: { ...PORTRAIT_DEFAULTS, ...opts.portrait },
+  };
+};
 
 export const overlays = {
   list: (db: DB) => (db.prepare('SELECT * FROM overlays ORDER BY created_at').all() as OverlayRow[]).map(toOverlay),
@@ -111,10 +116,10 @@ export const overlays = {
     const profile = profiles.create(db, id, 'Standard');
     return overlays.update(db, id, { activeProfileId: profile.id })!;
   },
-  update: (db: DB, id: string, patch: Partial<Omit<OverlayInfo, 'id' | 'key'>>) => {
+  update: (db: DB, id: string, patch: Partial<Omit<OverlayInfo, 'id' | 'key' | 'portrait'>> & { portrait?: Partial<OverlayInfo['portrait']> }) => {
     const cur = overlays.get(db, id);
     if (!cur) return undefined;
-    const n = { ...cur, ...patch };
+    const n = { ...cur, ...patch, portrait: { ...cur.portrait, ...patch.portrait } };
     const options = Object.fromEntries(OPTION_KEYS.map((k) => [k, n[k]]));
     db.prepare('UPDATE overlays SET name=?, width=?, height=?, alert_delay=?, volume=?, muted=?, options=? WHERE id=?')
       .run(n.name, n.width, n.height, n.alertDelay, n.volume, n.muted ? 1 : 0, JSON.stringify(options), id);

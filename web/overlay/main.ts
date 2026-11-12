@@ -1,9 +1,11 @@
-import type { ServerToOverlay } from '../../server/src/shared/types';
+import type { OverlayInfo, ServerToOverlay } from '../../server/src/shared/types';
 import { playAlert, type PlayingAlert } from './renderer';
 
 /*
  * Overlay-Browserquelle für OBS & Co.
  * URL: /overlay/?id=<overlayId>&key=<geheimerKey>   (Zusatz &debug=1 zeigt den Verbindungsstatus)
+ * Hochkant-Variante: &format=9x16 (Browserquelle 1080 × 1920) – dieselben Alerts, größer skaliert fürs Handy.
+ * Ohne format-Angabe entscheidet das Seitenverhältnis der Browserquelle.
  * Spielt nur ab, was das Backend schickt; Warteschlange und Logik liegen im Backend.
  */
 
@@ -14,7 +16,16 @@ const stage = document.getElementById('stage')!;
 const statusEl = document.getElementById('status')!;
 if (params.get('debug') === '1') document.body.classList.add('debug');
 
-let audio = { volume: 1, muted: false };
+const formatParam = (params.get('format') ?? '').toLowerCase();
+const isPortrait = () =>
+  /^(9x16|9:16|portrait|hochkant|vertical)$/.test(formatParam) ||
+  (!/^(16x9|16:9|landscape|quer)$/.test(formatParam) && window.innerHeight > window.innerWidth);
+let overlayInfo: OverlayInfo | null = null;
+/** &mute=1: diese Quelle spielt keinen Ton (z. B. wenn Quer- und Hochformat in derselben Szene liegen) */
+const forceMute = params.get('mute') === '1';
+document.body.classList.toggle('portrait', isPortrait());
+
+let audio = { volume: 1, muted: params.get('mute') === '1' };
 let current: { itemId: string; playing: PlayingAlert } | null = null;
 let retry = 0;
 let ws: WebSocket | null = null;
@@ -49,16 +60,17 @@ function connect() {
     const msg = JSON.parse(ev.data) as ServerToOverlay | { t: 'pong' };
     switch (msg.t) {
       case 'hello':
-        setStatus(`verbunden: ${msg.overlay.name}`);
+        overlayInfo = msg.overlay;
+        setStatus(`verbunden: ${msg.overlay.name}${isPortrait() ? ' · Hochformat 9:16' : ' · Querformat 16:9'}`);
         break;
       case 'state':
-        audio = { volume: msg.volume, muted: msg.muted };
+        audio = { volume: msg.volume, muted: msg.muted || forceMute };
         current?.playing.setAudio(audio);
         break;
       case 'alert.show': {
         current?.playing.stop();
         const itemId = msg.alert.itemId;
-        const playing = playAlert(stage, msg.alert, audio);
+        const playing = playAlert(stage, msg.alert, { ...audio, portrait: isPortrait() ? overlayInfo?.portrait : undefined });
         current = { itemId, playing };
         send({ t: 'alert.started', itemId });
         void playing.finished.then(() => {

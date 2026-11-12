@@ -66,7 +66,7 @@ Webhooks ────────┘                                            
 - Test-Alerts für jeden Event-Typ, die durch dieselben Filter und Regeln laufen
 
 **Weiteres**
-- Mehrere Overlays mit eigener URL, Queue und eigenen Regeln
+- Mehrere Overlays mit eigener URL, Queue und eigenen Regeln – jedes zusätzlich als Hochformat-Variante (9:16)
 - Globale Filter: Mindestbetrag, Sperrliste, Schimpfwort-Filter (zensieren oder ausblenden; Namen werden anonymisiert)
 - Gift-Bündelung: Einzel-Subs der Gift-Empfänger erscheinen nur im Log, der Alert kommt vom Gift-Event
 - Event-Log wird nach `EVENT_RETENTION_DAYS` (Standard 30) gelöscht
@@ -118,6 +118,13 @@ Daten (SQLite-Datenbank + Uploads) liegen in `./data`. Backup = diesen Ordner si
 4. Hängt man `&debug=1` an die URL, zeigt die Quelle ihren Verbindungsstatus.
 
 Ist der Key einmal sichtbar geworden: **Key erneuern** – alte Quellen werden sofort getrennt.
+
+### Querformat und Hochformat gleichzeitig
+Jedes Overlay hat zwei URLs, die parallel und synchron laufen (gleiche Warteschlange, gleiche Alerts):
+- **16:9:** die normale URL, Browserquelle 1920 × 1080
+- **9:16:** dieselbe URL mit `&format=9x16`, Browserquelle 1080 × 1920 – z. B. für die Hochkant-Leinwand (OBS „Vertical Canvas“) bei TikTok, Shorts oder Reels
+
+Im Hochformat werden die Alerts größer skaliert (Standard 160 %), oben platziert und halten Abstand zu den Bedienelementen der Apps. Einstellbar unter **Alert-Box → Allgemeine Einstellungen → Hochformat 9:16**; die Vorschau in Alert-Box und „Alle Designs“ lässt sich auf 9:16 umschalten. Ohne `format` entscheidet das Seitenverhältnis der Browserquelle. Liegen beide Quellen in derselben Szene, mit `&mute=1` eine davon stummschalten, sonst kommt der Sound doppelt.
 
 ### Widgets in OBS
 Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern** → URL kopieren und als eigene Browserquelle einfügen (die passende Größe steht unter der URL). Änderungen erscheinen sofort in OBS, ohne die Quelle neu zu laden. Für die End-Credits in den Eigenschaften der Browserquelle „Quelle beim Ausblenden herunterfahren“ **aus** lassen; mit „Abspielen, wenn die Quelle sichtbar wird“ starten sie beim Szenenwechsel.

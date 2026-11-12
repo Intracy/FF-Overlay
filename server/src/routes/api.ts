@@ -32,6 +32,8 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
     const o = store.overlays.update(db, req.params.id, patch);
     if (!o) return reply.code(404).send({ error: 'Overlay nicht gefunden' });
     if (patch.muted !== undefined || patch.volume !== undefined) pipeline.queue(o.id)?.setAudio(o.muted, o.volume);
+    // Browserquellen bekommen neue Darstellungs-Einstellungen (z. B. Hochformat) sofort
+    if (patch.portrait) ctx.hub.sendOverlay(o.id, { t: 'hello', overlay: { ...o, key: '' } });
     return { ...o, url: overlayUrl(o) };
   });
 

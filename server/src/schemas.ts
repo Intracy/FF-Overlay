@@ -127,6 +127,16 @@ export const overlayPatchSchema = z.object({
   disabledTypes: z.array(z.string().max(40)).max(50).optional(),
   activeProfileId: z.string().max(40).optional(),
   previewBackground: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional(),
+  portrait: z
+    .object({
+      scale: z.number().min(50).max(400),
+      align: z.enum(['top', 'center', 'bottom']),
+      safeTop: z.number().min(0).max(45),
+      safeBottom: z.number().min(0).max(45),
+      stackSideBySide: z.boolean(),
+    })
+    .partial()
+    .optional(),
 });
 
 export const testEventSchema = z.object({

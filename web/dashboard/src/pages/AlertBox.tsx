@@ -3,7 +3,8 @@ import { api, type AlertTemplate, type GlobalSettings, type Overlay, type Rule }
 import type { Profile } from '../../../../server/src/shared/types';
 import { CATALOG, detectPreset, FREQUENCIES, TIERS, type CatalogEntry, type VariationPreset } from '../../../../server/src/shared/catalog';
 import { DesignFields, Section } from '../components/DesignFields';
-import { TemplatePreview } from '../components/Preview';
+import { FormatToggle, TemplatePreview, usePreviewFormat } from '../components/Preview';
+import type { PortraitLayout } from '../../../../server/src/shared/types';
 import { CopyField, Field, Link, Modal, NumberInput, useAction, useLoad, useToast } from '../ui';
 import { BP_TYPES, WIDGET_INFO, type BpWidgetType } from '../../../../server/src/shared/widgets';
 import { BetterplaceSetup, BpWidgetPanel } from './BetterplacePanel';
@@ -119,7 +120,8 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
       </div>
       </div>
       <div className="card stack">
-        <Field label="Widget-URL (als Browserquelle in OBS einfügen – nicht im Stream zeigen)"><CopyField value={overlayUrl} secret /></Field>
+        <Field label="Querformat 16:9 · Browserquelle 1920 × 1080 (nicht im Stream zeigen)"><CopyField value={overlayUrl} secret /></Field>
+        <Field label="Hochformat 9:16 · Browserquelle 1080 × 1920 (läuft parallel)"><CopyField value={`${overlayUrl}&format=9x16`} secret /></Field>
       </div>
     </div>
   );
@@ -146,6 +148,7 @@ function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample
   const save = async () => {
     await run(() => api.patch(`/api/overlays/${o.id}`, {
       alertDelay: o.alertDelay, moderationDelay: o.moderationDelay, interruptMode: o.interruptMode, interruptDelay: o.interruptDelay, previewBackground: o.previewBackground,
+      portrait: o.portrait,
     }));
     if (s) await run(() => api.put('/api/settings', { ...s, badWords: lines(words), blockedUsers: lines(blocked) }), 'Einstellungen gespeichert');
     reload();
@@ -172,9 +175,34 @@ function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample
           {s && <label className="check"><input type="checkbox" checked={s.autoResetSession} onChange={(e) => setS({ ...s, autoResetSession: e.target.checked })} /> Stream-Session bei Stream-Start automatisch zurücksetzen</label>}
         </div>
       </Section>
+      <Section title="Hochformat 9:16 (Handy)" badge={`${o.portrait.scale} %`}>
+        <p className="small muted" style={{ margin: 0 }}>
+          Dieselben Alerts laufen parallel in einer Hochkant-Browserquelle (1080 × 1920) – größer skaliert und außerhalb der Bedienelemente von TikTok, Shorts und Reels.
+          Die Vorschau rechts auf „9:16“ stellen.
+        </p>
+        <div className="fields">
+          <Field label={`Skalierung ${o.portrait.scale} %`} hint="100 % = wie im Querformat">
+            <input type="range" min={80} max={300} step={5} value={o.portrait.scale} onChange={(e) => setO({ ...o, portrait: { ...o.portrait, scale: Number(e.target.value) } })} />
+          </Field>
+          <Field label="Position">
+            <select value={o.portrait.align} onChange={(e) => setO({ ...o, portrait: { ...o.portrait, align: e.target.value as PortraitLayout['align'] } })}>
+              <option value="top">Oben</option>
+              <option value="center">Mitte</option>
+              <option value="bottom">Unten</option>
+            </select>
+          </Field>
+          <Field label={`Abstand oben ${o.portrait.safeTop} %`}>
+            <input type="range" min={0} max={45} value={o.portrait.safeTop} onChange={(e) => setO({ ...o, portrait: { ...o.portrait, safeTop: Number(e.target.value) } })} />
+          </Field>
+          <Field label={`Abstand unten ${o.portrait.safeBottom} %`}>
+            <input type="range" min={0} max={45} value={o.portrait.safeBottom} onChange={(e) => setO({ ...o, portrait: { ...o.portrait, safeBottom: Number(e.target.value) } })} />
+          </Field>
+        </div>
+        <label className="check"><input type="checkbox" checked={o.portrait.stackSideBySide} onChange={(e) => setO({ ...o, portrait: { ...o.portrait, stackSideBySide: e.target.checked } })} /> Layout „Bild links“ im Hochformat untereinander anordnen</label>
+      </Section>
       </div>
       <div className="col aside">
-      {sample && <PreviewCard template={sample} background={o.previewBackground} />}
+      {sample && <PreviewCard template={sample} background={o.previewBackground} portrait={o.portrait} />}
       {s && (
         <Section title="Schimpfwort-Filter" badge="gilt für alle Overlays">
           <div className="row">
@@ -197,11 +225,15 @@ function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample
   );
 }
 
-function PreviewCard({ template, background }: { template: AlertTemplate; background: string }) {
+function PreviewCard({ template, background, portrait }: { template: AlertTemplate; background: string; portrait: PortraitLayout }) {
+  const [format, setFormat] = usePreviewFormat();
   return (
     <div className="card preview-card">
-      <h3>Vorschau</h3>
-      <TemplatePreview template={template} background={background} />
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <h3 style={{ margin: 0 }}>Vorschau {format === 'portrait' ? '9:16' : '16:9'}</h3>
+        <FormatToggle value={format} onChange={setFormat} />
+      </div>
+      <TemplatePreview template={template} background={background} portrait={format === 'portrait' ? portrait : undefined} />
     </div>
   );
 }
@@ -243,7 +275,7 @@ function GlobalEdit({ view, reload }: { view: View; reload: () => void }) {
           <DesignFields part="left" t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
         </div>
         <div className="col aside">
-          <PreviewCard template={t} background={view.overlay.previewBackground} />
+          <PreviewCard template={t} background={view.overlay.previewBackground} portrait={view.overlay.portrait} />
           <DesignFields part="right" t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
         </div>
       </div>
@@ -298,8 +330,8 @@ function ConditionEditor({ entry, rule, onChange }: { entry: CatalogEntry; rule:
   );
 }
 
-function EntryEditor({ entry, item, isVariation, background, onSaved, onDeleted }: {
-  entry: CatalogEntry; item: Item; isVariation: boolean; background: string; onSaved: () => void; onDeleted: () => void;
+function EntryEditor({ entry, item, isVariation, background, portrait, onSaved, onDeleted }: {
+  entry: CatalogEntry; item: Item; isVariation: boolean; background: string; portrait: PortraitLayout; onSaved: () => void; onDeleted: () => void;
 }) {
   const [rule, setRule] = useState(item.rule);
   const [t, setT] = useState(item.template!);
@@ -345,7 +377,7 @@ function EntryEditor({ entry, item, isVariation, background, onSaved, onDeleted 
       <DesignFields part="left" t={t} setT={(fn) => setT((x) => fn(x))} />
       </div>
       <div className="col aside">
-        <PreviewCard template={t} background={background} />
+        <PreviewCard template={t} background={background} portrait={portrait} />
         <DesignFields part="right" t={t} setT={(fn) => setT((x) => fn(x))} />
       </div>
       </div>
@@ -515,7 +547,7 @@ export function AlertBoxPage() {
             </div>
           )}
           {sel.kind === 'entry' && selectedEntry && item?.template && (
-            <EntryEditor key={item.rule.id} entry={selectedEntry} item={item} isVariation={!!sel.ruleId} background={v.overlay.previewBackground}
+            <EntryEditor key={item.rule.id} entry={selectedEntry} item={item} isVariation={!!sel.ruleId} background={v.overlay.previewBackground} portrait={v.overlay.portrait}
               onSaved={view.reload} onDeleted={() => { setSel({ kind: 'entry', key: selectedEntry.key }); view.reload(); }} />
           )}
           {sel.kind === 'entry' && item && !item.template && <div className="empty">Das Design dieses Alerts fehlt. <button className="small" onClick={() => toast('Bitte unter „Regeln“ ein Design zuweisen.')}>Hilfe</button></div>}

@@ -218,3 +218,17 @@ describe('Alert-Box, Profile, globale Bearbeitung', () => {
     db.close();
   });
 });
+
+describe('Hochformat 9:16', () => {
+  it('speichert Teil-Updates der Hochformat-Einstellungen und behält den Rest', async () => {
+    const { openDb, overlays, PORTRAIT_DEFAULTS } = await import('../src/db.js');
+    const db = openDb(':memory:');
+    const o = overlays.create(db, 'Test');
+    expect(o.portrait).toEqual(PORTRAIT_DEFAULTS);
+    const u = overlays.update(db, o.id, { portrait: { scale: 200 } })!;
+    expect(u.portrait).toEqual({ ...PORTRAIT_DEFAULTS, scale: 200 });
+    const { overlayPatchSchema } = await import('../src/schemas.js');
+    expect(() => overlayPatchSchema.parse({ portrait: { scale: 9999 } })).toThrow();
+    expect(overlayPatchSchema.parse({ portrait: { align: 'bottom' } }).portrait).toEqual({ align: 'bottom' });
+  });
+});

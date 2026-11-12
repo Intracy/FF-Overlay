@@ -204,6 +204,24 @@ export interface OverlayInfo {
   activeProfileId: string;
   /** Hintergrund der Vorschau im Editor */
   previewBackground: string;
+  /** Hochkant-Variante (9:16, 1080 × 1920) derselben Alerts */
+  portrait: PortraitLayout;
+}
+
+/**
+ * Darstellung im Hochformat: dieselben Alerts wie im Querformat, aber größer skaliert und
+ * mit Sicherheitsabständen, damit sie auf dem Handy (TikTok, Shorts, Reels) gut lesbar sind.
+ */
+export interface PortraitLayout {
+  /** Skalierung der Alerts in % (100 = wie im Querformat) */
+  scale: number;
+  /** Vertikale Lage */
+  align: 'top' | 'center' | 'bottom';
+  /** Sicherheitsabstand oben/unten in % der Höhe (Bedienelemente der Apps) */
+  safeTop: number;
+  safeBottom: number;
+  /** Bild links neben Text im Hochformat untereinander anordnen */
+  stackSideBySide: boolean;
 }
 
 export type EventStatus = 'queued' | 'held' | 'played' | 'filtered' | 'suppressed' | 'no_rule' | 'skipped' | 'rejected';

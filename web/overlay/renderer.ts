@@ -1,4 +1,4 @@
-import type { AlertPayload, AlertTemplate } from '../../server/src/shared/types';
+import type { AlertPayload, AlertTemplate, PortraitLayout } from '../../server/src/shared/types';
 import './renderer.css';
 
 /*
@@ -10,6 +10,8 @@ import './renderer.css';
 export interface PlayOptions {
   volume: number;
   muted: boolean;
+  /** Hochformat (9:16): Alerts größer skalieren und in den sicheren Bereich setzen */
+  portrait?: PortraitLayout;
 }
 
 export interface PlayingAlert {
@@ -80,12 +82,24 @@ function buildTitle(alert: AlertPayload): HTMLElement {
     const span = document.createElement('span');
     if (seg.highlight) span.style.color = t.highlightColor;
     if (t.letterAnimation && t.letterAnimation !== 'none') {
-      for (const ch of Array.from(seg.text)) {
-        const l = document.createElement('span');
-        l.className = `ffo-letter ffo-l-${t.letterAnimation}`;
-        l.style.animationDelay = `${index++ * 70}ms`;
-        l.textContent = ch === ' ' ? ' ' : ch;
-        span.appendChild(l);
+      // Buchstaben wortweise bündeln, damit Zeilen nur zwischen Wörtern umbrechen (wichtig im schmalen Hochformat)
+      for (const part of seg.text.split(/(\s+)/)) {
+        if (!part) continue;
+        if (/^\s+$/.test(part)) {
+          span.appendChild(document.createTextNode(part));
+          index += part.length;
+          continue;
+        }
+        const word = document.createElement('span');
+        word.className = 'ffo-word';
+        for (const ch of Array.from(part)) {
+          const l = document.createElement('span');
+          l.className = `ffo-letter ffo-l-${t.letterAnimation}`;
+          l.style.animationDelay = `${index++ * 70}ms`;
+          l.textContent = ch;
+          word.appendChild(l);
+        }
+        span.appendChild(word);
       }
     } else {
       span.textContent = seg.text;
@@ -203,12 +217,25 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
   let audioOpts = opts;
   let resolveFinished!: () => void;
   const finished = new Promise<void>((r) => (resolveFinished = r));
-  const fw = root.clientWidth || window.innerWidth;
-  const fh = root.clientHeight || window.innerHeight;
+  const portrait = opts.portrait;
+  // Im Hochformat wird die ganze Alert-Fläche per CSS-zoom vergrößert; innen rechnet alles mit der verkleinerten Fläche,
+  // dadurch bleiben Bild- und Textgrenzen (max-width/-height) im sichtbaren Bereich.
+  const zoom = portrait ? Math.max(0.5, portrait.scale / 100) : 1;
+  const fw = (root.clientWidth || window.innerWidth) / zoom;
+  const fh = (root.clientHeight || window.innerHeight) / zoom;
 
   const box = document.createElement('div');
   box.className = `ffo-alert ffo-layout-${tpl.layout} ffo-mode-${tpl.positioning.mode}`;
   box.style.visibility = 'hidden';
+  if (portrait) {
+    box.classList.add('ffo-portrait');
+    if (portrait.stackSideBySide) box.classList.add('ffo-portrait-stack');
+    box.style.zoom = String(zoom);
+    box.style.paddingTop = `${(portrait.safeTop / 100) * fh}px`;
+    box.style.paddingBottom = `${(portrait.safeBottom / 100) * fh}px`;
+    box.style.boxSizing = 'border-box';
+    if (tpl.positioning.mode === 'preset') box.style.justifyContent = portrait.align === 'top' ? 'flex-start' : portrait.align === 'bottom' ? 'flex-end' : 'center';
+  }
   // Größen relativ zur Bühne (Overlay = Fenster, Vorschau = skalierte 1920×1080-Fläche)
   box.style.setProperty('--ffo-fw', `${fw}px`);
   box.style.setProperty('--ffo-fh', `${fh}px`);

@@ -16,11 +16,15 @@ function OverlayCard({ o, onChange }: { o: Overlay; onChange: () => void }) {
         <h2 style={{ margin: 0 }}>{o.name}</h2>
         <span className={`badge ${conns ? 'ok' : ''}`}><span className="dot" />{conns} Browserquelle{conns === 1 ? '' : 'n'} verbunden</span>
       </div>
-      <Field label="Browserquellen-URL (wie ein Passwort behandeln – nicht im Stream zeigen)">
+      <Field label="Querformat 16:9 – Browserquelle 1920 × 1080 (wie ein Passwort behandeln – nicht im Stream zeigen)">
         <CopyField value={o.url} secret />
       </Field>
+      <Field label="Hochformat 9:16 – Browserquelle 1080 × 1920 (dieselben Alerts, fürs Handy größer)">
+        <CopyField value={`${o.url}&format=9x16`} secret />
+      </Field>
       <p className="small muted" style={{ margin: 0 }}>
-        In OBS: Quelle hinzufügen → Browser → URL einfügen, Breite {o.width}, Höhe {o.height}, „Audio über OBS steuern“ aktivieren.
+        In OBS: Quelle hinzufügen → Browser → URL einfügen, Größe wie angegeben, „Audio über OBS steuern“ aktivieren. Beide Varianten laufen gleichzeitig und synchron;
+        für den Ton reicht eine (die andere in OBS stummschalten). Skalierung und Position fürs Hochformat: Alert-Box → Allgemeine Einstellungen.
         Mit <code>&amp;debug=1</code> am Ende zeigt die Quelle ihren Verbindungsstatus.
       </p>
       <div className="fields">

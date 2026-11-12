@@ -150,7 +150,7 @@ export function LivePage({ popout }: { popout: boolean }) {
     <>
       <div className="page-head">
         <div>
-          <h1>Live</h1>
+          <h1>Alert Feed</h1>
           {!popout && <p className="lead" style={{ margin: 0 }}>Ereignisse, Warteschlange und Steuerung während des Streams.</p>}
         </div>
         {!popout && <button onClick={() => window.open('/?popout=1', 'ffo-live', 'width=720,height=900')}>↗ Als Popout öffnen</button>}

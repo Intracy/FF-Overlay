@@ -23,7 +23,7 @@ Webhooks ────────┘                                            
 - Varianten-Bedingungen aus dem Streamlabs-Katalog: zufällig mit Häufigkeit (sehr selten … sehr häufig), Betrag/Bits/Monate/Streak mindestens oder genau, Abo-Stufe, Mindestanzahl Gift-Subs, anonym verschenkt, Raid-Größe, bestimmtes Power-Up, Belohnungsname, größte Spende des Streams
 - **Themen** (Profile): mehrere komplette Alert-Box-Konfigurationen pro Overlay, umschaltbar, als Kopie oder leer anlegbar
 - **Ereignisse filtern** pro Overlay und **Test**-Menü für jeden Event-Typ
-- **Allgemeine Einstellungen**: Alert-Verzögerung, **Moderationsverzögerung** (Sekunden oder unbegrenzt, Freigabe/Ablehnen im Live-Bereich), **Alert-Parry** (neuer Alert unterbricht den laufenden), Vorschau-Hintergrund, Session-Reset bei Stream-Start, Schimpfwort-Filter (Sternchen oder ausblenden, Standardliste, Namen anonymisieren, auf Event-Log anwenden, eigene Wörter, Blacklist)
+- **Allgemeine Einstellungen**: Alert-Verzögerung, **Moderationsverzögerung** (Sekunden oder unbegrenzt, Freigabe/Ablehnen im Alert Feed), **Alert-Parry** (neuer Alert unterbricht den laufenden), Vorschau-Hintergrund, Session-Reset bei Stream-Start, Schimpfwort-Filter (Sternchen oder ausblenden, Standardliste, Namen anonymisieren, auf Event-Log anwenden, eigene Wörter, Blacklist)
 - **Globale Bearbeitung**: Allgemein, Animationen, Bild, Video-Lautstärke, Positionierung, Sound, Schrift, Nachrichtenschrift und TTS mit „Auf alle Alerts anwenden“
 - Pro Alert: **Text-in-Sprache** (Stimme, Sprache, Mindestbetrag, Spam-Sicherheit aus/niedrig/mittel/hoch, Wiederholungssperre, Lautstärke, Vorlage mitlesen), **Twitch-Emotes** in Nachrichten, **eigenes HTML/CSS/JS** mit eigenen Feldern in einem abgeschotteten Sandbox-Frame
 - Zusätzliche Twitch-Events: **Power-Ups** und **Charity-Spenden**
@@ -51,7 +51,7 @@ Webhooks ────────┘                                            
 - Layouts (Bild über/unter Text, Bild links, nur Text) oder manuelle Positionierung in %
 - Live-Vorschau im Editor mit exakt derselben Render-Logik wie im Overlay
 
-**Live-Steuerung**
+**Alert Feed (Live-Steuerung)**
 - Event-Feed mit Filtern, Lesebestätigung, Replay, Popout-Fenster
 - Pro Overlay: Pause/Fortsetzen, Skip, Stumm, Master-Lautstärke, Queue leeren, Browserquellen neu laden, Anzeige verbundener Quellen
 - Test-Alerts für jeden Event-Typ, die durch dieselben Filter und Regeln laufen

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Children, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { api } from '../api';
 import { CopyField, Field, NumberInput, useAction, useLoad } from '../ui';
 import { AnimSelect, FontInput, Section } from '../components/DesignFields';
@@ -353,16 +353,21 @@ function TickerForm({ s, set }: { s: TickerSettings; set: SetS<TickerSettings> }
   );
 }
 
-function SettingsForm({ w, s, set }: { w: W; s: WidgetSettingsMap[WidgetType]; set: (p: object) => void }) {
-  switch (w.type) {
-    case 'event_list': return <EventListForm s={s as EventListSettings} set={set} />;
-    case 'goal': return <GoalForm s={s as GoalSettings} set={set} />;
-    case 'label': return <LabelForm s={s as LabelSettings} set={set} />;
-    case 'timer': return <TimerForm s={s as TimerSettings} set={set} />;
-    case 'credits': return <CreditsForm s={s as CreditsSettings} set={set} />;
-    case 'boss': return <BossForm s={s as BossSettings} set={set} />;
-    case 'ticker': return <TickerForm s={s as TickerSettings} set={set} />;
-  }
+/** Liefert die Einstellungs-Abschnitte eines Widgets als Liste, damit sie auf zwei Spalten verteilt werden können.
+ *  Die Formulare nutzen keine Hooks und dürfen deshalb direkt aufgerufen werden. */
+function settingsSections(type: WidgetType, s: WidgetSettingsMap[WidgetType], set: (p: object) => void): ReactNode[] {
+  const form = (): ReactElement<{ children?: ReactNode }> => {
+    switch (type) {
+      case 'event_list': return EventListForm({ s: s as EventListSettings, set });
+      case 'goal': return GoalForm({ s: s as GoalSettings, set });
+      case 'label': return LabelForm({ s: s as LabelSettings, set });
+      case 'timer': return TimerForm({ s: s as TimerSettings, set });
+      case 'credits': return CreditsForm({ s: s as CreditsSettings, set });
+      case 'boss': return BossForm({ s: s as BossSettings, set });
+      case 'ticker': return TickerForm({ s: s as TickerSettings, set });
+    }
+  };
+  return Children.toArray(form().props.children);
 }
 
 // ---------- Vorschau & Steuerung ----------
@@ -494,32 +499,43 @@ function Editor({ id, onDeleted, onRenamed }: { id: string; onDeleted: () => voi
     });
   const info = WIDGET_INFO[w.type];
 
+  const sections = settingsSections(w.type, draft as WidgetSettingsMap[WidgetType], set);
+  const half = Math.ceil(sections.length / 2);
+
   return (
     <div className="stack">
-      <div className="card stack">
-        <div className="row between">
-          <h2 style={{ margin: 0 }}>{ICON[w.type]} {w.name} <span className="badge">{info.label}</span></h2>
-          <div className="row">
-            <button className="primary" disabled={!dirty} onClick={save}>Speichern</button>
-            <button disabled={!dirty} onClick={() => { setDraft(w.settings); setName(w.name); setBg(w.previewBackground); }}>Verwerfen</button>
-          </div>
-        </div>
-        <WidgetPreview key={w.url} w={w} background={bg} />
-        <div className="row between" style={{ flexWrap: 'wrap' }}>
-          <Controls w={w} data={live ?? w.data} onChange={refresh} />
-          <label className="row small" style={{ gap: 6 }}>Vorschau-Hintergrund <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} style={{ width: 40, padding: 2 }} /></label>
-        </div>
-        <TestButtons />
-        <Field label="Widget-URL (wie ein Passwort behandeln – nicht im Stream zeigen)"><CopyField value={w.url} secret /></Field>
-        <p className="small muted" style={{ margin: 0 }}>In OBS: Quelle → Browser → URL einfügen, Breite {info.width}, Höhe {info.height}. Mit <code>&amp;debug=1</code> zeigt die Quelle ihren Verbindungsstatus.</p>
-      </div>
-      <div className="card stack">
-        <Field label="Name"><input value={name} onChange={(e) => setName(e.target.value)} /></Field>
-        <SettingsForm w={w} s={draft as WidgetSettingsMap[WidgetType]} set={set} />
+      <div className="split-head">
+        <h2 style={{ margin: 0 }}>{ICON[w.type]} {w.name} <span className="badge">{info.label}</span></h2>
         <div className="row">
           <button className="primary" disabled={!dirty} onClick={save}>Speichern</button>
-          <button onClick={() => confirm('Neuen Key erzeugen? Die alte URL funktioniert danach nicht mehr.') && run(() => api.post(`/api/widgets/${id}/rotate-key`), 'Neuer Key erzeugt').then(detail.reload)}>Key erneuern</button>
-          <button className="danger" onClick={() => confirm(`Widget „${w.name}“ löschen?`) && run(() => api.del(`/api/widgets/${id}`), 'Gelöscht').then(onDeleted)}>Löschen</button>
+          <button disabled={!dirty} onClick={() => { setDraft(w.settings); setName(w.name); setBg(w.previewBackground); }}>Verwerfen</button>
+        </div>
+      </div>
+      <div className="split">
+        <div className="col">
+          <div className="card stack">
+            <Field label="Name"><input value={name} onChange={(e) => setName(e.target.value)} /></Field>
+            <Field label="Widget-URL (wie ein Passwort behandeln – nicht im Stream zeigen)"><CopyField value={w.url} secret /></Field>
+            <p className="small muted" style={{ margin: 0 }}>In OBS: Quelle → Browser → URL einfügen, Breite {info.width}, Höhe {info.height}. Mit <code>&amp;debug=1</code> zeigt die Quelle ihren Verbindungsstatus.</p>
+          </div>
+          {sections.slice(0, half)}
+          <div className="row">
+            <button className="primary" disabled={!dirty} onClick={save}>Speichern</button>
+            <button onClick={() => confirm('Neuen Key erzeugen? Die alte URL funktioniert danach nicht mehr.') && run(() => api.post(`/api/widgets/${id}/rotate-key`), 'Neuer Key erzeugt').then(detail.reload)}>Key erneuern</button>
+            <button className="danger" onClick={() => confirm(`Widget „${w.name}“ löschen?`) && run(() => api.del(`/api/widgets/${id}`), 'Gelöscht').then(onDeleted)}>Löschen</button>
+          </div>
+        </div>
+        <div className="col aside">
+          <div className="card stack preview-card">
+            <div className="row between">
+              <h3 style={{ margin: 0 }}>Vorschau</h3>
+              <label className="row small" style={{ gap: 6 }}>Hintergrund <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} style={{ width: 40, padding: 2 }} /></label>
+            </div>
+            <WidgetPreview key={w.url} w={w} background={bg} />
+            <Controls w={w} data={live ?? w.data} onChange={refresh} />
+            <TestButtons />
+          </div>
+          {sections.slice(half)}
         </div>
       </div>
     </div>

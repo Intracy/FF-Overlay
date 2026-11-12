@@ -65,7 +65,8 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
   };
 
   return (
-    <div className="card stack">
+    <div className="split">
+      <div className="card stack">
       <div className="ab-top">
         <Field label="Thema (Profil)">
           <div className="row" style={{ flexWrap: 'nowrap' }}>
@@ -104,14 +105,17 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
           ))}
         </Dropdown>
       </div>
-      <Field label="Widget-URL (als Browserquelle in OBS einfügen – nicht im Stream zeigen)"><CopyField value={overlayUrl} secret /></Field>
+      </div>
+      <div className="card stack">
+        <Field label="Widget-URL (als Browserquelle in OBS einfügen – nicht im Stream zeigen)"><CopyField value={overlayUrl} secret /></Field>
+      </div>
     </div>
   );
 }
 
 // ---------- Allgemeine Einstellungen ----------
 
-function GeneralSettings({ overlay, reload }: { overlay: Overlay; reload: () => void }) {
+function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample?: AlertTemplate; reload: () => void }) {
   const [o, setO] = useState(overlay);
   const settings = useLoad(() => api.get<GlobalSettings>('/api/settings'));
   const [s, setS] = useState<GlobalSettings | null>(null);
@@ -138,11 +142,13 @@ function GeneralSettings({ overlay, reload }: { overlay: Overlay; reload: () => 
 
   return (
     <div className="stack">
-      <div className="row between"><h2 style={{ margin: 0 }}>Allgemeine Einstellungen</h2><button className="primary" onClick={save}>Einstellungen speichern</button></div>
+      <div className="split-head"><h2 style={{ margin: 0 }}>Allgemeine Einstellungen</h2><button className="primary" onClick={save}>Einstellungen speichern</button></div>
+      <div className="split">
+      <div className="col">
       <Section title="Ablauf">
         <div className="fields">
           <Field label={`Alert-Verzögerung ${o.alertDelay / 1000} s`} hint="Pause zwischen zwei Alerts"><input type="range" min={0} max={30} step={0.5} value={o.alertDelay / 1000} onChange={(e) => setO({ ...o, alertDelay: Math.round(Number(e.target.value) * 1000) })} /></Field>
-          <Field label={`Alert-Moderationsverzögerung ${unlimited ? 'unbegrenzt' : `${o.moderationDelay / 1000} s`}`} hint="Zeit, in der du Alerts im Live-Bereich ablehnen kannst">
+          <Field label={`Alert-Moderationsverzögerung ${unlimited ? 'unbegrenzt' : `${o.moderationDelay / 1000} s`}`} hint="Zeit, in der du Alerts im Alert Feed ablehnen kannst">
             <input type="range" min={0} max={60} step={1} disabled={unlimited} value={unlimited ? 60 : o.moderationDelay / 1000} onChange={(e) => setO({ ...o, moderationDelay: Number(e.target.value) * 1000 })} />
           </Field>
           <Field label={`Alert-Parry-Verzögerung ${o.interruptDelay} ms`} hint="Neuer Alert unterbricht den laufenden nach dieser Zeit"><input type="range" min={0} max={5000} step={100} disabled={!o.interruptMode} value={o.interruptDelay} onChange={(e) => setO({ ...o, interruptDelay: Number(e.target.value) })} /></Field>
@@ -154,6 +160,9 @@ function GeneralSettings({ overlay, reload }: { overlay: Overlay; reload: () => 
           {s && <label className="check"><input type="checkbox" checked={s.autoResetSession} onChange={(e) => setS({ ...s, autoResetSession: e.target.checked })} /> Stream-Session bei Stream-Start automatisch zurücksetzen</label>}
         </div>
       </Section>
+      </div>
+      <div className="col aside">
+      {sample && <PreviewCard template={sample} background={o.previewBackground} />}
       {s && (
         <Section title="Schimpfwort-Filter" badge="gilt für alle Overlays">
           <div className="row">
@@ -170,6 +179,17 @@ function GeneralSettings({ overlay, reload }: { overlay: Overlay; reload: () => 
           </div>
         </Section>
       )}
+      </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewCard({ template, background }: { template: AlertTemplate; background: string }) {
+  return (
+    <div className="card preview-card">
+      <h3>Vorschau</h3>
+      <TemplatePreview template={template} background={background} />
     </div>
   );
 }
@@ -202,12 +222,19 @@ function GlobalEdit({ view, reload }: { view: View; reload: () => void }) {
         <h2 style={{ margin: 0 }}>Globale Bearbeitung</h2>
         <p className="small muted">Einstellungen einmal setzen und mit einem Klick auf alle Alerts und Varianten des aktuellen Themas übertragen. Einzelne Alerts lassen sich danach weiter anpassen.</p>
       </div>
-      <div className="card">
-        <h3>Auf alle Alerts anwenden</h3>
-        <div className="chips">{GLOBAL_GROUPS.map((g) => <button key={g.id} className="small" onClick={() => apply(g.id, g.label)}>{g.label}</button>)}</div>
+      <div className="split">
+        <div className="col">
+          <div className="card">
+            <h3>Auf alle Alerts anwenden</h3>
+            <div className="chips">{GLOBAL_GROUPS.map((g) => <button key={g.id} className="small" onClick={() => apply(g.id, g.label)}>{g.label}</button>)}</div>
+          </div>
+          <DesignFields part="left" t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
+        </div>
+        <div className="col aside">
+          <PreviewCard template={t} background={view.overlay.previewBackground} />
+          <DesignFields part="right" t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
+        </div>
       </div>
-      <TemplatePreview template={t} background={view.overlay.previewBackground} />
-      <DesignFields t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
     </div>
   );
 }
@@ -279,7 +306,7 @@ function EntryEditor({ entry, item, isVariation, background, onSaved, onDeleted 
 
   return (
     <div className="stack">
-      <div className="row between">
+      <div className="split-head">
         <div>
           <h2 style={{ margin: 0 }}>{entry.label}{isVariation ? ` › ${rule.name}` : ''}</h2>
           <span className="small muted">{isVariation ? 'Variante – ersetzt den Standard-Alert, wenn die Bedingung zutrifft' : 'Standard-Alert'}</span>
@@ -289,6 +316,8 @@ function EntryEditor({ entry, item, isVariation, background, onSaved, onDeleted 
           <button className="primary" disabled={!dirty} onClick={save}>Einstellungen speichern</button>
         </div>
       </div>
+      <div className="split">
+      <div className="col">
       <div className="card stack">
         <div className="row">
           <label className="check"><input type="checkbox" checked={rule.enabled} onChange={(e) => setRule({ ...rule, enabled: e.target.checked })} /> Aktiviert</label>
@@ -301,8 +330,13 @@ function EntryEditor({ entry, item, isVariation, background, onSaved, onDeleted 
           </>
         )}
       </div>
-      <div className="card"><TemplatePreview template={t} background={background} /></div>
-      <DesignFields t={t} setT={(fn) => setT((x) => fn(x))} />
+      <DesignFields part="left" t={t} setT={(fn) => setT((x) => fn(x))} />
+      </div>
+      <div className="col aside">
+        <PreviewCard template={t} background={background} />
+        <DesignFields part="right" t={t} setT={(fn) => setT((x) => fn(x))} />
+      </div>
+      </div>
     </div>
   );
 }
@@ -441,10 +475,10 @@ export function AlertBoxPage() {
 
         <div className="stack" style={{ minWidth: 0 }}>
           <TopBar view={v} overlayUrl={overlay.url} reload={reload} />
-          {sel.kind === 'general' && <GeneralSettings overlay={v.overlay} reload={reload} />}
+          {sel.kind === 'general' && <GeneralSettings overlay={v.overlay} sample={v.entries.find((e) => e.default?.template)?.default?.template ?? undefined} reload={reload} />}
           {sel.kind === 'global' && <GlobalEdit view={v} reload={view.reload} />}
           {sel.kind === 'entry' && selectedEntry && !data?.default && (
-            <div className="card stack">
+            <div className="card stack" style={{ maxWidth: 'calc(50% - 8px)' }}>
               <h2 style={{ margin: 0 }}>{selectedEntry.label}</h2>
               <p className="muted" style={{ margin: 0 }}>Für diesen Event-Typ gibt es in diesem Thema noch keinen Alert.</p>
               <div><button className="primary" onClick={() => run(() => api.post(`/api/overlays/${overlayId}/alertbox/${selectedEntry.key}/enable`), 'Alert angelegt').then(view.reload)}>Alert für „{selectedEntry.label}“ anlegen</button></div>

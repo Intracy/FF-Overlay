@@ -1,4 +1,5 @@
 import type { AlertTemplate } from '../shared/types.js';
+import { BRAND_COLOR } from '../shared/brand.js';
 
 /** Startvorlage für eigenen Code. Platzhalter: {img} {name} {user} {amount} {messageTemplate} {userMessage} {count} {months} {tier} {product} + eigene Felder */
 export const DEFAULT_CUSTOM_HTML = `<div class="alert">
@@ -9,7 +10,7 @@ export const DEFAULT_CUSTOM_HTML = `<div class="alert">
 
 export const DEFAULT_CUSTOM_CSS = `.alert { display: flex; flex-direction: column; align-items: center; gap: 12px; font-family: sans-serif; color: #fff; text-align: center; }
 .title { font-size: 56px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
-.title .hl { color: #ffb703; }
+.title .hl { color: #9373c5; }
 .message { font-size: 28px; }
 .media img, .media video { max-width: 600px; max-height: 500px; }`;
 
@@ -27,7 +28,7 @@ export function defaultTemplate(id: string, name: string, format: string): Alert
       size: 56,
       weight: 800,
       color: '#ffffff',
-      highlightColor: '#ffb703',
+      highlightColor: BRAND_COLOR,
       strokeColor: '#000000',
       strokeWidth: 0,
       shadow: true,

@@ -63,7 +63,9 @@ function useVoices() {
   return voices;
 }
 
-export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: AlertTemplate) => AlertTemplate) => void }) {
+/** part: 'left' = Allgemein, Medien, Sound, Animationen; 'right' = Schrift, Nachricht, TTS, eigener Code (für das zweispaltige Layout). */
+export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT: (fn: (t: AlertTemplate) => AlertTemplate) => void; part?: 'all' | 'left' | 'right' }) {
+  const show = (p: 'left' | 'right') => part === 'all' || part === p;
   const [picker, setPicker] = useState<'giphy' | 'visual' | 'audio' | null>(null);
   const [codeTab, setCodeTab] = useState<'html' | 'css' | 'js' | 'fields'>('html');
   const voices = useVoices();
@@ -81,6 +83,7 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
 
   return (
     <div className="stack">
+      {show('left') && (
       <Section title="Allgemein">
         <Field label="Nachrichtenvorlage" hint={`Platzhalter: ${TOKENS.join(' ')}`}>
           <input value={t.text.format} onChange={(e) => up('text', { format: e.target.value })} />
@@ -112,7 +115,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
           </div>
         )}
       </Section>
+      )}
 
+      {show('left') && (
       <Section title="Bild, GIF oder Video" badge={t.media.kind === 'none' ? 'keins' : t.media.giphyId ? 'GIPHY' : t.media.kind === 'video' ? 'Video' : 'Bild'}>
         <div className="row">
           <button onClick={() => setPicker('giphy')}>GIPHY durchsuchen</button>
@@ -125,7 +130,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
           {t.media.kind === 'video' && <Field label={`Video-Lautstärke ${Math.round(t.media.volume * 100)} %`}><input type="range" min={0} max={1} step={0.05} value={t.media.volume} onChange={(e) => up('media', { volume: Number(e.target.value) })} /></Field>}
         </div>
       </Section>
+      )}
 
+      {show('left') && (
       <Section title="Sound" badge={t.sound.url ? `${Math.round(t.sound.volume * 100)} %` : 'keiner'}>
         <div className="row">
           <button onClick={() => setPicker('audio')}>{t.sound.url ? 'Sound ändern' : 'Sound wählen'}</button>
@@ -134,7 +141,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
         </div>
         <Field label={`Lautstärke ${Math.round(t.sound.volume * 100)} %`}><input type="range" min={0} max={1} step={0.01} value={t.sound.volume} onChange={(e) => up('sound', { volume: Number(e.target.value) })} /></Field>
       </Section>
+      )}
 
+      {show('left') && (
       <Section title="Animationen">
         <div className="fields">
           <Field label="Alert einblenden"><AnimSelect value={t.animation.in} onChange={(v) => up('animation', { in: v })} groups={IN_ANIMATIONS} /></Field>
@@ -149,7 +158,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
           <Field label="Animationsdauer (ms)"><NumberInput value={t.animation.speedMs} min={100} max={5000} step={100} onChange={(speedMs) => up('animation', { speedMs })} /></Field>
         </div>
       </Section>
+      )}
 
+      {show('right') && (
       <Section title="Schriftart-Einstellungen" open={false}>
         <div className="fields">
           <Field label="Schriftart (Google Fonts)"><FontInput value={t.text.font} onChange={(font) => up('text', { font })} /></Field>
@@ -165,7 +176,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
         </div>
         <label className="check"><input type="checkbox" checked={t.text.shadow} onChange={(e) => up('text', { shadow: e.target.checked })} /> Schatten</label>
       </Section>
+      )}
 
+      {show('right') && (
       <Section title="Einstellungen für Nachrichten" badge={t.message.show ? 'Aktiviert' : 'Deaktiviert'} open={false}>
         <div className="row">
           <label className="check"><input type="checkbox" checked={t.message.show} onChange={(e) => up('message', { show: e.target.checked })} /> Zuschauer-Nachricht anzeigen</label>
@@ -183,7 +196,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
           <Field label="Nachricht erst ab Betrag"><NumberInput value={t.message.minAmount} min={0} onChange={(minAmount) => up('message', { minAmount })} /></Field>
         </div>
       </Section>
+      )}
 
+      {show('right') && (
       <Section title="Einstellungen Text-in-Sprache" badge={t.tts.enabled ? 'Aktiviert' : 'Deaktiviert'} open={false}>
         <label className="check"><input type="checkbox" checked={t.tts.enabled} onChange={(e) => up('tts', { enabled: e.target.checked })} /> Nachrichten vorlesen</label>
         <div className="fields">
@@ -215,7 +230,9 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
           }}>▶ Stimme testen</button>
         </div>
       </Section>
+      )}
 
+      {show('right') && (
       <Section title="Benutzerdefiniertes HTML/CSS" badge={t.custom.enabled ? 'Aktiviert' : 'Deaktiviert'} open={false}>
         <label className="check"><input type="checkbox" checked={t.custom.enabled} onChange={(e) => up('custom', { enabled: e.target.checked })} /> Eigenen Code statt Bild/Text verwenden</label>
         <div className="chips">
@@ -231,6 +248,7 @@ export function DesignFields({ t, setT }: { t: AlertTemplate; setT: (fn: (t: Ale
         </p>
         <div><button className="small" onClick={() => up('custom', { html: DEFAULT_CUSTOM_HTML, css: DEFAULT_CUSTOM_CSS, js: '', fields: '{}' })}>Code zurücksetzen</button></div>
       </Section>
+      )}
 
       {picker === 'giphy' && <GiphyPicker onPick={setMedia} onClose={() => setPicker(null)} />}
       {picker === 'visual' && <MediaPicker kind="visual" onPick={setMedia} onClose={() => setPicker(null)} />}

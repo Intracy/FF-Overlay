@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from './brand.js';
 // Widgets nach dem Vorbild der Streamlabs-Widgets, die auf dieselben Events reagieren wie die Alert-Box.
 // Reine Daten und Typen – Backend, Dashboard und Widget-Seite benutzen diese Datei.
 
@@ -211,14 +212,14 @@ const ALL_TYPES = ['follow', 'sub', 'resub', 'gift', 'cheer', 'power_up', 'raid'
 
 export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } = {
   event_list: () => ({
-    style: 'crisscross', themeColor: '#777777', text: text(32, 600), types: ALL_TYPES.filter((t) => t !== 'raid' && t !== 'custom'),
+    style: 'crisscross', themeColor: BRAND_COLOR, text: text(32, 600), types: ALL_TYPES.filter((t) => t !== 'raid' && t !== 'custom'),
     minBits: 0, minRaiders: 0, maxEvents: 4, flipX: false, flipY: false, keepHistory: true, fadeTime: 0,
     animIn: 'bounceIn', animOut: 'fadeOutDown', speedMs: 1000,
   }),
   goal: () => ({
     goalType: 'donation', title: 'Spendenziel', target: 1000, startValue: 0, startedAt: new Date().toISOString(), endsAt: '',
     includeSubs: true, includeResubs: false, includeGifts: true, layout: 'standard',
-    barColor: '#46e65a', barBgColor: '#dddddd', barThickness: 48, barTextColor: '#000000', text: text(28, 700),
+    barColor: BRAND_COLOR, barBgColor: '#2a2238', barThickness: 48, barTextColor: '#ffffff', text: text(28, 700),
   }),
   label: () => ({ kind: 'latest_follower', period: 'session', format: '{name}', empty: '–', align: 'left', text: text(36, 700), shadow: true }),
   timer: () => ({
@@ -227,7 +228,7 @@ export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } 
     showAdded: true, endText: 'Zeit abgelaufen!', text: text(72, 800), shadow: true,
   }),
   credits: () => ({
-    theme: 'crawl', title: 'Danke fürs Zuschauen!', subtitle: '', text: text(28, 600), headingColor: '#ffb703',
+    theme: 'crawl', title: 'Danke fürs Zuschauen!', subtitle: '', text: text(28, 600), headingColor: BRAND_COLOR,
     include: { follows: true, subs: true, donations: true, cheers: true, raids: true, gifters: true, charity: true },
     headings: { follows: 'Neue Follower', subs: 'Abonnenten', donations: 'Spender', cheers: 'Bits', raids: 'Raids', gifters: 'Gift-Subs verschenkt', charity: 'Charity-Spenden' },
     showAmounts: true, loop: false, loopDelay: 1, mode: 'duration', speed: 60, duration: 30, playOnLoad: false, playOnVisible: true,
@@ -235,9 +236,9 @@ export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } 
   boss: () => ({
     startHp: 1000, mode: 'fixed', overkillMultiplier: 2, overkillMin: 1000, incrAmount: 200,
     damagePerFollow: 5, damagePerSub: 300, damagePerBit: 1, damagePerDonationUnit: 200, damagePerRaider: 0, bossHeal: true,
-    initialName: 'Streamer', barColor: '#46e65a', barBgColor: '#0c3416', barTextColor: '#ffffff', text: text(24, 700), killAnimation: 'hinge',
+    initialName: 'Streamer', barColor: BRAND_COLOR, barBgColor: '#241a35', barTextColor: '#ffffff', text: text(24, 700), killAnimation: 'hinge',
   }),
-  ticker: () => ({ types: ['donation', 'charity', 'cheer'], maxItems: 10, format: '{name}: {amount}', speed: 80, text: text(32, 700), amountColor: '#32c3a6', separator: '•' }),
+  ticker: () => ({ types: ['donation', 'charity', 'cheer'], maxItems: 10, format: '{name}: {amount}', speed: 80, text: text(32, 700), amountColor: BRAND_COLOR, separator: '•' }),
 };
 
 export const WIDGET_INFO: Record<WidgetType, { label: string; description: string; width: number; height: number }> = {

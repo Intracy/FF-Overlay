@@ -16,7 +16,7 @@ import { SettingsPage } from './pages/Settings';
 import { WidgetsPage } from './pages/Widgets';
 
 const NAV = [
-  { to: '/', label: 'Live' },
+  { to: '/', label: 'Alert Feed' },
   { to: '/alertbox', label: 'Alert-Box' },
   { to: '/widgets', label: 'Widgets' },
   { to: '/rules', label: 'Regeln (erweitert)' },

@@ -137,7 +137,7 @@ export interface AlertTemplate {
     /** Dauer-Animation pro Buchstabe: bounce, pulse, rubberBand, tada, wave, wiggle, wobble, none */
     letterAnimation: string;
     outro: string;
-    /** Animation Library: Text-Effekt (browsertexteffects), leer = keiner */
+    /** Animation Library: Text-Effekt (text-effects.colorion.co), leer = keiner */
     effect: string;
     /** Tempo des Text-Effekts (1 = normal) */
     effectSpeed: number;

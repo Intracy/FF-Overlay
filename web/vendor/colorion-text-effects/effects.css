@@ -1,0 +1,4541 @@
+/*
+ * CSS Text Effects – https://text-effects.colorion.co
+ * Quelle: https://github.com/ckissi/colorion-text-effects (Commit f5358700148e26f4ad400df320636ede1d706447)
+ * Lizenz: MIT (laut Projekt). Für FF-Overlay automatisch angepasst mit scripts/vendor-text-effects.mjs:
+ * Schrift aus dem Alert, px → em, beliebiger Text, Umbruch zwischen Wörtern, ohne prefers-reduced-motion.
+ * Farben: --ink (Text), --ink-2 und --ink-3 (Akzente). NICHT VON HAND BEARBEITEN – Skript erneut ausführen.
+ */
+
+/* 01 Borealis — aurora gradient drifting through the letters */
+.fx-aurora {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  background: linear-gradient(115deg, var(--ink-2), var(--ink-3), var(--ink-2), var(--ink-3)) 0 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fx-aurora 7s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-aurora {
+  0%   { background-position: 0% 50%;   filter: hue-rotate(0deg); }
+  100% { background-position: 300% 50%; filter: hue-rotate(360deg); }
+}
+
+/* 02 Glitchcore — RGB channel-split glitch with sliced jumps */
+.fx-glitch {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: var(--ink);
+}
+.fx-glitch::before, .fx-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+}
+.fx-glitch::before {
+  color: var(--ink-2);
+  clip-path: inset(0 0 55% 0);
+  animation: fx-glitch-a 2.6s steps(1) infinite;
+}
+.fx-glitch::after {
+  color: var(--ink-3);
+  clip-path: inset(45% 0 0 0);
+  animation: fx-glitch-b 2.6s steps(1) infinite;
+}
+@keyframes fx-glitch-a {
+  0%, 12%, 20%, 55%, 100% { transform: translate(0); opacity: 0; }
+  13% { transform: translate(-0.1667em, -0.0667em); opacity: .9; }
+  16% { transform: translate(0.1333em, 0.0333em);   opacity: .9; }
+  48% { transform: translate(-0.1em, 0.0667em);  opacity: .9; }
+  51% { transform: translate(0.0667em, -0.0333em);  opacity: .9; }
+}
+@keyframes fx-glitch-b {
+  0%, 14%, 22%, 60%, 100% { transform: translate(0); opacity: 0; }
+  15% { transform: translate(0.1667em, 0.0667em);   opacity: .9; }
+  18% { transform: translate(-0.1333em, -0.0333em); opacity: .9; }
+  52% { transform: translate(0.1em, -0.0667em);  opacity: .9; }
+  56% { transform: translate(-0.0667em, 0.0333em);  opacity: .9; }
+}
+
+/* 03 Teletype — typewriter with blinking caret (word must match the ch width) */
+.fx-typewriter {
+  box-sizing: content-box; /* the caret sits outside the character-count width */
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  width: var(--fx-w, 10ch); /* = number of characters typed */
+  border-right: .55ch solid var(--ink-2);
+  animation: fx-type 3.6s steps(var(--fx-n, 10)) infinite,
+             fx-caret .65s steps(1) infinite;
+}
+@keyframes fx-type {
+  0%, 8%    { width: 0; }
+  55%, 100% { width: var(--fx-w, 10ch); }
+}
+@keyframes fx-caret {
+  50% { border-color: transparent; }
+}
+
+/* 04 Neon-Haus — buzzing neon sign with unstable tube flicker */
+.fx-neon {
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: var(--ink);
+  animation: fx-neon 3.2s linear infinite;
+}
+@keyframes fx-neon {
+  0%, 18%, 21%, 24%, 100% {
+    opacity: 1;
+    text-shadow:
+      0 0 0.125em var(--ink),
+      0 0 0.3438em var(--ink-2),
+      0 0 0.75em var(--ink-2),
+      0 0 1.5em var(--ink-2);
+  }
+  19%, 22%, 62% {
+    opacity: .35;
+    text-shadow: none;
+  }
+  63%, 64.5% {
+    opacity: .6;
+    text-shadow: 0 0 0.125em var(--ink-2);
+  }
+}
+
+/* 05 Aqua-Fill — the word fills with liquid that rises and drains */
+.fx-liquid {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: transparent;
+  -webkit-text-stroke: 0.0313em color-mix(in srgb, var(--ink-3) 65%, transparent);
+  background: linear-gradient(0deg,
+      var(--ink-3) 0 46%,
+      color-mix(in srgb, var(--ink-3) 55%, transparent) 48%,
+      transparent 52% 100%
+    ) 0 0 / 100% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-liquid 3.4s ease-in-out infinite;
+  text-shadow: none;
+}
+@keyframes fx-liquid {
+  0%, 100% { background-position: 0 -110%; }
+  50%      { background-position: 0 10%; }
+}
+
+/* 06 Chromia — brushed-metal letters with a passing sheen */
+.fx-chrome {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  background: linear-gradient(105deg,
+      color-mix(in srgb, var(--ink) 40%, transparent) 0 38%,
+      var(--ink) 47%,
+      #fff 50%,
+      var(--ink) 53%,
+      color-mix(in srgb, var(--ink) 40%, transparent) 62% 100%
+    ) 0 0 / 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fx-chrome 2.8s ease-in-out infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-chrome {
+  0%   { background-position: 130% 0; }
+  60%, 100% { background-position: -130% 0; }
+}
+
+/* 07 Lens-Drift — letters slip in and out of focus, one after another */
+.fx-focus {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+}
+.fx-focus b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-focus 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .18s);
+}
+@keyframes fx-focus {
+  0%, 100% { filter: blur(0);   opacity: 1; }
+  50%      { filter: blur(0.2333em); opacity: .35; }
+}
+
+/* 08 Tidal-Type — letters ride a rolling sine wave */
+.fx-wave {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink-3);
+}
+.fx-wave b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-wave 1.3s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.14s);
+}
+@keyframes fx-wave {
+  0%, 100% { transform: translateY(0.2188em); }
+  50%      { transform: translateY(-0.2188em); }
+}
+
+/* 09 Bisect — the word is sliced horizontally; halves drift apart and re-align */
+.fx-sliced {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: transparent;
+}
+.fx-sliced::before, .fx-sliced::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+}
+.fx-sliced::before {
+  clip-path: inset(0 0 50% 0);
+  animation: fx-sliced-top 3s ease-in-out infinite;
+}
+.fx-sliced::after {
+  clip-path: inset(50% 0 0 0);
+  animation: fx-sliced-bot 3s ease-in-out infinite;
+}
+@keyframes fx-sliced-top {
+  0%, 22%, 78%, 100% { transform: translateX(0); }
+  38%, 62% { transform: translateX(0.25em); color: var(--ink-2); }
+}
+@keyframes fx-sliced-bot {
+  0%, 22%, 78%, 100% { transform: translateX(0); }
+  38%, 62% { transform: translateX(-0.25em); color: var(--ink-3); }
+}
+
+/* 10 Cipher — scrambled characters decode into the word, then re-encrypt */
+.fx-decoder {
+  line-height: 1.2;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+/* 11 Redactor — a scanning bar sweeps the word, lighting letters as it passes */
+.fx-scanner {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  background: linear-gradient(90deg,
+      color-mix(in srgb, var(--ink) 25%, transparent) 0 40%,
+      var(--ink) 50%,
+      color-mix(in srgb, var(--ink) 25%, transparent) 60% 100%
+    ) 0 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fx-scan-glow 2.6s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-scanner::after {
+  content: "";
+  position: absolute;
+  top: -0.2143em;
+  bottom: -0.2143em;
+  left: 0;
+  width: 0.1071em;
+  background: var(--ink-2);
+  box-shadow: 0 0 0.5em var(--ink-2);
+  animation: fx-scan-bar 2.6s ease-in-out infinite alternate;
+}
+@keyframes fx-scan-glow {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+@keyframes fx-scan-bar {
+  0%   { left: 0; transform: translateX(0); }
+  100% { left: 100%; transform: translateX(-100%); }
+}
+
+/* 12 Emberglow — letters smoulder under rising fire light */
+.fx-ember {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: #ffd9a0;
+  animation: fx-ember 1.7s ease-in-out infinite alternate;
+}
+@keyframes fx-ember {
+  0% {
+    text-shadow:
+      0 -0.0625em 0.1875em  #ffab40,
+      0 -0.1875em 0.4375em #ff6d00,
+      0 -0.375em 0.875em #dd2c00,
+      0 -0.625em 1.375em rgba(213, 0, 0, .55);
+  }
+  100% {
+    text-shadow:
+      0 -0.0938em 0.25em  #ffc46b,
+      0 -0.2813em 0.625em #ff8f1f,
+      0 -0.5625em 1.1875em #ff3d00,
+      0 -0.9375em 1.875em rgba(213, 0, 0, .8);
+  }
+}
+
+/* 13 Echo-Verse — ghost copies of the word ripple outward */
+.fx-echo {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: var(--ink);
+}
+.fx-echo::before, .fx-echo::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  animation: fx-echo 2s ease-out infinite;
+}
+.fx-echo::before { color: var(--ink-2); }
+.fx-echo::after  { color: var(--ink-3); animation-delay: 1s; }
+@keyframes fx-echo {
+  0%   { opacity: .8; transform: scale(1);   filter: blur(0); }
+  100% { opacity: 0;  transform: scale(1.9); filter: blur(0.0938em); }
+}
+
+/* 14 Deep-Type — extruded 3D block letters rocking on their axis */
+.fx-extrude {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  text-shadow:
+    0.0294em 0.0294em 0 color-mix(in srgb, var(--ink-2) 80%, #000),
+    0.0588em 0.0588em 0 color-mix(in srgb, var(--ink-2) 70%, #000),
+    0.0882em 0.0882em 0 color-mix(in srgb, var(--ink-2) 60%, #000),
+    0.1176em 0.1176em 0 color-mix(in srgb, var(--ink-2) 50%, #000),
+    0.1471em 0.1471em 0 color-mix(in srgb, var(--ink-2) 40%, #000),
+    0.1765em 0.1765em 0 color-mix(in srgb, var(--ink-2) 30%, #000),
+    0.2059em 0.2059em 0.3529em rgba(0, 0, 0, .5);
+  animation: fx-extrude 3s ease-in-out infinite;
+}
+@keyframes fx-extrude {
+  0%, 100% { transform: rotate(-3.5deg) translateY(0.0588em); }
+  50%      { transform: rotate(3.5deg)  translateY(-0.1176em); }
+}
+
+/* 15 Wireframe — a dashed outline endlessly traces the letterforms */
+.fx-contour {
+  width: 6em;
+  height: 1.4em;
+  overflow: visible;
+}
+.fx-contour text {
+  
+  letter-spacing: .02em;
+  fill: color-mix(in srgb, var(--ink) 10%, transparent);
+  stroke: var(--ink-3);
+  stroke-width: 1.2;
+  stroke-dasharray: 34 66;
+  animation: fx-contour 3.2s linear infinite;
+}
+@keyframes fx-contour {
+  to { stroke-dashoffset: -100; }
+}
+
+/* 16 Prisma — each letter refracts a different band of the spectrum */
+.fx-spectrum {
+  line-height: 1.1;
+  letter-spacing: .08em;
+}
+.fx-spectrum b {
+  font-weight: inherit;
+  display: inline-block;
+  color: #ff2d78;
+  filter: hue-rotate(calc(var(--i) * 42deg));
+  animation: fx-spectrum 2.4s linear infinite;
+  animation-delay: calc(var(--i) * -.1s);
+}
+@keyframes fx-spectrum {
+  to { filter: hue-rotate(calc(var(--i) * 42deg + 360deg)); }
+}
+
+/* 17 Jitterbug — nervous analogue jitter: skews, jumps and dropped frames */
+.fx-jitter {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: var(--ink);
+  animation: fx-jitter 1.9s steps(1) infinite;
+}
+@keyframes fx-jitter {
+  0%, 7%, 15%, 55%, 100% { transform: none; opacity: 1; }
+  8%  { transform: skewX(-14deg) translateX(-0.1333em); }
+  10% { transform: skewX(10deg) translateX(0.1em); }
+  12% { transform: translateY(-0.1em); opacity: .6; }
+  46% { transform: skewX(8deg); }
+  48% { transform: skewX(-6deg) translateY(0.0667em); opacity: .75; }
+  50% { transform: translateX(0.0667em); }
+}
+
+/* 18 Anaglyph-3D — red/cyan stereo channels drift apart and snap back */
+.fx-anaglyph {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  animation: fx-anaglyph 2.4s ease-in-out infinite;
+}
+@keyframes fx-anaglyph {
+  0%, 100% { text-shadow: 0 0 0 #ff3355, 0 0 0 #33ddff; }
+  50% {
+    text-shadow:
+      -0.2em 0 0.0333em #ff3355,
+       0.2em 0 0.0333em #33ddff;
+  }
+}
+
+/* 19 Split-Flap — airport departure board; letters flip on their plates */
+.fx-flap {
+  line-height: 1;
+  letter-spacing: 0;
+  display: inline-flex;
+  gap: 0.125em;
+  perspective: 16.6667em;
+  color: var(--ink);
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-flap b {
+  font-weight: inherit;
+  display: grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.9em;
+  background: linear-gradient(
+      color-mix(in srgb, var(--ink) 16%, transparent) 0 49%,
+      color-mix(in srgb, var(--ink) 8%, transparent) 51% 100%);
+  border-radius: 0.1667em;
+  transform-origin: center;
+  animation: fx-flap 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+@keyframes fx-flap {
+  0%, 55%, 100% { transform: rotateX(0); }
+  62% { transform: rotateX(-88deg); }
+  69% { transform: rotateX(0); }
+  74% { transform: rotateX(-25deg); }
+  79% { transform: rotateX(0); }
+}
+
+/* 20 Phosphor — CRT terminal: green glow, rolling scanlines, tube flicker */
+.fx-crt {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .1em;
+  padding: .3em .5em;
+  color: #4dff88;
+  text-shadow: 0 0 0.2692em rgba(77, 255, 136, .8);
+  background: rgba(20, 60, 35, .18);
+  border-radius: 0.1538em;
+  animation: fx-crt-flicker 3.4s steps(1) infinite;
+}
+.fx-crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+      transparent 0 0.0769em,
+      rgba(0, 0, 0, .38) 0.0769em 0.1538em);
+  animation: fx-crt-roll 6s linear infinite;
+}
+@keyframes fx-crt-flicker {
+  0%, 6%, 100% { opacity: 1; }
+  3%   { opacity: .82; }
+  4.5% { opacity: .95; transform: translateY(0.0385em); }
+  70%  { opacity: .9; }
+  71%  { opacity: 1; transform: none; }
+}
+@keyframes fx-crt-roll {
+  to { background-position: 0 1.8462em; }
+}
+
+/* 21 Pop-Riot — letters leap with a hard comic-book drop shadow */
+.fx-pop {
+  line-height: 1.1;
+  letter-spacing: .04em;
+  color: var(--ink);
+}
+.fx-pop b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-pop 1.5s cubic-bezier(.3, 1.6, .4, 1) infinite;
+  animation-delay: calc(var(--i) * .09s);
+}
+@keyframes fx-pop {
+  0%, 55%, 100% { transform: translateY(0); text-shadow: 0 0 0 var(--ink-2); }
+  25% { transform: translateY(-0.3529em) rotate(-4deg); text-shadow: 0 0.3529em 0 var(--ink-2); }
+}
+
+/* 22 Limelight — a spotlight sweeps across otherwise unlit letters */
+.fx-spotlight {
+  line-height: 1.2;
+  letter-spacing: .08em;
+  background: radial-gradient(3.5ch 100% at 50% 50%,
+      var(--ink) 20%,
+      color-mix(in srgb, var(--ink) 14%, transparent) 75%
+    ) 0 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fx-spotlight 3.4s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-spotlight {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+
+/* 23 Rubber-Band — the word squashes and stretches like an elastic band */
+.fx-elastic {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink-2);
+  animation: fx-elastic 1.6s ease-in-out infinite;
+}
+@keyframes fx-elastic {
+  0%, 100% { transform: scale(1, 1); }
+  28% { transform: scale(1.28, .72); }
+  44% { transform: scale(.78, 1.24); }
+  60% { transform: scale(1.12, .9); }
+  74% { transform: scale(.96, 1.05); }
+  86% { transform: scale(1.02, .98); }
+}
+
+/* 24 Still-Water — the word floats over its own rippling reflection
+   (uses -webkit-box-reflect: Chromium & Safari; degrades gracefully) */
+.fx-mirror {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  -webkit-box-reflect: below 0.0625em linear-gradient(transparent 45%, rgba(255, 255, 255, .28));
+  animation: fx-mirror 3s ease-in-out infinite;
+}
+@keyframes fx-mirror {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-0.1875em); }
+}
+
+/* 25 Ransom-Note — mismatched cut-out letters shifting on the page */
+.fx-ransom {
+  line-height: 1;
+  letter-spacing: 0;
+  display: inline-flex;
+  gap: 0.1667em;
+  color: var(--ink);
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-ransom b {
+  font-weight: inherit;
+  display: grid;
+  place-items: center;
+  padding: .28em .3em;
+  border-radius: 0.125em;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  animation: fx-ransom 2.8s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -.5s);
+}
+.fx-ransom b:nth-child(odd) {
+  background: var(--ink-2);
+  color: #14020f;
+}
+.fx-ransom b:nth-child(3n) {
+  background: transparent;
+  outline: 0.0625em dashed color-mix(in srgb, var(--ink) 55%, transparent);
+  color: var(--ink-3);
+}
+@keyframes fx-ransom {
+  0%   { transform: rotate(-6deg) translateY(0.0625em); }
+  100% { transform: rotate(6deg)  translateY(-0.0625em); }
+}
+
+/* 26 Meltdown — letters sag, stretch and drip before snapping back */
+.fx-melt {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink-2);
+}
+.fx-melt b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: top center;
+  animation: fx-melt 2.8s ease-in infinite;
+  animation-delay: calc(var(--i) * .22s);
+}
+@keyframes fx-melt {
+  0%, 45%  { transform: scaleY(1) translateY(0); filter: blur(0); }
+  70%      { transform: scaleY(1.55) translateY(0.2059em) scaleX(.92); filter: blur(0.0441em); }
+  85%, 100% { transform: scaleY(1) translateY(0); filter: blur(0); }
+}
+
+/* 27 Cardio — a lub-dub heartbeat with a systolic glow */
+.fx-heartbeat {
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: var(--ink-2);
+  animation: fx-heartbeat 1.4s ease-in-out infinite;
+}
+@keyframes fx-heartbeat {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+  14% { transform: scale(1.14); text-shadow: 0 0 0.5625em color-mix(in srgb, var(--ink-2) 65%, transparent); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.18); text-shadow: 0 0 0.8125em color-mix(in srgb, var(--ink-2) 80%, transparent); }
+  70% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+}
+
+/* 28 Hi-Liter — a marker pen paints across the word, then lifts off */
+.fx-marker {
+  line-height: 1.3;
+  letter-spacing: .08em;
+  color: var(--ink);
+  padding: .1em .2em;
+  background: linear-gradient(100deg,
+      color-mix(in srgb, var(--ink-2) 85%, transparent),
+      color-mix(in srgb, var(--ink-2) 60%, transparent)
+    ) no-repeat 0 62%;
+  background-size: 0% 46%;
+  animation: fx-marker 3s ease-in-out infinite;
+}
+@keyframes fx-marker {
+  0%        { background-size: 0% 46%;   background-position: 0 62%; }
+  38%, 62%  { background-size: 100% 46%; background-position: 0 62%; }
+  100%      { background-size: 0% 46%;   background-position: 100% 62%; }
+}
+
+/* 29 Sundial — a long cast shadow circles the letters like a passing sun */
+.fx-sundial {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  animation: fx-sundial 5s linear infinite;
+}
+@keyframes fx-sundial {
+  0%, 100% {
+    text-shadow:
+      0.125em 0 var(--ink-2),
+      0.25em 0 color-mix(in srgb, var(--ink-2) 55%, transparent),
+      0.375em 0 color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  12.5% {
+    text-shadow:
+      0.0875em 0.0875em var(--ink-2),
+      0.175em 0.175em color-mix(in srgb, var(--ink-2) 55%, transparent),
+      0.2625em 0.2625em color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  25% {
+    text-shadow:
+      0 0.125em var(--ink-2),
+      0 0.25em color-mix(in srgb, var(--ink-2) 55%, transparent),
+      0 0.375em color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  37.5% {
+    text-shadow:
+      -0.0875em 0.0875em var(--ink-2),
+      -0.175em 0.175em color-mix(in srgb, var(--ink-2) 55%, transparent),
+      -0.2625em 0.2625em color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  50% {
+    text-shadow:
+      -0.125em 0 var(--ink-2),
+      -0.25em 0 color-mix(in srgb, var(--ink-2) 55%, transparent),
+      -0.375em 0 color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  62.5% {
+    text-shadow:
+      -0.0875em -0.0875em var(--ink-2),
+      -0.175em -0.175em color-mix(in srgb, var(--ink-2) 55%, transparent),
+      -0.2625em -0.2625em color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  75% {
+    text-shadow:
+      0 -0.125em var(--ink-2),
+      0 -0.25em color-mix(in srgb, var(--ink-2) 55%, transparent),
+      0 -0.375em color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+  87.5% {
+    text-shadow:
+      0.0875em -0.0875em var(--ink-2),
+      0.175em -0.175em color-mix(in srgb, var(--ink-2) 55%, transparent),
+      0.2625em -0.2625em color-mix(in srgb, var(--ink-2) 25%, transparent);
+  }
+}
+
+/* 30 Negative — an inversion bar sweeps the word, flipping letters to their
+   photographic negative via mix-blend-mode: difference */
+.fx-negative {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  color: var(--ink);
+  padding: .18em .22em;
+}
+.fx-negative::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  background: var(--ink);
+  mix-blend-mode: difference;
+  animation: fx-negative 2.4s ease-in-out infinite alternate;
+}
+@keyframes fx-negative {
+  0%   { left: 0;    transform: translateX(0); }
+  100% { left: 100%; transform: translateX(-100%); }
+}
+
+/* 31 Holograph — translucent scanline projection with drifting chroma edges */
+.fx-hologram {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .12em;
+  color: color-mix(in srgb, var(--ink-3) 72%, var(--ink));
+  text-shadow:
+    0 0 0.2143em color-mix(in srgb, var(--ink-3) 60%, transparent),
+    0 0 0.7857em color-mix(in srgb, var(--ink-3) 45%, transparent);
+  isolation: isolate;
+  animation: fx-hologram-float 3.8s ease-in-out infinite;
+}
+.fx-hologram::before,
+.fx-hologram::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-hologram::before {
+  color: var(--ink-2);
+  clip-path: inset(0 0 52% 0);
+  opacity: .58;
+  animation: fx-hologram-split 2.8s steps(1) infinite;
+}
+.fx-hologram::after {
+  color: transparent;
+  background: repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--ink) 70%, transparent) 0 0.0357em,
+      transparent 0.0357em 0.1429em
+    );
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .48;
+  animation: fx-hologram-lines 1.2s linear infinite;
+}
+@keyframes fx-hologram-float {
+  0%, 100% { transform: translateY(0.0714em) skewX(0deg); filter: brightness(1); }
+  50%      { transform: translateY(-0.1429em) skewX(-3deg); filter: brightness(1.35); }
+}
+@keyframes fx-hologram-split {
+  0%, 14%, 40%, 72%, 100% { transform: translateX(0); opacity: .22; }
+  15% { transform: translateX(-0.1786em); opacity: .8; }
+  17% { transform: translateX(0.1429em);  opacity: .6; }
+  74% { transform: translateX(0.1071em);  opacity: .7; }
+}
+@keyframes fx-hologram-lines {
+  to { background-position: 0 0.4286em; }
+}
+
+/* 32 Gold-Foil — embossed metallic letters with a diagonal specular sweep */
+.fx-foil {
+  line-height: 1.05;
+  letter-spacing: .08em;
+  color: transparent;
+  background:
+    linear-gradient(108deg,
+      #7a4a08 0%,
+      #f2c15d 18%,
+      #fff4b8 24%,
+      #b87014 36%,
+      #f6d66d 51%,
+      #8e560b 68%,
+      #fff0a2 76%,
+      #c98218 100%
+    ) 0 0 / 230% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow:
+    0 0.0278em 0 rgba(255, 244, 184, .45),
+    0 0.25em 0.5556em rgba(0, 0, 0, .36);
+  animation: fx-foil 3.1s ease-in-out infinite;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-foil {
+  0%, 100% { background-position: 115% 0; filter: saturate(1.05); }
+  45%      { background-position: -35% 0; filter: saturate(1.35) brightness(1.12); }
+}
+
+/* 33 Pixel-Sort — blocky offsets smear the word into stepped digital columns */
+.fx-pixel {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  text-shadow:
+    0.0333em 0 0 var(--ink-2),
+   -0.0333em 0 0 var(--ink-3);
+}
+.fx-pixel::before,
+.fx-pixel::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: .85;
+}
+.fx-pixel::before {
+  color: var(--ink-2);
+  clip-path: polygon(0 0, 100% 0, 100% 28%, 0 28%, 0 44%, 100% 44%, 100% 58%, 0 58%);
+  animation: fx-pixel-a 2.2s steps(1) infinite;
+}
+.fx-pixel::after {
+  color: var(--ink-3);
+  clip-path: polygon(0 30%, 100% 30%, 100% 42%, 0 42%, 0 66%, 100% 66%, 100% 82%, 0 82%);
+  animation: fx-pixel-b 2.2s steps(1) infinite;
+}
+@keyframes fx-pixel-a {
+  0%, 20%, 54%, 100% { transform: translate(0); }
+  22% { transform: translate(0.2333em, -0.0667em); }
+  24% { transform: translate(-0.1333em, 0.0333em); }
+  56% { transform: translate(0.1667em, 0.0667em); }
+  58% { transform: translate(-0.2333em, 0); }
+}
+@keyframes fx-pixel-b {
+  0%, 18%, 58%, 100% { transform: translate(0); }
+  19% { transform: translate(-0.2em, 0.0667em); }
+  21% { transform: translate(0.1333em, -0.0333em); }
+  60% { transform: translate(-0.1667em, -0.0667em); }
+  63% { transform: translate(0.2em, 0.0333em); }
+}
+
+/* 34 Starlight — a constellation shimmer twinkles across frosted letter faces */
+.fx-starlight {
+  line-height: 1.2;
+  letter-spacing: .12em;
+  color: transparent;
+  background:
+    radial-gradient(circle at 14% 35%, #fff 0 0.0714em, transparent 0.0857em),
+    radial-gradient(circle at 42% 68%, #fff 0 0.0571em, transparent 0.0714em),
+    radial-gradient(circle at 75% 24%, #fff 0 0.0786em, transparent 0.0929em),
+    linear-gradient(100deg, var(--ink), var(--ink-3), var(--ink));
+  background-size: 4.2857em 2.1429em, 5.3571em 2.5714em, 6.4286em 2.4286em, 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.3571em color-mix(in srgb, var(--ink-3) 45%, transparent));
+  animation: fx-starlight 3.6s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-starlight {
+  0%   { background-position: 0 0, 0 0, 0 0, 120% 0; }
+  100% { background-position: 4.2857em 0, -5.3571em 0, 6.4286em 0, -120% 0; }
+}
+
+/* 35 Blueprint — technical outline letters over a moving drafting grid */
+.fx-blueprint {
+  line-height: 1.15;
+  letter-spacing: .1em;
+  color: transparent;
+  padding: .28em .45em;
+  -webkit-text-stroke: 0.0357em color-mix(in srgb, var(--ink-3) 80%, var(--ink));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ink-3) 22%, transparent) 0.0357em, transparent 0.0357em),
+    linear-gradient(0deg, color-mix(in srgb, var(--ink-3) 18%, transparent) 0.0357em, transparent 0.0357em),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink-3) 42%, transparent), transparent 35% 65%, color-mix(in srgb, var(--ink-3) 42%, transparent));
+  background-size: 0.4286em 0.4286em, 0.4286em 0.4286em, 240% 100%;
+  background-position: 0 0, 0 0, 100% 0;
+  border: 0.0357em solid color-mix(in srgb, var(--ink-3) 42%, transparent);
+  box-shadow: inset 0 0 0.6429em color-mix(in srgb, var(--ink-3) 18%, transparent);
+  animation: fx-blueprint 4s linear infinite;
+}
+@keyframes fx-blueprint {
+  to { background-position: 0.8571em 0, 0 0.8571em, -100% 0; }
+}
+
+/* 36 Vapor-Trail — soft neon copies trail behind a drifting word */
+.fx-vapor {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .16em;
+  color: var(--ink);
+  text-shadow: 0 0 0.375em color-mix(in srgb, var(--ink) 45%, transparent);
+  animation: fx-vapor-main 2.8s ease-in-out infinite;
+}
+.fx-vapor::before,
+.fx-vapor::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  filter: blur(0.0625em);
+  opacity: .62;
+}
+.fx-vapor::before {
+  color: var(--ink-2);
+  animation: fx-vapor-a 2.8s ease-in-out infinite;
+}
+.fx-vapor::after {
+  color: var(--ink-3);
+  animation: fx-vapor-b 2.8s ease-in-out infinite;
+}
+@keyframes fx-vapor-main {
+  0%, 100% { transform: translateX(-0.0938em); }
+  50%      { transform: translateX(0.0938em); }
+}
+@keyframes fx-vapor-a {
+  0%, 100% { transform: translate(-0.3125em, 0.1875em) scaleX(1.08); opacity: .22; }
+  50%      { transform: translate(-0.5625em, -0.125em) scaleX(1.22); opacity: .58; }
+}
+@keyframes fx-vapor-b {
+  0%, 100% { transform: translate(0.3125em, -0.1563em) scaleX(1.08); opacity: .2; }
+  50%      { transform: translate(0.5625em, 0.1563em) scaleX(1.2); opacity: .56; }
+}
+
+/* 37 Kinetic-Type — characters slide on staggered rails and lock into place */
+.fx-kinetic {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-kinetic b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: center;
+  animation: fx-kinetic 2.6s cubic-bezier(.2, .8, .2, 1) infinite;
+  animation-delay: calc(var(--i) * .08s);
+}
+.fx-kinetic b:nth-child(2n) { color: var(--ink-3); }
+.fx-kinetic b:nth-child(3n) { color: var(--ink-2); }
+@keyframes fx-kinetic {
+  0%, 18%   { transform: translateY(0) rotate(0deg); filter: blur(0); }
+  34%       { transform: translateY(-0.6em) rotate(-9deg); filter: blur(0.0133em); }
+  52%       { transform: translateY(0.4667em) rotate(7deg); }
+  68%, 100% { transform: translateY(0) rotate(0deg); filter: blur(0); }
+}
+
+/* 38 Blackout — redaction strips repeatedly hide and reveal classified text */
+.fx-blackout {
+  position: relative;
+  line-height: 1.15;
+  letter-spacing: .08em;
+  color: var(--ink);
+  padding: .28em .12em;
+}
+.fx-blackout::before,
+.fx-blackout::after {
+  content: "";
+  position: absolute;
+  left: -.18em;
+  right: -.18em;
+  height: 44%;
+  background: var(--ink);
+  box-shadow: 0 0 0 0.0417em color-mix(in srgb, var(--ink-2) 45%, transparent);
+  animation: fx-blackout 3s steps(1) infinite;
+}
+.fx-blackout::before {
+  top: 0;
+  transform-origin: left;
+}
+.fx-blackout::after {
+  bottom: 0;
+  transform-origin: right;
+  animation-delay: .28s;
+}
+@keyframes fx-blackout {
+  0%, 20%, 72%, 100% { transform: scaleX(0); }
+  26%, 58%           { transform: scaleX(1); }
+  64%                { transform: scaleX(.38); }
+}
+
+/* 39 Magnetic — letters attract into a tight field, then repel outward */
+.fx-magnetic {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-magnetic b {
+  font-weight: inherit;
+  display: inline-block;
+  text-shadow: 0 0 0 var(--ink-2);
+  animation: fx-magnetic 2.7s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .07s);
+}
+.fx-magnetic b:nth-child(odd) { color: var(--ink-3); }
+@keyframes fx-magnetic {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+    text-shadow: 0 0 0 transparent;
+  }
+  42% {
+    transform: translateX(calc((3 - var(--i)) * 0.0667em)) scale(1.12);
+    text-shadow: 0 0 0.5333em color-mix(in srgb, var(--ink-2) 70%, transparent);
+  }
+  62% {
+    transform: translateX(calc((var(--i) - 3) * 0.1em)) scale(.96);
+  }
+}
+
+/* 40 Luma-Mesh — animated mesh-gradient ink with a soft luminous edge */
+.fx-mesh {
+  line-height: 1.05;
+  letter-spacing: .08em;
+  color: transparent;
+  background:
+    radial-gradient(circle at 18% 28%, var(--ink-2) 0 12%, transparent 28%),
+    radial-gradient(circle at 78% 24%, var(--ink-3) 0 14%, transparent 30%),
+    radial-gradient(circle at 44% 82%, #ffffff 0 10%, transparent 24%),
+    linear-gradient(110deg, var(--ink-2), var(--ink-3));
+  background-size: 180% 180%, 170% 170%, 160% 160%, 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.4737em color-mix(in srgb, var(--ink-3) 28%, transparent));
+  animation: fx-mesh 4.8s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-mesh {
+  0%   { background-position: 0% 20%, 100% 10%, 35% 100%, 100% 0; }
+  100% { background-position: 100% 80%, 0% 60%, 70% 0%, -100% 0; }
+}
+
+/* 41 Iridescent — pearlescent text whose colour shifts with a moving angle */
+.fx-iridescent {
+  line-height: 1.05;
+  letter-spacing: .12em;
+  color: transparent;
+  background: conic-gradient(
+      from 20deg,
+      #f7fbff,
+      var(--ink-3),
+      #bba7ff,
+      var(--ink-2),
+      #fff7d6,
+      #f7fbff
+    ) 50% 50% / 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0.2632em 0.7368em rgba(0, 0, 0, .28);
+  animation: fx-iridescent 4.5s linear infinite;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-iridescent {
+  to { filter: hue-rotate(360deg); background-position: 120% 50%; }
+}
+
+/* 42 Glass-Type — translucent frosted letters with an offset refraction layer */
+.fx-glass {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: color-mix(in srgb, var(--ink) 58%, transparent);
+  -webkit-text-stroke: 0.0294em color-mix(in srgb, var(--ink) 52%, transparent);
+  text-shadow:
+    0 0.0294em 0 rgba(255, 255, 255, .4),
+    0 0.3529em 0.7059em rgba(0, 0, 0, .3);
+  animation: fx-glass 3.4s ease-in-out infinite;
+}
+.fx-glass::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--ink-3);
+  opacity: .34;
+  filter: blur(0.0882em);
+  transform: translate(0.1176em, 0.1471em);
+}
+.fx-glass::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: linear-gradient(115deg, transparent 22%, #fff 44%, transparent 62%) 110% 0 / 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .55;
+  animation: fx-glass-sheen 2.7s ease-in-out infinite;
+}
+@keyframes fx-glass {
+  50% { transform: translateY(-0.0882em); }
+}
+@keyframes fx-glass-sheen {
+  to { background-position: -110% 0; }
+}
+
+/* 43 Datastream — matrix-like data bands flow through clipped letterforms */
+.fx-datastream {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: transparent;
+  background:
+    repeating-linear-gradient(0deg,
+      var(--ink-3) 0 0.0667em,
+      color-mix(in srgb, var(--ink-3) 35%, transparent) 0.0667em 0.1333em,
+      transparent 0.1333em 0.2667em
+    ),
+    linear-gradient(90deg, var(--ink-2), var(--ink-3), var(--ink));
+  background-size: 100% 1.0667em, 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-datastream 1.6s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-datastream::after {
+  content: "0101 1100 0011";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 170%;
+  color: color-mix(in srgb, var(--ink-3) 42%, transparent);
+  font-size: .42em;
+  letter-spacing: .16em;
+  transform: translateX(-50%);
+  animation: fx-datastream-code 1.6s linear infinite;
+}
+@keyframes fx-datastream {
+  to { background-position: 0 1.0667em, -120% 0; }
+}
+@keyframes fx-datastream-code {
+  0% { opacity: .2; transform: translate(-50%, -0.0667em); }
+  50% { opacity: .7; }
+  100% { opacity: .2; transform: translate(-50%, 0.3333em); }
+}
+
+/* 44 Orbitals — letters circle tiny invisible tracks before settling back */
+.fx-orbit {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-orbit b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: 50% 120%;
+  animation: fx-orbit 2.8s cubic-bezier(.45, 0, .2, 1) infinite;
+  animation-delay: calc(var(--i) * -.18s);
+}
+.fx-orbit b:nth-child(odd) { color: var(--ink-3); }
+.fx-orbit b:nth-child(3n) { color: var(--ink-2); }
+@keyframes fx-orbit {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  35%      { transform: translate(0.1667em, -0.4333em) rotate(16deg); }
+  70%      { transform: translate(-0.1667em, 0.2333em) rotate(-10deg); }
+}
+
+/* 45 Prism-Cut — diagonal glass shards refract the word into colour offsets */
+.fx-prismcut {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: var(--ink);
+}
+.fx-prismcut::before,
+.fx-prismcut::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-prismcut::before {
+  color: var(--ink-2);
+  clip-path: polygon(0 0, 66% 0, 46% 100%, 0 100%);
+  animation: fx-prismcut-a 3s ease-in-out infinite;
+}
+.fx-prismcut::after {
+  color: var(--ink-3);
+  clip-path: polygon(42% 0, 100% 0, 100% 100%, 24% 100%);
+  animation: fx-prismcut-b 3s ease-in-out infinite;
+}
+@keyframes fx-prismcut-a {
+  0%, 100% { transform: translate(0); opacity: .35; }
+  50%      { transform: translate(-0.2188em, -0.0625em); opacity: .85; }
+}
+@keyframes fx-prismcut-b {
+  0%, 100% { transform: translate(0); opacity: .35; }
+  50%      { transform: translate(0.2188em, 0.0625em); opacity: .85; }
+}
+
+/* 46 Soft-Blur — a modern bloom effect that breathes between crisp and hazy */
+.fx-softblur {
+  line-height: 1.05;
+  letter-spacing: .1em;
+  color: var(--ink);
+  text-shadow:
+    0 0 0 var(--ink),
+    0 0 0.5em color-mix(in srgb, var(--ink-2) 45%, transparent),
+    0 0 0.9444em color-mix(in srgb, var(--ink-3) 35%, transparent);
+  animation: fx-softblur 3.2s ease-in-out infinite;
+}
+@keyframes fx-softblur {
+  0%, 100% { filter: blur(0); opacity: 1; transform: scale(1); }
+  50%      { filter: blur(0.0667em); opacity: .72; transform: scale(1.045); }
+}
+
+/* 47 Laser-Cut — a hot scanning blade carves a bright split through the word */
+.fx-laser {
+  position: relative;
+  line-height: 1.08;
+  letter-spacing: .12em;
+  color: var(--ink);
+}
+.fx-laser::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--ink-2);
+  clip-path: inset(44% 0 42% 0);
+  text-shadow: 0 0 0.2941em var(--ink-2);
+  animation: fx-laser-slice 2.2s ease-in-out infinite;
+}
+.fx-laser::after {
+  content: "";
+  position: absolute;
+  left: -8%;
+  top: 49%;
+  width: 116%;
+  height: 0.0588em;
+  background: linear-gradient(90deg, transparent, #fff, var(--ink-2), transparent);
+  box-shadow: 0 0 0.3824em var(--ink-2);
+  animation: fx-laser 2.2s ease-in-out infinite;
+}
+@keyframes fx-laser {
+  0%, 100% { transform: translateY(-0.4118em) scaleX(.35); opacity: 0; }
+  44%, 58% { transform: translateY(0) scaleX(1); opacity: 1; }
+}
+@keyframes fx-laser-slice {
+  0%, 100% { transform: translateX(0); opacity: .2; }
+  50%      { transform: translateX(0.1471em); opacity: 1; }
+}
+
+/* 48 Microchip — circuit-board traces scroll beneath monospaced letter masks */
+.fx-microchip {
+  line-height: 1.15;
+  letter-spacing: .1em;
+  color: transparent;
+  padding: .35em .45em;
+  background:
+    linear-gradient(90deg, transparent 0 44%, var(--ink-3) 44% 47%, transparent 47% 100%),
+    linear-gradient(0deg, transparent 0 46%, var(--ink-2) 46% 49%, transparent 49% 100%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--ink-3) 35%, transparent) 0 0.0357em, transparent 0.0357em 0.5em),
+    linear-gradient(100deg, var(--ink), var(--ink-3));
+  background-size: 1.5em 1.5em, 1.5em 1.5em, 0.5em 100%, 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  border: 0.0357em solid color-mix(in srgb, var(--ink-3) 24%, transparent);
+  animation: fx-microchip 3.8s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-microchip {
+  to { background-position: 1.5em 0, 0 1.5em, 0.5em 0, -120% 0; }
+}
+
+/* 49 Heatmap — thermal colour blooms migrate across dense letter shapes */
+.fx-heatmap {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: transparent;
+  background:
+    radial-gradient(circle at 20% 50%, #fff26d 0 8%, transparent 24%),
+    radial-gradient(circle at 70% 40%, #ff4f8b 0 12%, transparent 28%),
+    radial-gradient(circle at 44% 78%, var(--ink-3) 0 14%, transparent 32%),
+    linear-gradient(90deg, #2d7dff, #36f0b2, #ffcf4a, #ff4f8b);
+  background-size: 130% 130%, 150% 150%, 140% 140%, 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-heatmap 3.5s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-heatmap {
+  0%   { background-position: 0 0, 100% 20%, 40% 100%, 100% 0; filter: saturate(1); }
+  100% { background-position: 100% 90%, 0 60%, 80% 0, -100% 0; filter: saturate(1.35); }
+}
+
+/* 50 Parallax — coloured shadow layers drift at different speeds per letter */
+.fx-parallax {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-parallax b {
+  font-weight: inherit;
+  display: inline-block;
+  text-shadow:
+    0.1333em 0.1333em 0 color-mix(in srgb, var(--ink-2) 72%, transparent),
+   -0.1333em -0.1em 0 color-mix(in srgb, var(--ink-3) 72%, transparent);
+  animation: fx-parallax 3s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.11s);
+}
+@keyframes fx-parallax {
+  0%, 100% {
+    transform: translate(0);
+    text-shadow:
+      0.1333em 0.1333em 0 color-mix(in srgb, var(--ink-2) 72%, transparent),
+     -0.1333em -0.1em 0 color-mix(in srgb, var(--ink-3) 72%, transparent);
+  }
+  50% {
+    transform: translateY(-0.1333em);
+    text-shadow:
+      0.2667em 0.0667em 0 color-mix(in srgb, var(--ink-2) 72%, transparent),
+     -0.2667em -0.0333em 0 color-mix(in srgb, var(--ink-3) 72%, transparent);
+  }
+}
+
+/* 51 Ink-Trap — editorial serif-like traps pulse as heavy ink floods corners */
+.fx-inktrap {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .04em;
+  color: var(--ink);
+}
+.fx-inktrap::before,
+.fx-inktrap::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-inktrap::before {
+  color: transparent;
+  -webkit-text-stroke: 0.0263em var(--ink-3);
+  opacity: .65;
+  animation: fx-inktrap-line 2.7s ease-in-out infinite;
+}
+.fx-inktrap::after {
+  color: var(--ink-2);
+  clip-path: polygon(0 0, 100% 0, 84% 22%, 18% 22%, 0 0, 0 100%, 20% 78%, 86% 78%, 100% 100%, 0 100%);
+  mix-blend-mode: screen;
+  animation: fx-inktrap-fill 2.7s ease-in-out infinite;
+}
+@keyframes fx-inktrap-line {
+  50% { transform: scale(1.05); opacity: .95; }
+}
+@keyframes fx-inktrap-fill {
+  0%, 100% { opacity: .18; transform: scale(.98); }
+  50%      { opacity: .72; transform: scale(1.02); }
+}
+
+/* 52 Topographic — contour-map lines crawl through the text fill */
+.fx-topographic {
+  line-height: 1.15;
+  letter-spacing: .1em;
+  color: transparent;
+  background:
+    repeating-radial-gradient(ellipse at 30% 55%,
+      var(--ink) 0 0.0357em,
+      transparent 0.0357em 0.25em
+    ),
+    repeating-radial-gradient(ellipse at 78% 35%,
+      var(--ink-3) 0 0.0357em,
+      transparent 0.0357em 0.2857em
+    );
+  background-size: 4.6429em 2.5em, 6.0714em 2.8571em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.2857em color-mix(in srgb, var(--ink-3) 25%, transparent));
+  animation: fx-topographic 5s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-topographic {
+  to { background-position: 4.6429em 0, -6.0714em 0; }
+}
+
+/* 53 Signal-Noise — broadcast interference bends the word into noisy bands */
+.fx-signal {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  animation: fx-signal 2s steps(1) infinite;
+}
+.fx-signal::before,
+.fx-signal::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-signal::before {
+  color: var(--ink-2);
+  clip-path: inset(0 0 58% 0);
+  animation: fx-signal-a 2s steps(1) infinite;
+}
+.fx-signal::after {
+  color: var(--ink-3);
+  clip-path: inset(42% 0 0 0);
+  animation: fx-signal-b 2s steps(1) infinite;
+}
+@keyframes fx-signal {
+  0%, 21%, 47%, 100% { filter: none; }
+  22%, 24% { filter: blur(0.0267em) contrast(1.4); }
+}
+@keyframes fx-signal-a {
+  0%, 20%, 52%, 100% { transform: translate(0); opacity: .15; }
+  23% { transform: translate(-0.2667em, -0.0333em); opacity: .9; }
+  54% { transform: translate(0.1667em, 0.0667em); opacity: .7; }
+}
+@keyframes fx-signal-b {
+  0%, 24%, 58%, 100% { transform: translate(0); opacity: .12; }
+  27% { transform: translate(0.2667em, 0.0333em); opacity: .86; }
+  60% { transform: translate(-0.1667em, -0.0667em); opacity: .72; }
+}
+
+/* 54 Portal — a conic vortex opens inside the letters and rotates behind them */
+.fx-portal {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .12em;
+  color: transparent;
+  background: conic-gradient(from 0deg, var(--ink-2), var(--ink), var(--ink-3), var(--ink-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-portal 3.6s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-portal::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: radial-gradient(circle, transparent 0 30%, #fff 34% 36%, transparent 40% 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .72;
+  animation: fx-portal-pulse 1.8s ease-in-out infinite;
+}
+@keyframes fx-portal {
+  to { filter: hue-rotate(360deg); transform: rotate(.001deg); }
+}
+@keyframes fx-portal-pulse {
+  0%, 100% { transform: scale(.92); opacity: .24; }
+  50%      { transform: scale(1.08); opacity: .8; }
+}
+
+/* 55 Tilt-Shift — a sharp focal strip travels through blurred duplicate text */
+.fx-tiltshift {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: color-mix(in srgb, var(--ink) 28%, transparent);
+  filter: blur(0.0625em);
+}
+.fx-tiltshift::before,
+.fx-tiltshift::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-tiltshift::before {
+  color: var(--ink);
+  filter: blur(0);
+  clip-path: inset(32% 0 32% 0);
+  animation: fx-tiltshift 2.8s ease-in-out infinite alternate;
+}
+.fx-tiltshift::after {
+  color: var(--ink-3);
+  opacity: .3;
+  filter: blur(0.1875em);
+}
+@keyframes fx-tiltshift {
+  0%   { clip-path: inset(0 0 64% 0); transform: translateY(-0.0625em); }
+  100% { clip-path: inset(64% 0 0 0); transform: translateY(0.0625em); }
+}
+
+/* 56 Duotone — two offset colour plates slide across a crisp centre layer */
+.fx-duotone {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .1em;
+  color: var(--ink);
+}
+.fx-duotone::before,
+.fx-duotone::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.fx-duotone::before {
+  color: var(--ink-2);
+  animation: fx-duotone-a 2.6s ease-in-out infinite;
+}
+.fx-duotone::after {
+  color: var(--ink-3);
+  animation: fx-duotone-b 2.6s ease-in-out infinite;
+}
+@keyframes fx-duotone-a {
+  0%, 100% { transform: translate(-0.0789em, 0); opacity: .42; }
+  50%      { transform: translate(-0.2368em, -0.0789em); opacity: .8; }
+}
+@keyframes fx-duotone-b {
+  0%, 100% { transform: translate(0.0789em, 0); opacity: .42; }
+  50%      { transform: translate(0.2368em, 0.0789em); opacity: .8; }
+}
+
+/* 57 Glyph-Rain — characters fall in staggered vertical trails and re-form */
+.fx-glyphrain {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-glyphrain b {
+  font-weight: inherit;
+  display: inline-block;
+  text-shadow:
+    0 -0.4286em 0 color-mix(in srgb, var(--ink-3) 45%, transparent),
+    0 -0.8571em 0 color-mix(in srgb, var(--ink-2) 28%, transparent);
+  animation: fx-glyphrain 2.4s cubic-bezier(.25, .8, .25, 1) infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+.fx-glyphrain b:nth-child(2n) { color: var(--ink-3); }
+@keyframes fx-glyphrain {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  38% {
+    transform: translateY(0.7857em);
+    opacity: .22;
+  }
+  64% {
+    transform: translateY(-0.3571em);
+    opacity: .75;
+  }
+}
+
+/* 58 Zoetrope — letters whirl on a spinning 3D drum, one frame after another */
+.fx-zoetrope {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  display: inline-flex;
+  perspective: 16em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-zoetrope b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-zoetrope 3s cubic-bezier(.55, 0, .25, 1) infinite;
+  animation-delay: calc(var(--i) * .09s);
+}
+.fx-zoetrope b:nth-child(3n)   { color: var(--ink-2); }
+.fx-zoetrope b:nth-child(3n+1) { color: var(--ink-3); }
+@keyframes fx-zoetrope {
+  0%, 12%   { transform: rotateY(0); filter: blur(0); }
+  40%       { filter: blur(0.0333em); }
+  62%, 100% { transform: rotateY(360deg); filter: blur(0); }
+}
+
+/* 59 Dot-Matrix — halftone dot letters printed row by row under a bright head */
+.fx-dotmatrix {
+  line-height: 1.15;
+  letter-spacing: .1em;
+  color: transparent;
+  background:
+    linear-gradient(180deg, transparent 0 16%, #fff 24%, transparent 32% 100%) 0 -100% / 100% 300%,
+    radial-gradient(circle, var(--ink-3) 0 0.0433em, transparent 0.06em) 0 0 / 0.1667em 0.1667em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-dotmatrix 2.8s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-dotmatrix {
+  0%   { background-position: 0 -100%, 0 0; }
+  100% { background-position: 0 200%, 0 0; }
+}
+
+/* 60 Pendulum — letters swing from an unseen pivot in staggered phase */
+.fx-pendulum {
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: var(--ink);
+}
+.fx-pendulum b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: 50% -80%;
+  animation: fx-pendulum 1.8s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.12s);
+}
+.fx-pendulum b:nth-child(even) { color: var(--ink-3); }
+@keyframes fx-pendulum {
+  0%, 100% { transform: rotate(10deg); }
+  50%      { transform: rotate(-10deg); }
+}
+
+/* 61 Smoke-Signal — letters curl upward and dissipate like smoke, then re-form */
+.fx-smoke {
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: var(--ink);
+}
+.fx-smoke b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-smoke 3.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .16s);
+}
+@keyframes fx-smoke {
+  0%, 42%   { transform: none; opacity: 1; filter: blur(0); color: var(--ink); }
+  62%       { color: var(--ink-3); }
+  78%       { transform: translate(0.1875em, -0.6875em) rotate(14deg) scale(1.45); opacity: 0; filter: blur(0.2188em); }
+  79%       { transform: translateY(0.3125em) scale(.8); opacity: 0; filter: blur(0.125em); }
+  92%, 100% { transform: none; opacity: 1; filter: blur(0); }
+}
+
+/* 62 Eclipse — a dark moon crosses the glowing word and dims it in passing */
+.fx-eclipse {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: var(--ink);
+  text-shadow:
+    0 0 0.3125em color-mix(in srgb, var(--ink-2) 70%, transparent),
+    0 0 0.8125em color-mix(in srgb, var(--ink-2) 40%, transparent);
+  animation: fx-eclipse-dim 5s ease-in-out infinite;
+}
+.fx-eclipse::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -1.5em;
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 50%;
+  background: #05040c;
+  box-shadow:
+    0 0 0.3125em 0.0625em color-mix(in srgb, var(--ink-2) 85%, transparent),
+    inset -0.125em -0.0938em 0.25em rgba(0, 0, 0, .9);
+  transform: translateY(-50%);
+  animation: fx-eclipse 5s ease-in-out infinite;
+}
+@keyframes fx-eclipse {
+  0%   { left: -1.5em; }
+  50%  { left: calc(50% - .65em); }
+  100% { left: 100%; }
+}
+@keyframes fx-eclipse-dim {
+  0%, 28%, 72%, 100% { filter: brightness(1); }
+  50%                { filter: brightness(.4); }
+}
+
+/* 63 Barcode — striped code bars fill the word while a red beam scans it */
+.fx-barcode {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: transparent;
+  background: repeating-linear-gradient(90deg,
+      var(--ink) 0 0.0625em, transparent 0.0625em 0.125em,
+      var(--ink) 0.125em 0.1563em, transparent 0.1563em 0.25em,
+      var(--ink) 0.25em 0.3438em, transparent 0.3438em 0.4063em);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-barcode::before {
+  content: "9 780316 668111";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  font-size: .3em;
+  letter-spacing: .34em;
+  white-space: normal;
+}
+.fx-barcode::after {
+  content: "";
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  left: -2%;
+  width: 0.0625em;
+  background: var(--ink-2);
+  box-shadow:
+    0 0 0.375em var(--ink-2),
+    0 0 0.8125em color-mix(in srgb, var(--ink-2) 60%, transparent);
+  animation: fx-barcode 1.9s ease-in-out infinite alternate;
+}
+@keyframes fx-barcode {
+  0%   { left: -2%; }
+  100% { left: 101%; }
+}
+
+/* 64 Frostbite — ice creeps up the letters under a crystalline shimmer */
+.fx-frost {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: transparent;
+  background:
+    radial-gradient(circle at 22% 30%, #fff 0 0.05em, transparent 0.0688em),
+    radial-gradient(circle at 68% 62%, #fff 0 0.0406em, transparent 0.0594em),
+    linear-gradient(0deg,
+      #fff 0%,
+      var(--ink-3) 34%,
+      color-mix(in srgb, var(--ink-3) 45%, var(--ink)) 60%,
+      var(--ink) 100%);
+  background-size: 2.8125em 1.4375em, 3.75em 1.8125em, 100% 260%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-frost 4s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-frost {
+  0% {
+    background-position: 0 0, 0 0, 0 0%;
+    filter: drop-shadow(0 0 0.0625em color-mix(in srgb, var(--ink-3) 30%, transparent));
+  }
+  100% {
+    background-position: 0.5625em 0.1875em, -0.6875em -0.25em, 0 100%;
+    filter: drop-shadow(0 0 0.375em color-mix(in srgb, var(--ink-3) 75%, transparent));
+  }
+}
+
+/* 65 Moiré — two line screens drift against each other, weaving interference bands */
+.fx-moire {
+  line-height: 1.05;
+  letter-spacing: .08em;
+  color: transparent;
+  background:
+    repeating-linear-gradient(87deg, var(--ink-2) 0 0.0294em, transparent 0.0294em 0.1176em),
+    repeating-linear-gradient(90deg, var(--ink-3) 0 0.0294em, transparent 0.0294em 0.1176em),
+    linear-gradient(color-mix(in srgb, var(--ink) 30%, transparent), color-mix(in srgb, var(--ink) 30%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-moire 6s linear infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-moire {
+  0%   { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 1.4118em 0, -1.4118em 0, 0 0; }
+}
+
+/* 66 Rubber-Stamp — the word slams down like an ink stamp, then fades off the page */
+.fx-stamp {
+  line-height: 1;
+  letter-spacing: .14em;
+  color: var(--ink-2);
+  padding: .38em .5em;
+  border: 0.1154em solid var(--ink-2);
+  border-radius: 0.3077em;
+  box-shadow: inset 0 0 0 0.0577em color-mix(in srgb, var(--ink-2) 55%, transparent);
+  animation: fx-stamp 3.2s cubic-bezier(.22, 1.4, .36, 1) infinite;
+}
+@keyframes fx-stamp {
+  0%, 6%    { transform: rotate(-6deg) scale(2.4); opacity: 0; filter: blur(0.1538em); }
+  14%       { transform: rotate(-6deg) scale(.96); opacity: 1; filter: blur(0); }
+  18%       { transform: rotate(-6deg) scale(1.04); }
+  22%, 78%  { transform: rotate(-6deg) scale(1); opacity: 1; filter: blur(0); }
+  94%, 100% { transform: rotate(-6deg) scale(1); opacity: 0; filter: blur(0.0231em); }
+}
+
+/* 67 LED-Board — stadium LED matrix letters with a chasing brightness sweep */
+.fx-led {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .18em;
+  color: color-mix(in srgb, var(--ink-2) 22%, transparent);
+  text-shadow: 0 0 0.0294em color-mix(in srgb, var(--ink-2) 35%, transparent);
+}
+.fx-led::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background:
+    radial-gradient(circle closest-side,
+      #fff 0 28%,
+      var(--ink-2) 34% 62%,
+      transparent 68%) 0 0 / 0.1324em 0.1324em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter:
+    drop-shadow(0 0 0.1765em color-mix(in srgb, var(--ink-2) 70%, transparent))
+    drop-shadow(0 0 0.4706em color-mix(in srgb, var(--ink-2) 35%, transparent));
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 18%,
+    #000 42%,
+    transparent 68%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 18%,
+    #000 42%,
+    transparent 68%
+  );
+  -webkit-mask-size: 240% 100%;
+  mask-size: 240% 100%;
+  -webkit-mask-position: 120% 0;
+  mask-position: 120% 0;
+  animation: fx-led 2.1s linear infinite;
+}
+.fx-led::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background:
+    radial-gradient(circle closest-side,
+      color-mix(in srgb, var(--ink-2) 55%, transparent) 0 55%,
+      transparent 62%) 0 0 / 0.1324em 0.1324em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .45;
+}
+@keyframes fx-led {
+  to {
+    -webkit-mask-position: -120% 0;
+    mask-position: -120% 0;
+  }
+}
+
+/* 68 Light-Leak — cinematic colour veils wash diagonally through the word */
+.fx-lightleak {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .1em;
+  color: var(--ink);
+  isolation: isolate;
+}
+.fx-lightleak::before,
+.fx-lightleak::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  mix-blend-mode: screen;
+}
+.fx-lightleak::before {
+  background: linear-gradient(
+      118deg,
+      transparent 12%,
+      #ff5a1f 34%,
+      #ffd27a 44%,
+      #fff 48%,
+      transparent 62%
+    ) 120% 0 / 240% 100%;
+  filter: blur(0.0103em);
+  animation: fx-lightleak-a 4.4s ease-in-out infinite;
+}
+.fx-lightleak::after {
+  background: linear-gradient(
+      248deg,
+      transparent 18%,
+      var(--ink-3) 38%,
+      var(--ink-2) 48%,
+      transparent 68%
+    ) -20% 0 / 240% 100%;
+  opacity: .9;
+  animation: fx-lightleak-b 5.6s ease-in-out infinite;
+}
+@keyframes fx-lightleak-a {
+  0%, 100% { background-position: 130% 0; opacity: .12; }
+  42%      { background-position: -30% 0; opacity: 1; }
+}
+@keyframes fx-lightleak-b {
+  0%, 100% { background-position: -30% 0; opacity: .1; }
+  55%      { background-position: 130% 0; opacity: .95; }
+}
+
+/* 69 Kilovolt — letters crackle with staggered electric discharge flashes */
+.fx-voltage {
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-voltage b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-voltage 2.6s steps(1) infinite;
+  animation-delay: calc(var(--i) * .08s);
+}
+@keyframes fx-voltage {
+  0%, 100% {
+    transform: none;
+    color: var(--ink);
+    text-shadow: none;
+    filter: brightness(1);
+  }
+  7% {
+    transform: translate(0.0313em, -0.0313em) skewX(-10deg);
+    color: #fff;
+    text-shadow:
+      0 0 0.125em #fff,
+      0 0 0.4375em var(--ink-3),
+      0.0625em 0 0 var(--ink-2),
+     -0.0625em 0 0 var(--ink-3);
+    filter: brightness(1.85);
+  }
+  9% {
+    transform: translate(-0.0313em, 0.0313em) skewX(8deg);
+    color: var(--ink-3);
+    text-shadow:
+      0 0 0.3125em var(--ink-3),
+      0 0 0.6875em color-mix(in srgb, var(--ink-3) 70%, transparent);
+  }
+  11%, 48% {
+    transform: none;
+    color: var(--ink);
+    text-shadow: none;
+    filter: brightness(1);
+  }
+  61% {
+    transform: translate(0, -0.0313em) skewX(4deg);
+    color: #fff;
+    text-shadow:
+      0 0 0.1875em var(--ink-2),
+      0 0 0.5625em var(--ink-2),
+     -0.0313em 0 0 var(--ink-3);
+    filter: brightness(1.6);
+  }
+  63% {
+    transform: none;
+    color: var(--ink);
+    text-shadow: none;
+    filter: brightness(1);
+  }
+}
+
+/* 70 Carrara — liquid marble veins drift through polished stone letterforms */
+.fx-marble {
+  line-height: 1.05;
+  letter-spacing: .1em;
+  color: transparent;
+  background:
+    radial-gradient(ellipse 40% 70% at 18% 42%,
+      color-mix(in srgb, var(--ink) 55%, transparent) 0%,
+      transparent 55%),
+    radial-gradient(ellipse 50% 40% at 72% 58%,
+      color-mix(in srgb, var(--ink-3) 40%, transparent) 0%,
+      transparent 50%),
+    linear-gradient(118deg,
+      #f4f0ea 0%,
+      #d9d2c8 14%,
+      var(--ink-2) 22%,
+      #ebe6df 34%,
+      var(--ink-3) 48%,
+      #cfc7bb 58%,
+      #f7f3ed 72%,
+      var(--ink) 86%,
+      #e8e2d8 100%);
+  background-size: 160% 160%, 180% 180%, 280% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0.2353em 0.5294em rgba(0, 0, 0, .28));
+  animation: fx-marble 5.2s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-marble {
+  0% {
+    background-position: 8% 30%, 90% 70%, 0% 50%;
+    filter: drop-shadow(0 0.2353em 0.5294em rgba(0, 0, 0, .28)) saturate(1);
+  }
+  100% {
+    background-position: 78% 68%, 12% 22%, 100% 50%;
+    filter: drop-shadow(0 0.2941em 0.6471em rgba(0, 0, 0, .34)) saturate(1.15);
+  }
+}
+
+/* 71 Ripple — concentric water rings expand through the word like a pond splash */
+.fx-ripple {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .12em;
+  color: color-mix(in srgb, var(--ink-3) 55%, var(--ink));
+}
+.fx-ripple::before,
+.fx-ripple::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.fx-ripple::before {
+  background:
+    repeating-radial-gradient(
+      circle at 50% 55%,
+      transparent 0 0.1765em,
+      color-mix(in srgb, var(--ink-3) 85%, #fff) 0.2059em 0.2647em,
+      transparent 0.2941em 0.4706em
+    );
+  background-size: 100% 100%;
+  opacity: .9;
+  animation: fx-ripple 2.4s linear infinite;
+}
+.fx-ripple::after {
+  background:
+    repeating-radial-gradient(
+      circle at 50% 55%,
+      transparent 0 0.2353em,
+      var(--ink-2) 0.2647em 0.3235em,
+      transparent 0.3529em 0.5882em
+    );
+  opacity: .55;
+  animation: fx-ripple 2.4s linear infinite reverse;
+  mix-blend-mode: screen;
+}
+@keyframes fx-ripple {
+  0% {
+    background-size: 40% 40%;
+    background-position: 50% 55%;
+    opacity: .35;
+  }
+  70% { opacity: .95; }
+  100% {
+    background-size: 220% 220%;
+    background-position: 50% 55%;
+    opacity: .15;
+  }
+}
+
+/* 72 Shatter — letters fracture outward then snap back into place */
+.fx-shatter {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  display: inline-flex;
+  perspective: 13.125em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-shatter b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: 50% 60%;
+  animation: fx-shatter 3.2s cubic-bezier(.22, 1.15, .36, 1) infinite;
+  animation-delay: calc(var(--i) * .07s);
+}
+@keyframes fx-shatter {
+  0%, 18% {
+    transform: none;
+    opacity: 1;
+    filter: blur(0);
+    color: var(--ink);
+    text-shadow: none;
+  }
+  28% {
+    transform:
+      translate(
+        calc((var(--i) - 2.5) * 0.4375em),
+        calc(-0.5625em - var(--i) * 0.0938em)
+      )
+      rotate(calc((var(--i) - 2.5) * 18deg))
+      scale(.88);
+    opacity: .55;
+    filter: blur(0.0125em);
+    color: var(--ink-2);
+    text-shadow:
+      0.0625em 0 0 color-mix(in srgb, var(--ink-3) 70%, transparent),
+     -0.0625em 0 0 color-mix(in srgb, var(--ink-2) 70%, transparent);
+  }
+  38% {
+    transform:
+      translate(
+        calc((var(--i) - 2.5) * 0.6875em),
+        calc(0.25em + var(--i) * 0.0625em)
+      )
+      rotate(calc((var(--i) - 2.5) * -12deg))
+      scale(1.05);
+    opacity: .25;
+    filter: blur(0.0375em);
+  }
+  48% {
+    transform: translate(0, -0.1875em) scale(1.08);
+    opacity: 0;
+    filter: blur(0.0625em);
+  }
+  49% {
+    transform: scale(.7);
+    opacity: 0;
+    filter: blur(0);
+    color: var(--ink-3);
+  }
+  62%, 100% {
+    transform: none;
+    opacity: 1;
+    filter: blur(0);
+    color: var(--ink);
+    text-shadow: none;
+  }
+}
+
+/* 73 Film-Grain — analogue silver-halide noise crawls over the letterforms */
+.fx-grain {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .14em;
+  color: var(--ink);
+  animation: fx-grain-flicker 3.6s ease-in-out infinite;
+}
+.fx-grain::before,
+.fx-grain::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.fx-grain::before {
+  background-image:
+    radial-gradient(circle, #fff 0 0.0153em, transparent 0.0236em),
+    radial-gradient(circle, #000 0 0.0125em, transparent 0.0208em),
+    radial-gradient(circle, #fff 0 0.0111em, transparent 0.0194em);
+  background-size: 0.0833em 0.0833em, 0.1111em 0.1111em, 0.1389em 0.1389em;
+  background-position: 0 0, 0.0278em 0.0556em, 0.0556em 0.0278em;
+  opacity: .42;
+  mix-blend-mode: soft-light;
+  animation: fx-grain .28s steps(4) infinite;
+}
+.fx-grain::after {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ink) 0%, transparent) 0%,
+      color-mix(in srgb, #fff 22%, transparent) 48%,
+      color-mix(in srgb, var(--ink) 0%, transparent) 100%
+    ) 0 -40% / 100% 60%;
+  opacity: .55;
+  mix-blend-mode: overlay;
+  animation: fx-grain-scan 2.6s linear infinite;
+}
+@keyframes fx-grain {
+  0%   { background-position: 0 0, 0.0278em 0.0556em, 0.0556em 0.0278em; }
+  25%  { background-position: 0.0556em -0.0278em, -0.0278em 0.0833em, 0 0.0556em; }
+  50%  { background-position: -0.0278em 0.0556em, 0.0833em 0, 0.0278em -0.0278em; }
+  75%  { background-position: 0.0278em 0.0278em, -0.0556em -0.0278em, 0.0833em 0.0556em; }
+  100% { background-position: 0 0, 0.0278em 0.0556em, 0.0556em 0.0278em; }
+}
+@keyframes fx-grain-scan {
+  0%   { background-position: 0 -50%; opacity: .15; }
+  45%  { opacity: .6; }
+  100% { background-position: 0 160%; opacity: .2; }
+}
+@keyframes fx-grain-flicker {
+  0%, 100% { filter: contrast(1.04) brightness(1); }
+  32%      { filter: contrast(1.14) brightness(1.05); }
+  58%      { filter: contrast(.97) brightness(.94); }
+  76%      { filter: contrast(1.08) brightness(1.02); }
+}
+
+/* 74 Caustics — underwater light ribbons swim and refract through the word */
+.fx-caustic {
+  line-height: 1.05;
+  letter-spacing: .12em;
+  color: transparent;
+  background:
+    radial-gradient(ellipse 55% 35% at 18% 42%,
+      #fff 0 8%, transparent 42%),
+    radial-gradient(ellipse 45% 50% at 68% 58%,
+      color-mix(in srgb, var(--ink-3) 90%, #fff) 0 10%, transparent 46%),
+    radial-gradient(ellipse 40% 30% at 42% 78%,
+      #fff 0 6%, transparent 40%),
+    radial-gradient(ellipse 50% 40% at 82% 28%,
+      color-mix(in srgb, var(--ink-2) 75%, #fff) 0 9%, transparent 44%),
+    radial-gradient(ellipse 35% 45% at 30% 18%,
+      var(--ink-3) 0 7%, transparent 38%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ink-3) 70%, var(--ink)) 0%,
+      var(--ink) 42%,
+      color-mix(in srgb, var(--ink-2) 55%, var(--ink)) 100%
+    );
+  background-size:
+    160% 160%,
+    180% 170%,
+    150% 150%,
+    170% 160%,
+    140% 150%,
+    100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.3529em color-mix(in srgb, var(--ink-3) 42%, transparent));
+  animation: fx-caustic 4.2s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-caustic {
+  0% {
+    background-position:
+      0% 25%, 100% 80%, 35% 100%, 90% 5%, 20% 10%, 0 0;
+    filter:
+      drop-shadow(0 0 0.2353em color-mix(in srgb, var(--ink-3) 30%, transparent))
+      brightness(1);
+  }
+  100% {
+    background-position:
+      85% 70%, 5% 15%, 70% 0%, 15% 90%, 75% 85%, 0 0;
+    filter:
+      drop-shadow(0 0 0.5882em color-mix(in srgb, var(--ink-3) 60%, transparent))
+      brightness(1.18);
+  }
+}
+
+/* 75 Origami — paper letters hinge open on staggered folds, then tuck shut */
+.fx-fold {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  display: inline-flex;
+  perspective: 20em;
+  transform-style: preserve-3d;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-fold b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  animation: fx-fold 3.8s cubic-bezier(.4, 0, .2, 1) infinite;
+  animation-delay: calc(var(--i) * .11s);
+}
+@keyframes fx-fold {
+  0%, 8% {
+    transform: rotateY(-92deg) translateZ(0);
+    opacity: 0;
+    color: color-mix(in srgb, var(--ink) 55%, #000);
+    text-shadow: none;
+    filter: brightness(.55);
+  }
+  22% {
+    transform: rotateY(8deg) translateZ(0.1875em);
+    opacity: 1;
+    color: var(--ink);
+    text-shadow: 0.125em 0 0.3125em color-mix(in srgb, var(--ink-2) 35%, transparent);
+    filter: brightness(1.08);
+  }
+  30%, 58% {
+    transform: rotateY(0deg) translateZ(0);
+    opacity: 1;
+    color: var(--ink);
+    text-shadow: none;
+    filter: brightness(1);
+  }
+  72% {
+    transform: rotateY(-12deg) translateZ(0.125em);
+    opacity: 1;
+    color: var(--ink-3);
+    text-shadow: -0.0938em 0 0.25em color-mix(in srgb, var(--ink-3) 30%, transparent);
+    filter: brightness(1.05);
+  }
+  86%, 100% {
+    transform: rotateY(92deg) translateZ(0);
+    opacity: 0;
+    color: color-mix(in srgb, var(--ink) 55%, #000);
+    text-shadow: none;
+    filter: brightness(.55);
+  }
+}
+
+/* 76 Domino — letters topple in a chain reaction, then spring back upright */
+.fx-domino {
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: flex-end;
+  perspective: 25em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-domino b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-origin: 0% 100%;
+  animation: fx-domino 3.6s linear infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+@keyframes fx-domino {
+  0%, 12% {
+    transform: rotate(0deg);
+    color: var(--ink);
+    text-shadow: 0.0313em 0 0 color-mix(in srgb, var(--ink-3) 25%, transparent);
+    animation-timing-function: cubic-bezier(.6, .04, .98, .34);
+  }
+  30% {
+    transform: rotate(87deg);
+    color: var(--ink-2);
+    text-shadow: 0 0 0.4375em color-mix(in srgb, var(--ink-2) 60%, transparent);
+    animation-timing-function: cubic-bezier(.2, .8, .3, 1);
+  }
+  35% {
+    transform: rotate(79deg);
+    color: var(--ink-2);
+    text-shadow: 0 0 0.1875em color-mix(in srgb, var(--ink-2) 30%, transparent);
+  }
+  42%, 64% {
+    transform: rotate(84deg);
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    text-shadow: none;
+    animation-timing-function: cubic-bezier(.5, -.35, .3, 1.45);
+  }
+  86% {
+    transform: rotate(-6deg);
+    color: var(--ink-3);
+    text-shadow: 0 0 0.3125em color-mix(in srgb, var(--ink-3) 45%, transparent);
+  }
+  94%, 100% {
+    transform: rotate(0deg);
+    color: var(--ink);
+    text-shadow: 0.0313em 0 0 color-mix(in srgb, var(--ink-3) 25%, transparent);
+  }
+}
+
+/* 77 Zip-Merge — letters interlock like zipper teeth behind a travelling slider */
+.fx-zipper {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  color: var(--ink);
+  display: inline-flex;
+  padding: 0 0.4em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-zipper b {
+  --dir: -1;
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-zipmesh 3.8s cubic-bezier(.34, 1.28, .5, 1) infinite;
+  animation-delay: calc(var(--i) * .1s);
+}
+.fx-zipper b:nth-child(even) { --dir: 1; }
+.fx-zipper::before {
+  content: '';
+  position: absolute;
+  left: 0.2em;
+  right: 0.2em;
+  top: 50%;
+  height: 0.0667em;
+  margin-top: -0.0333em;
+  border-radius: 0.0667em;
+  background: linear-gradient(90deg, var(--ink-2), var(--ink-3));
+  transform-origin: left center;
+  animation: fx-zipseam 3.8s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+.fx-zipper::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.4em;
+  height: 0.5667em;
+  margin: -0.2667em 0 0 -0.2em;
+  border-radius: 0.1em 0.1em 0.1667em 0.1667em;
+  background: linear-gradient(160deg, #fff 0%, var(--ink-3) 45%, var(--ink-2) 100%);
+  box-shadow: 0 0 0.4em color-mix(in srgb, var(--ink-3) 55%, transparent);
+  animation: fx-zipslider 3.8s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes fx-zipmesh {
+  0%, 8% {
+    transform: translateY(calc(var(--dir) * 0.8667em)) rotate(calc(var(--dir) * 7deg));
+    opacity: .2;
+    color: var(--ink-3);
+  }
+  /* meshed: alternating letters settle just above / below the seam,
+     interlocking the way zipper teeth do rather than sitting flush */
+  32%, 70% {
+    transform: translateY(calc(var(--dir) * 0.1667em)) rotate(0deg);
+    opacity: 1;
+    color: var(--ink);
+  }
+  82%, 100% {
+    transform: translateY(calc(var(--dir) * 0.8667em)) rotate(calc(var(--dir) * 7deg));
+    opacity: .2;
+    color: var(--ink-3);
+  }
+}
+@keyframes fx-zipseam {
+  0%, 8% { transform: scaleX(0); opacity: .15; }
+  40%, 70% { transform: scaleX(1); opacity: .5; }
+  92%, 100% { transform: scaleX(0); opacity: .15; }
+}
+@keyframes fx-zipslider {
+  0%, 8% { left: 0; }
+  40%, 70% { left: 100%; }
+  92%, 100% { left: 0; }
+}
+
+/* 78 Equalizer — letters ride the peaks of a pumping audio meter */
+.fx-equalizer {
+  line-height: 1.1;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.2333em;
+  padding-top: 1.4667em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-equalizer b {
+  position: relative;
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-eqbounce 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.21s);
+}
+.fx-equalizer b::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 122%;
+  transform: translateX(-50%);
+  border-radius: 0.1em 0.1em 0.0333em 0.0333em;
+  background: linear-gradient(
+    180deg,
+    var(--ink-2) 0%,
+    var(--ink-3) 65%,
+    color-mix(in srgb, var(--ink-3) 25%, transparent) 100%
+  );
+  box-shadow: 0 0 0.3333em color-mix(in srgb, var(--ink-2) 40%, transparent);
+  animation: fx-eqbar 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.21s);
+}
+@keyframes fx-eqbar {
+  0%, 100% { height: 0.2333em; bottom: -0.2333em; }
+  20% { height: 1.1333em; bottom: -1.1333em; }
+  40% { height: 0.5em; bottom: -0.5em; }
+  60% { height: 1.4667em; bottom: -1.4667em; }
+  80% { height: 0.7333em; bottom: -0.7333em; }
+}
+@keyframes fx-eqbounce {
+  0%, 100% {
+    transform: translateY(-0.2333em);
+    color: color-mix(in srgb, var(--ink) 65%, transparent);
+    text-shadow: none;
+  }
+  20% {
+    transform: translateY(-1.1333em);
+    color: var(--ink);
+    text-shadow: none;
+  }
+  40% {
+    transform: translateY(-0.5em);
+    color: color-mix(in srgb, var(--ink) 80%, transparent);
+    text-shadow: none;
+  }
+  60% {
+    transform: translateY(-1.4667em);
+    color: #fff;
+    text-shadow: 0 0 0.5333em var(--ink-2);
+  }
+  80% {
+    transform: translateY(-0.7333em);
+    color: var(--ink);
+    text-shadow: none;
+  }
+}
+
+/* 79 Mercury — liquid-metal letters puddle together, then reform */
+.fx-gooey {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  display: inline-flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-gooey b {
+  font-weight: inherit;
+  display: inline-block;
+  color: transparent;
+  background: linear-gradient(
+    185deg,
+    #f4f7ff 8%,
+    var(--ink-3) 34%,
+    #d5dbe6 50%,
+    var(--ink-2) 72%,
+    #9aa3b5 100%
+  );
+  background-size: 100% 190%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 0.2em 0.2667em color-mix(in srgb, var(--ink-3) 30%, transparent));
+  animation: fx-gooey 3.4s cubic-bezier(.45, .06, .28, 1) infinite;
+  animation-delay: calc(var(--i) * .06s);
+}
+@keyframes fx-gooey {
+  0%, 16%, 100% {
+    transform: translateX(0) scale(1, 1);
+    background-position: 50% 0%;
+    filter: drop-shadow(0 0.2em 0.2667em color-mix(in srgb, var(--ink-3) 30%, transparent));
+  }
+  44%, 54% {
+    transform: translateX(calc((3 - var(--i)) * 0.1667em)) scale(1.14, .7);
+    background-position: 50% 90%;
+    filter: drop-shadow(0 0.0667em 0.4em color-mix(in srgb, var(--ink-2) 55%, transparent));
+  }
+}
+
+/* 80 Sonar — a radar sweep lights the word like a returning ping */
+@property --sonar {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+.fx-sonar {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .16em;
+  color: color-mix(in srgb, var(--ink-3) 40%, var(--ink));
+  animation: fx-sonar 2.6s linear infinite;
+}
+.fx-sonar::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3.8125em;
+  height: 3.8125em;
+  margin: -1.9063em 0 0 -1.9063em;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 50%, var(--ink-2) 0 0.0625em, transparent 0.0938em),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0 0.4063em,
+      color-mix(in srgb, var(--ink-3) 18%, transparent) 0.4375em 0.4688em
+    ),
+    conic-gradient(
+      from var(--sonar),
+      transparent 0 348deg,
+      color-mix(in srgb, var(--ink-3) 22%, transparent) 354deg,
+      color-mix(in srgb, var(--ink-2) 58%, transparent) 360deg
+    );
+  box-shadow:
+    inset 0 0 0 0.0313em color-mix(in srgb, var(--ink-3) 30%, transparent),
+    0 0 0.5625em color-mix(in srgb, var(--ink-3) 16%, transparent);
+}
+.fx-sonar::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: conic-gradient(
+    from var(--sonar),
+    transparent 0 292deg,
+    var(--ink-3) 328deg,
+    #fff 348deg,
+    var(--ink-2) 360deg
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.3125em color-mix(in srgb, var(--ink-3) 50%, transparent));
+}
+@keyframes fx-sonar {
+  to { --sonar: 360deg; }
+}
+
+/* 81 Hyperspace — letters punch out of deep Z and blow past the camera */
+.fx-warp {
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: var(--ink);
+  display: inline-flex;
+  perspective: 15.2941em;
+  transform-style: preserve-3d;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-warp b {
+  font-weight: inherit;
+  display: inline-block;
+  transform-style: preserve-3d;
+  animation: fx-warp 2.7s cubic-bezier(.22, .82, .24, 1) infinite;
+  animation-delay: calc(var(--i) * .08s);
+}
+@keyframes fx-warp {
+  0%, 100% {
+    transform: translateZ(-4.7059em) scale(.62) rotateX(10deg);
+    opacity: .4;
+    color: var(--ink-3);
+    filter: blur(0.0735em);
+    text-shadow: none;
+  }
+  22% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  30%, 62% {
+    transform: translateZ(0) scale(1) rotateX(0deg);
+    opacity: 1;
+    color: #fff;
+    filter: blur(0);
+    text-shadow:
+      0 0 0.3529em var(--ink-3),
+      0 0 0.8235em color-mix(in srgb, var(--ink-2) 70%, transparent);
+  }
+  82% {
+    transform: translateZ(5.5882em) scale(1.42) rotateX(-10deg);
+    opacity: .22;
+    color: var(--ink-2);
+    filter: blur(0.0882em);
+    text-shadow: 0 0 0.6471em var(--ink-2);
+  }
+}
+
+/* 82 Ghostwrite — the AI shimmer: a soft luminance band sweeps muted letters */
+.fx-shimmer {
+  line-height: 1.1;
+  letter-spacing: .14em;
+  color: transparent;
+  background: linear-gradient(90deg,
+      color-mix(in srgb, var(--ink) 16%, transparent) 0 40%,
+      color-mix(in srgb, var(--ink) 55%, transparent) 46%,
+      #fff 50%,
+      color-mix(in srgb, var(--ink) 55%, transparent) 54%,
+      color-mix(in srgb, var(--ink) 16%, transparent) 60% 100%
+    ) 0 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-shimmer 2.8s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+@keyframes fx-shimmer {
+  to { background-position: 300% 0; }
+}
+
+/* 83 Tickertape — endless editorial marquee gliding one seamless loop
+   (the word repeats five times; the track slides exactly one copy width) */
+.fx-ticker {
+  justify-self: start;
+  width: max-content;
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  white-space: nowrap;
+  animation: fx-ticker 9s linear infinite;
+}
+@keyframes fx-ticker {
+  to { transform: translateX(-20%); }
+}
+
+/* 84 Kaboom — the word crashes in from nowhere with an RGB shake and shockwave */
+.fx-kaboom {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  animation: fx-kaboom 3s infinite;
+}
+.fx-kaboom::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.4em;
+  height: 1.5em;
+  border: 0.05em solid var(--ink-3);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: fx-kaboom-ring 3s ease-out infinite;
+}
+@keyframes fx-kaboom {
+  0%, 30% {
+    opacity: 0;
+    transform: scale(3.4) translateY(-0.25em);
+    filter: blur(0.35em);
+    animation-timing-function: cubic-bezier(.55, 0, 1, .45);
+  }
+  36% {
+    opacity: 1;
+    transform: scale(.88);
+    filter: blur(0);
+    animation-timing-function: cubic-bezier(.2, 1.6, .4, 1);
+  }
+  41% {
+    transform: scale(1.07);
+    animation-timing-function: steps(1, end);
+  }
+  45% {
+    color: #fff;
+    text-shadow: -0.15em 0 0 var(--ink-2), 0.15em 0 0 var(--ink-3);
+    transform: translate(-0.125em, 0.075em) scale(1);
+  }
+  49% { transform: translate(0.1em, -0.075em); }
+  53% {
+    transform: translate(-0.05em, 0.025em);
+    text-shadow: -0.05em 0 0 var(--ink-2), 0.05em 0 0 var(--ink-3);
+    animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+  }
+  57%, 88% {
+    transform: none;
+    color: var(--ink);
+    text-shadow: none;
+    filter: blur(0);
+    opacity: 1;
+  }
+  95%, 100% {
+    opacity: 0;
+    transform: scale(.8);
+    filter: blur(0.125em);
+  }
+}
+@keyframes fx-kaboom-ring {
+  0%, 34% { opacity: 0; transform: translate(-50%, -50%) scale(.25); }
+  40%     { opacity: .85; }
+  72%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.7); }
+}
+
+/* 85 Lyric-Fill — karaoke highlight paints each letter left-to-right with a bounce */
+.fx-karaoke {
+  line-height: 1.1;
+  letter-spacing: .12em;
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-karaoke b {
+  font-weight: inherit;
+  display: inline-block;
+  color: color-mix(in srgb, var(--ink) 42%, transparent);
+  background: linear-gradient(
+      180deg,
+      #fff 0%,
+      var(--ink-2) 42%,
+      var(--ink-3) 100%
+    ) no-repeat 0 0 / 0% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-karaoke 4.4s cubic-bezier(.2, .85, .25, 1) infinite;
+  animation-delay: calc(var(--i) * .28s);
+}
+@keyframes fx-karaoke {
+  0%, 6% {
+    background-size: 0% 100%;
+    transform: translateY(0) scale(1);
+    color: color-mix(in srgb, var(--ink) 42%, transparent);
+    filter: none;
+  }
+  14% {
+    background-size: 100% 100%;
+    transform: translateY(-0.2813em) scale(1.16);
+    color: transparent;
+    filter: drop-shadow(0 0 0.3125em color-mix(in srgb, var(--ink-2) 70%, transparent));
+  }
+  22%, 64% {
+    background-size: 100% 100%;
+    transform: translateY(0) scale(1);
+    color: transparent;
+    filter: none;
+  }
+  78%, 100% {
+    background-size: 0% 100%;
+    transform: translateY(0) scale(1);
+    color: color-mix(in srgb, var(--ink) 42%, transparent);
+    filter: none;
+  }
+}
+
+/* 86 Lenti-Card — a holographic trading card tilts, ridge-stripes flipping colour */
+.fx-lenticular {
+  position: relative;
+  line-height: 1;
+  letter-spacing: .12em;
+  color: transparent;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgb(255 255 255 / .28) 0 0.0278em,
+      transparent 0.0278em 0.0833em
+    ),
+    linear-gradient(
+      115deg,
+      var(--ink-2) 0%,
+      #fff 18%,
+      var(--ink-3) 36%,
+      #ffe08a 52%,
+      var(--ink-2) 70%,
+      #fff 86%,
+      var(--ink-3) 100%
+    );
+  background-size: 0.1111em 100%, 240% 100%;
+  background-position: 0 0, 120% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-lenti-tilt 2.8s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-lenticular::before,
+.fx-lenticular::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-lenticular::before {
+  color: var(--ink-2);
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 0.0556em, transparent 0.0556em 0.1111em);
+  mask-image: repeating-linear-gradient(90deg, #000 0 0.0556em, transparent 0.0556em 0.1111em);
+  animation: fx-lenti-a 2.8s ease-in-out infinite alternate;
+}
+.fx-lenticular::after {
+  color: var(--ink-3);
+  -webkit-mask-image: repeating-linear-gradient(90deg, transparent 0 0.0556em, #000 0.0556em 0.1111em);
+  mask-image: repeating-linear-gradient(90deg, transparent 0 0.0556em, #000 0.0556em 0.1111em);
+  animation: fx-lenti-b 2.8s ease-in-out infinite alternate;
+}
+@keyframes fx-lenti-tilt {
+  from {
+    transform: perspective(12.7778em) rotateY(-20deg);
+    filter: hue-rotate(0deg) saturate(1.15);
+    background-position: 0 0, 120% 0;
+  }
+  to {
+    transform: perspective(12.7778em) rotateY(20deg);
+    filter: hue-rotate(28deg) saturate(1.35);
+    background-position: 0 0, -20% 0;
+  }
+}
+@keyframes fx-lenti-a {
+  from { transform: translateX(-0.0833em); opacity: .4; }
+  to   { transform: translateX(0.1111em);  opacity: .85; }
+}
+@keyframes fx-lenti-b {
+  from { transform: translateX(0.0833em);  opacity: .85; }
+  to   { transform: translateX(-0.1111em); opacity: .35; }
+}
+
+/* 87 Helium — balloon letters inflate from flat, catch a highlight, then deflate */
+.fx-balloon {
+  line-height: 1;
+  letter-spacing: .06em;
+  display: inline-flex;
+  filter: drop-shadow(0 0.2647em 0.2941em color-mix(in srgb, var(--ink-2) 38%, transparent));
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-balloon b {
+  font-weight: inherit;
+  display: inline-block;
+  color: transparent;
+  background:
+    radial-gradient(circle at 32% 22%, #fff 0 9%, transparent 22%),
+    radial-gradient(circle at 50% 58%,
+      var(--ink-2) 0 40%,
+      color-mix(in srgb, var(--ink-2) 42%, #3a001f) 76%,
+      color-mix(in srgb, var(--ink-2) 18%, #14000a) 100%);
+  background-size: 160% 160%, 100% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform-origin: 50% 85%;
+  animation: fx-balloon 3.1s cubic-bezier(.34, 1.5, .64, 1) infinite;
+  animation-delay: calc(var(--i) * .13s);
+}
+.fx-balloon b:nth-child(even) {
+  background:
+    radial-gradient(circle at 32% 22%, #fff 0 9%, transparent 22%),
+    radial-gradient(circle at 50% 58%,
+      var(--ink-3) 0 40%,
+      color-mix(in srgb, var(--ink-3) 42%, #003038) 76%,
+      color-mix(in srgb, var(--ink-3) 18%, #001014) 100%);
+  background-size: 160% 160%, 100% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+@keyframes fx-balloon {
+  0%, 6% {
+    transform: scale(.72, .58) translateY(0.2353em);
+    filter: blur(0.0118em);
+    background-position: 50% 90%, 0 0;
+  }
+  28% {
+    transform: scale(1.14, 1.2) translateY(-0.2353em) rotate(-5deg);
+    filter: blur(0);
+    background-position: 16% 6%, 0 0;
+  }
+  40%, 74% {
+    transform: scale(1, 1) translateY(0) rotate(0deg);
+    filter: blur(0);
+    background-position: 32% 22%, 0 0;
+  }
+  92%, 100% {
+    transform: scale(.72, .58) translateY(0.2353em);
+    filter: blur(0.0118em);
+    background-position: 50% 90%, 0 0;
+  }
+}
+
+/* 88 Liquid-Lens — a glass puck glides over the word: a soft-masked copy
+   refracts the letters while the puck itself is clipped to an ellipse
+   (clip-path, not a mask — a mask does not clip `backdrop-filter`) */
+.fx-lens {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .1em;
+  color: color-mix(in srgb, var(--ink) 78%, transparent);
+}
+/* the magnified, chromatically split copy seen through the glass */
+.fx-lens::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: -0.5333em 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: 1.12em;
+  color: var(--ink);
+  text-shadow:
+    -0.0667em 0 color-mix(in srgb, var(--ink-2) 70%, transparent),
+     0.0667em 0 color-mix(in srgb, var(--ink-3) 70%, transparent);
+  -webkit-mask-image: radial-gradient(ellipse 1.2667em 0.9333em at 50% 50%,
+      #000 0 54%, rgb(0 0 0 / .55) 78%, transparent 88%);
+  mask-image: radial-gradient(ellipse 1.2667em 0.9333em at 50% 50%,
+      #000 0 54%, rgb(0 0 0 / .55) 78%, transparent 88%);
+  -webkit-mask-size: 2.8667em 100%;
+  mask-size: 2.8667em 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: fx-lens-refract 4.6s cubic-bezier(.6, 0, .4, 1) infinite;
+}
+/* the puck itself: rim highlight, sheen and a real backdrop blur */
+.fx-lens::after {
+  content: "";
+  position: absolute;
+  inset: -0.5333em 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 1.2667em 0.9333em at 50% 50%,
+      transparent 0 66%,
+      rgb(255 255 255 / .5) 78% 86%,
+      transparent 96%),
+    radial-gradient(ellipse 0.9333em 0.6em at 38% 26%,
+      rgb(255 255 255 / .16),
+      transparent 72%),
+    radial-gradient(ellipse 1.1333em 0.8em at 50% 58%,
+      color-mix(in srgb, var(--ink-3) 14%, transparent),
+      transparent 78%);
+  background-size: 2.8667em 100%;
+  background-repeat: no-repeat;
+  -webkit-backdrop-filter: blur(0.0333em) saturate(1.8) brightness(1.14);
+  backdrop-filter: blur(0.0333em) saturate(1.8) brightness(1.14);
+  animation: fx-lens-glass 4.6s cubic-bezier(.6, 0, .4, 1) infinite;
+}
+@keyframes fx-lens-refract {
+  0%, 6% {
+    -webkit-mask-position: -2.8667em 0;
+    mask-position: -2.8667em 0;
+  }
+  94%, 100% {
+    -webkit-mask-position: calc(100% + 2.8667em) 0;
+    mask-position: calc(100% + 2.8667em) 0;
+  }
+}
+@keyframes fx-lens-glass {
+  0%, 6% {
+    clip-path: ellipse(1.3333em 1em at -1.4333em 50%);
+    background-position: -2.8667em 0;
+  }
+  94%, 100% {
+    clip-path: ellipse(1.3333em 1em at calc(100% + 1.4333em) 50%);
+    background-position: calc(100% + 2.8667em) 0;
+  }
+}
+
+/* 89 Whiplash — letters whip in on a stretched motion-blur smear, land with a
+   squash, then get dragged off the other side */
+.fx-smear {
+  line-height: 1.1;
+  letter-spacing: .08em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-smear b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-smear 2.9s cubic-bezier(.16, .9, .3, 1) infinite;
+  animation-delay: calc(var(--i) * .07s);
+}
+.fx-smear b:nth-child(3n)   { color: var(--ink-3); }
+.fx-smear b:nth-child(3n+2) { color: var(--ink-2); }
+@keyframes fx-smear {
+  0% {
+    transform: translateX(-3.5294em) scale(3.4, .68) skewX(-16deg);
+    filter: blur(0.1471em);
+    opacity: 0;
+  }
+  17% {
+    transform: translateX(0) scale(1, 1) skewX(0deg);
+    filter: blur(0);
+    opacity: 1;
+  }
+  25% { transform: scale(.84, 1.14); }
+  33% { transform: scale(1.06, .95); }
+  41%, 72% { transform: scale(1, 1); filter: blur(0); opacity: 1; }
+  92%, 100% {
+    transform: translateX(3.5294em) scale(3.4, .68) skewX(16deg);
+    filter: blur(0.1471em);
+    opacity: 0;
+  }
+}
+
+/* 90 Keycap — mechanical keycaps bottom out one after another, the skirt
+   collapsing under each cap as it clicks */
+.fx-keycap {
+  line-height: 1;
+  letter-spacing: .02em;
+  display: inline-flex;
+  gap: 0.4211em;
+  padding-bottom: 0.4737em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-keycap b {
+  position: relative;
+  font-weight: inherit;
+  display: grid;
+  place-items: center;
+  width: 2em;
+  height: 2.1053em;
+  border-radius: 0.5263em;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--ink) 22%, transparent) 0%,
+      color-mix(in srgb, var(--ink) 7%, transparent) 46%,
+      transparent 100%),
+    color-mix(in srgb, var(--ink-2) 10%, #16121f);
+  box-shadow:
+    inset 0 0.0526em 0 color-mix(in srgb, var(--ink) 32%, transparent),
+    0 0.3158em 0 color-mix(in srgb, var(--ink-2) 42%, #0b0812),
+    0 0.5263em 0.8421em rgb(0 0 0 / .5);
+  animation: fx-keycap 3.4s cubic-bezier(.3, 1.4, .5, 1) infinite;
+  animation-delay: calc(var(--i) * .16s);
+}
+.fx-keycap b::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%,
+    color-mix(in srgb, var(--ink-3) 55%, transparent),
+    transparent 70%);
+  opacity: 0;
+  animation: fx-keycap-click 3.4s ease-out infinite;
+  animation-delay: calc(var(--i) * .16s);
+}
+@keyframes fx-keycap {
+  0%, 8% {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 0.0526em 0 color-mix(in srgb, var(--ink) 32%, transparent),
+      0 0.3158em 0 color-mix(in srgb, var(--ink-2) 42%, #0b0812),
+      0 0.5263em 0.8421em rgb(0 0 0 / .5);
+  }
+  16% {
+    transform: translateY(0.3158em);
+    box-shadow:
+      inset 0 0.0526em 0 color-mix(in srgb, var(--ink) 14%, transparent),
+      0 0 0 color-mix(in srgb, var(--ink-2) 42%, #0b0812),
+      0 0.1579em 0.4211em rgb(0 0 0 / .55);
+  }
+  30%, 100% {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 0.0526em 0 color-mix(in srgb, var(--ink) 32%, transparent),
+      0 0.3158em 0 color-mix(in srgb, var(--ink-2) 42%, #0b0812),
+      0 0.5263em 0.8421em rgb(0 0 0 / .5);
+  }
+}
+@keyframes fx-keycap-click {
+  0%, 12% { opacity: 0; }
+  16%     { opacity: .9; }
+  34%,100%{ opacity: 0; }
+}
+
+/* 91 Groovy — 70s retro type: each letter lifts off the page and a stack of
+   mustard, orange, rust and brown offset layers fans out beneath it */
+.fx-groovy {
+  --groovy-1: #f6b33d;
+  --groovy-2: #e8692c;
+  --groovy-3: #b23a28;
+  --groovy-4: #5b2a1e;
+  line-height: 1.1;
+  letter-spacing: .02em;
+  color: #ffe6bd;
+  display: inline-flex;
+  transform: skewX(-8deg);
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-groovy b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-groovy 3.2s cubic-bezier(.45, 0, .3, 1) infinite;
+  animation-delay: calc(var(--i) * .1s);
+}
+@keyframes fx-groovy {
+  0%, 100% {
+    transform: translate(0, 0);
+    text-shadow:
+      0.025em 0.025em 0 var(--groovy-1),
+      0.05em 0.05em 0 var(--groovy-2),
+      0.075em 0.075em 0 var(--groovy-3),
+      0.1em 0.1em 0 var(--groovy-4);
+  }
+  35%, 65% {
+    transform: translate(-0.075em, -0.125em);
+    text-shadow:
+      0.075em 0.075em 0 var(--groovy-1),
+      0.15em 0.15em 0 var(--groovy-2),
+      0.225em 0.225em 0 var(--groovy-3),
+      0.3em 0.3em 0 var(--groovy-4);
+  }
+}
+
+/* 92 Grunge — distressed type: inline SVG noise masks wear blotches, pinholes
+   and scratches into the letters over a misregistered second ink plate */
+.fx-grunge {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .08em;
+  color: var(--ink);
+  -webkit-mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='120'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.04' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -6 0 0 0 4.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='s' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' seed='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -10 0 0 0 7.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(-62deg, #000 0 0.425em, transparent 0.425em 0.45em, #000 0.45em 1.075em);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='120'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.04' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -6 0 0 0 4.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='s' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' seed='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -10 0 0 0 7.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(-62deg, #000 0 0.425em, transparent 0.425em 0.45em, #000 0.45em 1.075em);
+  mask-composite: intersect;
+  animation: fx-grunge 2.4s infinite;
+}
+/* second ink plate, printed slightly off-register */
+.fx-grunge::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: var(--ink-2);
+  opacity: .8;
+  transform: translate(0.075em, 0.05em);
+  animation: fx-grunge-plate 2.4s infinite;
+}
+@keyframes fx-grunge {
+  0%   { -webkit-mask-position: 0 0, 0 0, 0 0; mask-position: 0 0, 0 0, 0 0; animation-timing-function: steps(1, end); }
+  33%  { -webkit-mask-position: -1.5em 0.5em, 0.775em -0.425em, 0.225em 0; mask-position: -1.5em 0.5em, 0.775em -0.425em, 0.225em 0; animation-timing-function: steps(1, end); }
+  66%  { -webkit-mask-position: 1em -0.875em, -0.55em 1em, -0.35em 0; mask-position: 1em -0.875em, -0.55em 1em, -0.35em 0; animation-timing-function: steps(1, end); }
+  100% { -webkit-mask-position: 0 0, 0 0, 0 0; mask-position: 0 0, 0 0, 0 0; }
+}
+@keyframes fx-grunge-plate {
+  0%   { transform: translate(0.075em, 0.05em); animation-timing-function: steps(1, end); }
+  33%  { transform: translate(-0.05em, 0.075em); animation-timing-function: steps(1, end); }
+  66%  { transform: translate(0.05em, -0.05em); animation-timing-function: steps(1, end); }
+  100% { transform: translate(0.075em, 0.05em); }
+}
+
+/* 93 Pew-Pew — each letter fires in as a stretched laser bolt, flashes white
+   on impact with a spark, recoils and settles into a faint glow */
+.fx-pewpew {
+  line-height: 1.1;
+  letter-spacing: .06em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-pewpew b {
+  position: relative;
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-pewpew 3.2s infinite;
+  animation-delay: calc(var(--i) * .14s);
+}
+/* impact spark */
+.fx-pewpew b::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  margin: -.75em 0 0 -.75em;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    #fff 0 7%,
+    var(--ink-3) 14%,
+    color-mix(in srgb, var(--ink-2) 50%, transparent) 26%,
+    transparent 46%);
+  opacity: 0;
+  pointer-events: none;
+  animation: fx-pewpew-spark 3.2s ease-out infinite;
+  animation-delay: calc(var(--i) * .14s);
+}
+@keyframes fx-pewpew {
+  0% {
+    opacity: 0;
+    transform: translateX(-5em) scale(4, .08);
+    color: #fff;
+    text-shadow: 0 0 0.1176em var(--ink-3), 0 0 0.2941em var(--ink-3);
+    animation-timing-function: linear;
+  }
+  2% { opacity: 1; animation-timing-function: linear; }
+  8% {
+    transform: translateX(0) scale(1.35, .7);
+    color: #fff;
+    text-shadow: 0 0 0.1765em #fff, 0 0 0.4706em var(--ink-3), 0 0 0.8824em var(--ink-2);
+    animation-timing-function: cubic-bezier(.2, .8, .3, 1);
+  }
+  12% { transform: translateX(-0.1765em) scale(.88, 1.14); }
+  17% { transform: translateX(0.0588em) scale(1.04, .97); }
+  24%, 80% {
+    opacity: 1;
+    transform: none;
+    color: var(--ink);
+    text-shadow: 0 0 0.2941em color-mix(in srgb, var(--ink-3) 40%, transparent);
+  }
+  92%, 100% {
+    opacity: 0;
+    transform: translateX(0.5294em);
+    text-shadow: none;
+  }
+}
+@keyframes fx-pewpew-spark {
+  0%, 7% { opacity: 0; transform: scale(0); }
+  8%     { opacity: 1; transform: scale(.45); }
+  20%    { opacity: 0; transform: scale(1.7); }
+  100%   { opacity: 0; transform: scale(1.7); }
+}
+
+/* 94 Invisible-Ink — the word hides under a shimmering cloud of particles that
+   drifts apart to reveal it, then swirls back to cover it again */
+.fx-invisible {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: .12em;
+  color: var(--ink);
+  animation: fx-invisible-text 5.2s ease-in-out infinite;
+}
+.fx-invisible::before,
+.fx-invisible::after {
+  position: absolute;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, #fff 0 0.0167em, transparent 0.0306em) 0 0 / 0.1389em 0.1389em,
+    radial-gradient(circle, var(--ink-3) 0 0.0194em, transparent 0.0333em) 0.0556em 0.0833em / 0.1944em 0.1667em,
+    radial-gradient(circle, var(--ink) 0 0.0139em, transparent 0.0278em) 0.0278em 0.0278em / 0.0833em 0.1111em;
+  animation:
+    fx-invisible-shimmer .45s steps(3) infinite,
+    fx-invisible-cloud 5.2s ease-in-out infinite;
+}
+/* dense particles packed into the letter shapes */
+.fx-invisible::before {
+  content: attr(data-text);
+  inset: 0;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+/* looser particles floating around the word */
+.fx-invisible::after {
+  content: "";
+  inset: -0.2778em -0.3889em;
+  opacity: .5;
+  -webkit-mask-image: radial-gradient(closest-side, #000 40%, transparent);
+  mask-image: radial-gradient(closest-side, #000 40%, transparent);
+}
+@keyframes fx-invisible-text {
+  0%, 40%   { color: transparent; }
+  56%, 82%  { color: var(--ink); }
+  96%, 100% { color: transparent; }
+}
+@keyframes fx-invisible-shimmer {
+  0%   { background-position: 0 0, 0.0556em 0.0833em, 0.0278em 0.0278em; }
+  33%  { background-position: 0.0556em 0.0278em, -0.0278em 0.1111em, 0 0.0833em; }
+  66%  { background-position: -0.0278em 0.0833em, 0.0833em 0.0278em, 0.0556em 0; }
+  100% { background-position: 0.0278em -0.0278em, 0 0.0556em, -0.0278em 0.0556em; }
+}
+@keyframes fx-invisible-cloud {
+  0%, 38%   { opacity: 1; transform: scale(1); filter: blur(0); }
+  56%, 80%  { opacity: 0; transform: scale(1.18); filter: blur(0.0833em); }
+  96%, 100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* 95 Loud — the word swells up, shouts with a violent shake in the accent
+   colour, then snaps back down to size */
+.fx-loud {
+  line-height: 1;
+  letter-spacing: .06em;
+  color: var(--ink);
+  display: inline-block;
+  animation: fx-loud 3s infinite;
+}
+@keyframes fx-loud {
+  0%, 12% {
+    transform: scale(1);
+    color: var(--ink);
+    text-shadow: none;
+    animation-timing-function: cubic-bezier(.2, 1.5, .4, 1);
+  }
+  20% {
+    transform: scale(1.75);
+    color: var(--ink-2);
+    text-shadow: 0 0 0.45em color-mix(in srgb, var(--ink-2) 55%, transparent);
+  }
+  23% { transform: translate(-0.125em, 0.05em) rotate(-3deg) scale(1.75); }
+  26% { transform: translate(0.125em, -0.05em) rotate(3deg) scale(1.75); }
+  29% { transform: translate(-0.1em, -0.025em) rotate(-2deg) scale(1.75); }
+  32% { transform: translate(0.1em, 0.025em) rotate(2deg) scale(1.75); }
+  35% { transform: translate(-0.05em, 0.05em) rotate(-1deg) scale(1.75); }
+  38% { transform: translate(0.05em, -0.025em) rotate(1deg) scale(1.75); }
+  44% {
+    transform: scale(1.75);
+    color: var(--ink-2);
+    text-shadow: 0 0 0.45em color-mix(in srgb, var(--ink-2) 55%, transparent);
+    animation-timing-function: cubic-bezier(.3, 1.6, .5, 1);
+  }
+  54%, 100% {
+    transform: scale(1);
+    color: var(--ink);
+    text-shadow: none;
+  }
+}
+
+/* 96 Whisper — a gentle entrance: the word starts tiny and blurred, slowly
+   grows into focus with a soft glow, then fades away like a breath */
+.fx-gentle {
+  line-height: 1.1;
+  letter-spacing: .2em;
+  color: var(--ink);
+  display: inline-block;
+  text-shadow: 0 0 0.4118em color-mix(in srgb, var(--ink-3) 35%, transparent);
+  animation: fx-gentle 5s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes fx-gentle {
+  0%       { transform: scale(.35); opacity: 0; filter: blur(0.1765em); }
+  48%, 80% { transform: scale(1); opacity: 1; filter: blur(0); }
+  100%     { transform: scale(1.04); opacity: 0; filter: blur(0.0882em); }
+}
+
+/* 97 Rotator — text changing animation: the word slides up and out and a new
+   one rolls in from below, cycling through four words in three colours */
+.fx-rotator {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .08em;
+  /* the real word holds the width and stays readable to screen readers */
+  color: transparent;
+  clip-path: inset(0 -.2em);
+}
+.fx-rotator::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+  animation:
+    fx-rotator-word 8s infinite,
+    fx-rotator-slide 2s cubic-bezier(.7, 0, .3, 1) infinite;
+}
+@keyframes fx-rotator-word {
+  0%, 24.99%    { color: var(--ink); }
+  25%, 49.99%   { color: var(--ink-2); }
+  50%, 74.99%   { color: var(--ink-3); }
+  75%, 100%     { color: var(--ink-2); }
+}
+@keyframes fx-rotator-slide {
+  0%       { transform: translateY(100%); opacity: 0; }
+  18%, 82% { transform: translateY(0); opacity: 1; }
+  100%     { transform: translateY(-100%); opacity: 0; }
+}
+
+/* 98 Loader — text loading animation: a brightness wave runs through dimmed
+   letters as each one hops, while a progress bar fills underneath */
+.fx-loader {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .14em;
+  display: inline-flex;
+  padding-bottom: 0.4em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-loader b {
+  font-weight: inherit;
+  display: inline-block;
+  color: color-mix(in srgb, var(--ink) 28%, transparent);
+  animation: fx-loader 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .1s);
+}
+.fx-loader::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: .14em;
+  bottom: 0;
+  height: 0.1em;
+  border-radius: 0.1em;
+  background:
+    linear-gradient(90deg, var(--ink-2), var(--ink-3)) 0 0 / 0% 100% no-repeat,
+    color-mix(in srgb, var(--ink) 12%, transparent);
+  animation: fx-loader-bar 3.2s cubic-bezier(.6, 0, .4, 1) infinite;
+}
+@keyframes fx-loader {
+  0%, 40%, 100% {
+    transform: translateY(0);
+    color: color-mix(in srgb, var(--ink) 28%, transparent);
+    text-shadow: none;
+  }
+  20% {
+    transform: translateY(-0.2em);
+    color: var(--ink);
+    text-shadow: 0 0 0.4em color-mix(in srgb, var(--ink-3) 60%, transparent);
+  }
+}
+@keyframes fx-loader-bar {
+  0%       { background-size: 0% 100%, auto; }
+  85%, 92% { background-size: 100% 100%, auto; opacity: 1; }
+  100%     { background-size: 100% 100%, auto; opacity: 0; }
+}
+
+/* 99 Dissolve — fading text effect: letters fade up out of a blur one by one,
+   hold, then fade away again in the same order */
+.fx-fade {
+  line-height: 1.1;
+  letter-spacing: .1em;
+  color: var(--ink);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-fade b {
+  font-weight: inherit;
+  display: inline-block;
+  animation: fx-fade 4.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .09s);
+}
+@keyframes fx-fade {
+  0%       { opacity: 0; transform: translateY(0.2353em); filter: blur(0.1765em); }
+  22%, 62% { opacity: 1; transform: translateY(0); filter: blur(0); }
+  84%, 100%{ opacity: 0; transform: translateY(-0.2353em); filter: blur(0.1765em); }
+}
+
+/* 100 Ben-Day — offset halftone dots slide across bold outlined letters */
+.fx-halftone {
+  position: relative;
+  isolation: isolate;
+  line-height: 1.15;
+  letter-spacing: -.045em;
+  white-space: pre-wrap;
+  color: var(--ink-2);
+  -webkit-text-stroke: 0.0278em var(--ink);
+  paint-order: stroke fill;
+}
+.fx-halftone::before,
+.fx-halftone::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx-halftone::before {
+  z-index: -1;
+  color: var(--ink-3);
+  -webkit-text-stroke: 0;
+  transform: translate(0.1111em, 0.1389em);
+}
+.fx-halftone::after {
+  color: transparent;
+  -webkit-text-stroke: 0;
+  background: radial-gradient(circle, var(--ink) 0 0.0278em, transparent 0.0333em) 0 0 / 0.1111em 0.1111em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-halftone-drift 3s linear infinite;
+}
+@keyframes fx-halftone-drift {
+  to { background-position: 0.1111em 0.1111em; }
+}
+
+/* 101 Riso-Press — two textured ink plates drift out of print registration */
+.fx-risograph {
+  position: relative;
+  isolation: isolate;
+  line-height: 1.2;
+  letter-spacing: -.055em;
+  white-space: pre-wrap;
+  color: var(--ink-2);
+}
+.fx-risograph::before,
+.fx-risograph::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.fx-risograph::before {
+  z-index: -1;
+  background-image: radial-gradient(circle, transparent 0 0.0162em, var(--ink-3) 0.0235em);
+  background-size: 0.0882em 0.0882em;
+  transform: translate(0.1176em, 0.0882em);
+  animation: fx-riso-register 4s ease-in-out infinite;
+}
+.fx-risograph::after {
+  background-image: radial-gradient(circle, var(--ink) 0 0.0191em, transparent 0.0265em);
+  background-size: 0.0882em 0.0882em;
+  opacity: .42;
+}
+@keyframes fx-riso-register {
+  0%, 100% { transform: translate(0.1176em, 0.0882em); }
+  45% { transform: translate(-0.1176em, 0.0294em); }
+  70% { transform: translate(0.0588em, -0.0882em); }
+}
+
+/* 102 Peel-Off — thick die-cut sticker letters lift from their offset shadows */
+.fx-sticker {
+  display: inline-flex;
+  isolation: isolate;
+  line-height: 1.2;
+  letter-spacing: -.035em;
+  white-space: pre-wrap;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-sticker b {
+  display: inline-block;
+  font-weight: inherit;
+  color: var(--ink-2);
+  -webkit-text-stroke: 0.1579em var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0.0526em 0.1053em 0 var(--ink-3), 0.0789em 0.1579em 0 var(--ink-3);
+  transform: rotate(-5deg);
+  animation: fx-sticker-peel 3.8s cubic-bezier(.22,1,.36,1) infinite;
+  animation-delay: calc(var(--i) * .1s);
+}
+.fx-sticker b:nth-child(even) { color: var(--ink-3); }
+@keyframes fx-sticker-peel {
+  0%, 65%, 100% { transform: translateY(0) rotate(-5deg); }
+  22% { transform: translateY(-0.2105em) rotate(7deg); }
+  36% { transform: translateY(0.0526em) rotate(-7deg); }
+}
+
+/* 103 Paper-Stack — layered paper letters float above colorful cut edges */
+.fx-papercut {
+  display: inline-flex;
+  line-height: 1.15;
+  letter-spacing: .02em;
+  white-space: pre-wrap;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-papercut b {
+  display: inline-block;
+  font-weight: inherit;
+  color: var(--ink);
+  text-shadow:
+    0.0238em 0.0238em 0 var(--ink-3), 0.0476em 0.0476em 0 var(--ink-3),
+    0.0714em 0.0714em 0 var(--ink-2), 0.0952em 0.0952em 0 var(--ink-2),
+    0.119em 0.119em 0 color-mix(in srgb, var(--ink-2) 55%, #21142b),
+    0.1429em 0.1429em 0 color-mix(in srgb, var(--ink-2) 55%, #21142b),
+    0.2143em 0.2857em 0.1429em #08070f66;
+  transform: rotate(-3deg);
+  animation: fx-paper-float 4.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -.22s);
+}
+.fx-papercut b:nth-child(even) { color: color-mix(in srgb, var(--ink-3) 30%, var(--ink)); }
+@keyframes fx-paper-float {
+  0%, 100% { transform: translateY(0.0476em) rotate(-3deg); }
+  50% { transform: translateY(-0.1429em) rotate(4deg); }
+}
+
+/* 104 Impression — recessed letterpress type catches a soft grazing light */
+.fx-letterpress {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .025em;
+  white-space: pre-wrap;
+  color: color-mix(in srgb, var(--ink-2) 55%, #21142b);
+  text-shadow: 0 -0.0417em 0.0208em #08070fcc, 0 0.0208em 0 var(--ink-2), 0 0.0417em 0.0208em color-mix(in srgb, var(--ink) 55%, transparent);
+}
+.fx-letterpress::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  text-shadow: none;
+  background: linear-gradient(105deg, transparent 30%, var(--ink-3) 48%, var(--ink) 50%, transparent 62%) 100% 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .6;
+  animation: fx-press-light 5s ease-in-out infinite;
+}
+@keyframes fx-press-light {
+  0%, 15% { background-position: 100% 0; }
+  65%, 100% { background-position: 0 0; }
+}
+
+/* 105 Satin-Stitch — diagonal satin threads shimmer inside embroidered letters */
+.fx-embroidery {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .035em;
+  white-space: pre-wrap;
+  color: transparent;
+  background: repeating-linear-gradient(120deg,
+    var(--ink-2) 0 0.0238em,
+    color-mix(in srgb, var(--ink-2) 45%, var(--ink)) 0.0238em 0.0476em,
+    color-mix(in srgb, var(--ink-2) 65%, #21142b) 0.0476em 0.0714em);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 0.0143em var(--ink-3);
+  filter: drop-shadow(0.0238em 0.0476em 0 color-mix(in srgb, var(--ink-2) 60%, #21142b)) drop-shadow(0 0.0952em 0.0476em #08070f88);
+  text-shadow: none;
+}
+.fx-embroidery::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-text-stroke: 0;
+  background: linear-gradient(110deg, transparent 38%, var(--ink) 50%, transparent 62%) 100% 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .65;
+  animation: fx-thread-sheen 4.5s ease-in-out infinite;
+}
+@keyframes fx-thread-sheen {
+  0%, 10% { background-position: 100% 0; }
+  75%, 100% { background-position: 0 0; }
+}
+
+/* 106 Stretch-Club — condensed letters stretch upward in a staggered rhythm */
+.fx-stretch {
+  display: inline-flex;
+  line-height: 1;
+  letter-spacing: -.04em;
+  white-space: pre-wrap;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-stretch b {
+  display: inline-block;
+  font-weight: inherit;
+  color: var(--ink);
+  transform-origin: center bottom;
+  animation: fx-stretch-rise 3.6s cubic-bezier(.65,0,.35,1) infinite;
+  animation-delay: calc(var(--i) * .1s);
+}
+.fx-stretch b:nth-child(3n+1) { color: var(--ink-2); }
+.fx-stretch b:nth-child(3n+2) { color: var(--ink-3); }
+@keyframes fx-stretch-rise {
+  0%, 12%, 70%, 100% { transform: scale(.85, 1); }
+  34%, 42% { transform: scale(.65, 1.8); }
+  55% { transform: scale(1.05, .85); }
+}
+
+/* 107 Candy-Stripe — glossy diagonal candy stripes flow through rounded type */
+.fx-candystripe {
+  line-height: 1.2;
+  letter-spacing: .02em;
+  white-space: pre-wrap;
+  color: transparent;
+  background:
+    linear-gradient(180deg, var(--ink) 0%, transparent 38%, #21142b55 72%, transparent 100%),
+    repeating-linear-gradient(135deg, var(--ink-2) 0 0.1818em, var(--ink) 0.1818em 0.3636em, var(--ink-3) 0.3636em 0.5455em, var(--ink) 0.5455em 0.7273em);
+  background-size: 100% 100%, 2.057em 2.057em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 0.0136em var(--ink);
+  filter: drop-shadow(0 0.0682em 0 color-mix(in srgb, var(--ink-2) 60%, #21142b));
+  animation: fx-candy-slide 4s linear infinite;
+  text-shadow: none;
+}
+@keyframes fx-candy-slide {
+  to { background-position: 0 0, 2.057em 0; }
+}
+
+/* 108 Mirrorball — mirrored mosaic tiles catch a traveling disco highlight */
+.fx-disco {
+  position: relative;
+  line-height: 1.2;
+  letter-spacing: .04em;
+  white-space: pre-wrap;
+  color: transparent;
+  background:
+    repeating-linear-gradient(0deg, #21142b88 0 0.0217em, transparent 0.0217em 0.1304em),
+    repeating-linear-gradient(90deg, #21142b88 0 0.0217em, transparent 0.0217em 0.1304em),
+    repeating-conic-gradient(from 45deg,
+      var(--ink) 0deg 90deg, color-mix(in srgb, var(--ink-3) 65%, var(--ink)) 90deg 180deg,
+      color-mix(in srgb, var(--ink-2) 60%, #21142b) 180deg 270deg,
+      color-mix(in srgb, var(--ink-3) 50%, #21142b) 270deg 360deg) 0 0 / 0.2609em 0.2609em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 0.0109em color-mix(in srgb, var(--ink) 70%, transparent);
+  filter: drop-shadow(0 0.0435em 0 color-mix(in srgb, var(--ink-2) 60%, #21142b));
+  text-shadow: none;
+}
+.fx-disco::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-text-stroke: 0;
+  background: linear-gradient(115deg, transparent 35%, var(--ink) 49%, var(--ink-3) 51%, transparent 65%) 100% 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-disco-light 3.8s ease-in-out infinite;
+}
+@keyframes fx-disco-light {
+  0%, 8% { background-position: 100% 0; opacity: .2; }
+  45% { opacity: .9; }
+  85%, 100% { background-position: 0 0; opacity: .2; }
+}
+
+/* 109 Wax-Seal — molten wax compresses beneath a rotating embossed seal */
+.fx-waxseal {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-width: 5.8824em;
+  height: 5.8824em;
+  padding: 0 0.7059em;
+  box-sizing: border-box;
+  line-height: 1.1;
+  letter-spacing: .1em;
+  white-space: pre-wrap;
+  color: color-mix(in srgb, var(--ink-2) 40%, #210f22);
+  text-shadow: 0 0.0588em 0 color-mix(in srgb, var(--ink) 65%, transparent), 0 -0.0588em 0.0588em #210f22;
+  animation: fx-wax-impress 5s cubic-bezier(.22,1,.36,1) infinite;
+}
+.fx-waxseal::before {
+  content: '';
+  position: absolute;
+  inset: 0.2353em;
+  z-index: -1;
+  border-radius: 43% 57% 46% 54% / 55% 44% 56% 45%;
+  background:
+    radial-gradient(ellipse at 32% 24%, color-mix(in srgb, var(--ink) 55%, transparent), transparent 42%),
+    conic-gradient(from 20deg, var(--ink-2), #48132f, var(--ink-2), #731f48, var(--ink-2));
+  box-shadow: inset 0.1765em 0.2353em 0.2941em #ffffff55, inset -0.2353em -0.2941em 0.3529em #16081788, 0 0.4118em 0 #260f24, 0 0.7059em 0.9412em #08070f66;
+  animation: fx-wax-pool 5s ease-in-out infinite;
+}
+.fx-waxseal::after {
+  content: '';
+  position: absolute;
+  inset: 0.8824em;
+  border: 0.1765em double color-mix(in srgb, var(--ink) 45%, var(--ink-2));
+  border-radius: 50%;
+  box-shadow: inset 0 0.1176em 0.1176em #210f2266, 0 0.0588em 0.0588em #ffffff55;
+  pointer-events: none;
+  animation: fx-wax-ring 5s ease-in-out infinite;
+}
+@keyframes fx-wax-impress {
+  0%, 7% { transform: rotate(-18deg) scale(1.35); opacity: 0; }
+  17% { transform: rotate(-8deg) scale(.92); opacity: 1; }
+  23%, 78% { transform: rotate(-8deg) scale(1); opacity: 1; }
+  94%, 100% { transform: rotate(-8deg) scale(1); opacity: 0; }
+}
+@keyframes fx-wax-pool {
+  0%, 12% { border-radius: 50%; transform: scale(.86); }
+  22%, 100% { border-radius: 43% 57% 46% 54% / 55% 44% 56% 45%; transform: scale(1); }
+}
+@keyframes fx-wax-ring {
+  0%, 14% { opacity: 0; transform: rotate(30deg) scale(.8); }
+  24%, 100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+/* 110 Ticket-Punch — a perforated admission ticket snaps apart at its stub */
+.fx-ticket {
+  position: relative;
+  isolation: isolate;
+  padding: 1.12em 2.12em 1.12em 0.8em;
+  margin-right: 1.2em;
+  line-height: 1;
+  letter-spacing: .1em;
+  white-space: pre-wrap;
+  color: #21142b;
+  background:
+    radial-gradient(circle at 0 50%, transparent 0.36em, var(--ink-3) 0.38em) left / calc(100% - 1.44em) 100% no-repeat;
+  filter: drop-shadow(0 0.24em 0 #08070f55);
+  transform: rotate(-5deg);
+  animation: fx-ticket-arrive 4.8s cubic-bezier(.22,1,.36,1) infinite;
+}
+.fx-ticket::before {
+  content: '';
+  position: absolute;
+  left: 0.48em;
+  right: 1.92em;
+  top: 0.4em;
+  bottom: 0.4em;
+  border-top: 0.08em solid #21142b;
+  border-bottom: 0.08em solid #21142b;
+  background: repeating-linear-gradient(90deg, #21142b 0 0.08em, transparent 0.08em 0.2em) bottom / 100% 0.2em no-repeat;
+  opacity: .5;
+  pointer-events: none;
+}
+.fx-ticket::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 1.44em;
+  border-left: 0.08em dashed #21142b99;
+  box-sizing: border-box;
+  background:
+    repeating-linear-gradient(90deg, #21142b 0 0.08em, transparent 0.08em 0.2em) center / 0.8em 1.52em no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 0.36em, var(--ink-2) 0.38em);
+  transform-origin: left bottom;
+  animation: fx-ticket-tear 4.8s ease-in-out infinite;
+}
+@keyframes fx-ticket-arrive {
+  0%, 7% { transform: translateY(-0.8em) rotate(-12deg); opacity: 0; }
+  20%, 76% { transform: translateY(0) rotate(-5deg); opacity: 1; }
+  94%, 100% { transform: translateY(0.48em) rotate(-3deg); opacity: 0; }
+}
+@keyframes fx-ticket-tear {
+  0%, 38% { transform: translate(0) rotate(0); opacity: 1; }
+  48% { transform: translate(0.04em, 0.08em) rotate(12deg); opacity: 1; }
+  62%, 100% { transform: translate(0.64em, 0.96em) rotate(28deg); opacity: 0; }
+}
+
+/* 111 Carbon-Copy — three paper impressions fan apart after a typing impact */
+.fx-carbon {
+  position: relative;
+  isolation: isolate;
+  padding: 0.5185em 0.6667em;
+  margin-right: 1.037em;
+  line-height: 1.1;
+  letter-spacing: .06em;
+  white-space: pre-wrap;
+  color: #21142b;
+  background: linear-gradient(transparent 95%, #21142b18 95%) 0 0 / 100% 0.2963em, var(--ink);
+  border: 0.037em solid #21142b33;
+  box-shadow: 0 0.1111em 0.1852em #08070f44;
+  transform: rotate(-3deg);
+  animation: fx-carbon-strike 5.2s ease-in-out infinite;
+}
+.fx-carbon::before, .fx-carbon::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: -0.037em;
+  padding: 0.5185em 0.6667em;
+  border: 0.037em solid #21142b33;
+  box-shadow: 0 0.1111em 0.1852em #08070f44;
+  pointer-events: none;
+  transform-origin: left bottom;
+}
+.fx-carbon::before {
+  z-index: -2;
+  color: color-mix(in srgb, #21142b 45%, var(--ink-2));
+  background: var(--ink-2);
+  transform: translate(0.3333em, 0.6667em) rotate(6deg);
+  animation: fx-carbon-third 5.2s ease-in-out infinite;
+}
+.fx-carbon::after {
+  z-index: -1;
+  color: color-mix(in srgb, #21142b 65%, var(--ink-3));
+  background: var(--ink-3);
+  transform: translate(0.1852em, 0.3333em) rotate(3deg);
+  animation: fx-carbon-second 5.2s ease-in-out infinite;
+}
+@keyframes fx-carbon-strike {
+  0%, 9% { transform: translateY(-0.3704em) rotate(-3deg); opacity: 0; }
+  17% { transform: translateY(0.0741em) rotate(-3deg); opacity: 1; }
+  22%, 82% { transform: translateY(0) rotate(-3deg); opacity: 1; }
+  96%, 100% { opacity: 0; transform: translateY(0) rotate(-3deg); }
+}
+@keyframes fx-carbon-second {
+  0%, 24% { transform: translate(0) rotate(0); }
+  46%, 100% { transform: translate(0.1852em, 0.3333em) rotate(3deg); }
+}
+@keyframes fx-carbon-third {
+  0%, 30% { transform: translate(0) rotate(0); }
+  54%, 100% { transform: translate(0.3333em, 0.6667em) rotate(6deg); }
+}
+
+/* 112 Type-Hammer — individual metal type blocks swing down and leave ink impressions */
+.fx-typehammer {
+  display: inline-flex;
+  gap: .04em;
+  line-height: 1;
+  white-space: pre-wrap;
+  perspective: 20em;
+  padding: 0.4em 0 0.8em;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-typehammer b {
+  position: relative;
+  display: inline-block;
+  padding: .2em .13em;
+  font-weight: inherit;
+  color: #21142b;
+  background: linear-gradient(135deg, var(--ink), color-mix(in srgb, var(--ink-3) 65%, #21142b));
+  border: 0.0333em solid color-mix(in srgb, var(--ink) 65%, transparent);
+  border-radius: 0.1em 0.1em 0 0;
+  box-shadow: inset 0 0.0667em 0 #ffffff77, 0 0.1333em 0 #21142b;
+  transform-origin: center 140%;
+  animation: fx-typehammer-strike 4.6s cubic-bezier(.22,1,.36,1) infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+.fx-typehammer b::before {
+  content: '';
+  position: absolute;
+  width: 0.1em;
+  height: 0.5em;
+  top: 100%;
+  left: calc(50% - 0.05em);
+  background: linear-gradient(90deg, var(--ink), #21142b);
+  z-index: -1;
+}
+.fx-typehammer b::after {
+  content: '';
+  position: absolute;
+  inset: -0.1667em;
+  border: 0.0667em solid var(--ink-2);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  animation: fx-typehammer-impact 4.6s ease-out infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+@keyframes fx-typehammer-strike {
+  0%, 8% { transform: rotateX(-78deg) translateY(0.2667em); opacity: .25; }
+  18% { transform: rotateX(7deg) translateY(-0.0667em); opacity: 1; }
+  24% { transform: rotateX(-12deg) translateY(0.0667em); }
+  32%, 72% { transform: rotateX(0) translateY(0); opacity: 1; }
+  92%, 100% { transform: rotateX(-78deg) translateY(0.2667em); opacity: .25; }
+}
+@keyframes fx-typehammer-impact {
+  0%, 16% { transform: scale(.65); opacity: 0; }
+  19% { transform: scale(.8); opacity: .7; }
+  34%, 100% { transform: scale(1.65); opacity: 0; }
+}
+
+/* 113 Label-Maker — raised white glyphs emboss onto a feeding strip of ridged tape */
+.fx-labelmaker {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  padding: 0.5556em 0.8148em;
+  line-height: 1;
+  letter-spacing: .1em;
+  white-space: pre-wrap;
+  background: repeating-linear-gradient(0deg, transparent 0 0.0741em, #08070f22 0.0741em 0.1111em), color-mix(in srgb, var(--ink-2) 55%, #21142b);
+  border-top: 0.0741em solid color-mix(in srgb, var(--ink-2) 65%, var(--ink));
+  border-bottom: 0.1111em solid #21142b;
+  box-shadow: 0 0.1852em 0.2593em #08070f66;
+  transform: rotate(-4deg);
+  animation: fx-label-feed 5s cubic-bezier(.22,1,.36,1) infinite;
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-labelmaker b {
+  font-weight: inherit;
+  color: var(--ink);
+  text-shadow: -0.037em -0.037em 0 #08070faa, 0.037em 0.037em 0 #ffffff55, 0 0.0741em 0.0741em #08070f88;
+  animation: fx-label-emboss 5s steps(1,end) infinite;
+  animation-delay: calc(var(--i) * .13s);
+}
+.fx-labelmaker::before, .fx-labelmaker::after {
+  content: '';
+  position: absolute;
+  top: -0.0741em;
+  bottom: -0.1111em;
+  width: 0.2593em;
+  background: repeating-linear-gradient(135deg, #21142b 0 0.1111em, var(--ink-2) 0.1111em 0.1852em);
+  pointer-events: none;
+}
+.fx-labelmaker::before { left: -0.1111em; clip-path: polygon(0 0,100% 0,50% 16%,100% 33%,50% 50%,100% 66%,50% 83%,100% 100%,0 100%); }
+.fx-labelmaker::after { right: -0.1111em; clip-path: polygon(100% 0,0 0,50% 16%,0 33%,50% 50%,0 66%,50% 83%,0 100%,100% 100%); }
+@keyframes fx-label-feed {
+  0%, 6% { clip-path: inset(-0.2963em 100% -0.4444em -0.2963em); transform: translateX(-0.4444em) rotate(-4deg); }
+  34%, 80% { clip-path: inset(-0.2963em -0.2963em -0.4444em -0.2963em); transform: translateX(0) rotate(-4deg); }
+  95%, 100% { clip-path: inset(-0.2963em -0.2963em -0.4444em -0.2963em); transform: translateX(0.4444em) rotate(-4deg); opacity: 0; }
+  6%, 80% { opacity: 1; }
+}
+@keyframes fx-label-emboss {
+  0%, 12% { color: transparent; text-shadow: none; }
+  20%, 100% { color: var(--ink); text-shadow: -0.037em -0.037em 0 #08070faa, 0.037em 0.037em 0 #ffffff55, 0 0.0741em 0.0741em #08070f88; }
+}
+
+/* 114 Ink-Roller — a brayer rolls a textured ink face over a ghosted outline */
+.fx-inkroller {
+  position: relative;
+  isolation: isolate;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  white-space: pre-wrap;
+  color: transparent;
+  -webkit-text-stroke: 0.0278em color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.fx-inkroller::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-text-stroke: 0;
+  background:
+    repeating-linear-gradient(4deg, transparent 0 0.1389em, #21142b66 0.1389em 0.1667em, transparent 0.1667em 0.25em),
+    linear-gradient(90deg, var(--ink-2), var(--ink-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  clip-path: inset(0 0 0 0);
+  animation: fx-roller-print 4.8s ease-in-out infinite;
+}
+.fx-inkroller::after {
+  content: '';
+  position: absolute;
+  top: -0.2778em;
+  bottom: -0.2778em;
+  left: 0;
+  width: 0.3611em;
+  border-radius: 0.1389em;
+  background: linear-gradient(90deg, #21142b, var(--ink-2) 35%, var(--ink) 52%, var(--ink-2) 68%, #21142b);
+  box-shadow: 0.0833em 0 0.1667em #08070f77, 0 -0.1389em 0 -0.0556em var(--ink-3), 0 0.1389em 0 -0.0556em var(--ink-3);
+  -webkit-text-stroke: 0;
+  animation: fx-roller-travel 4.8s ease-in-out infinite;
+}
+@keyframes fx-roller-print {
+  0%, 10% { clip-path: inset(0 100% 0 0); }
+  54%, 82% { clip-path: inset(0 0 0 0); opacity: 1; }
+  96%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+}
+@keyframes fx-roller-travel {
+  0%, 8% { left: 0; transform: rotate(-8deg); opacity: 0; }
+  12% { left: 0; transform: rotate(-8deg); opacity: 1; }
+  54% { left: calc(100% - 0.3611em); transform: rotate(8deg); opacity: 1; }
+  64%, 100% { left: calc(100% - 0.3611em); transform: rotate(8deg) translateY(0.4167em); opacity: 0; }
+}
+
+/* 115 Ribbon-Banner — a folded banner with notched ends sways behind the word */
+.fx-ribbon {
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  padding: .36em 1.35em;
+  line-height: 1.1;
+  letter-spacing: .09em;
+  white-space: pre-wrap;
+  color: color-mix(in srgb, var(--ink) 28%, #38081f);
+  text-shadow: 0 0.037em 0 #ffffff5e;
+  animation: fx-ribbon-sway 4.6s ease-in-out infinite;
+}
+.fx-ribbon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink-2) 68%, #ffffff) 0%,
+    var(--ink-2) 48%,
+    color-mix(in srgb, var(--ink-2) 58%, #2a0716) 100%
+  );
+  clip-path: polygon(0 0, 100% 0, calc(100% - 0.6667em) 50%, 100% 100%, 0 100%, 0.6667em 50%);
+  box-shadow: inset 0 0.0741em 0 #ffffff66, inset 0 -0.1852em 0.2963em #2a07165e;
+}
+/* the folded tails tuck behind each notched end and hang below the band */
+.fx-ribbon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(45deg, color-mix(in srgb, var(--ink-2) 32%, #180310) 50%, transparent 50%) left calc(100% - 0.1852em) / 0.7037em 0.6296em no-repeat,
+    linear-gradient(315deg, color-mix(in srgb, var(--ink-2) 32%, #180310) 50%, transparent 50%) right calc(100% - 0.1852em) / 0.7037em 0.6296em no-repeat;
+  animation: fx-ribbon-tail 4.6s ease-in-out infinite;
+}
+@keyframes fx-ribbon-sway {
+  0%, 100% { transform: rotate(-1.4deg) translateY(0); }
+  50% { transform: rotate(1.4deg) translateY(-0.0741em); }
+}
+@keyframes fx-ribbon-tail {
+  0%, 100% { transform: translate(-0.037em, 0); }
+  50% { transform: translate(0.037em, 0); }
+}
+
+/* 116 Lava-Lamp — molten blobs drift and merge inside the letterforms */
+.fx-lava {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .02em;
+  white-space: pre-wrap;
+  color: transparent;
+  background:
+    radial-gradient(circle at 24% 80%, #ffd000 0 19%, transparent 22%),
+    radial-gradient(circle at 74% 26%, #ff7a00 0 21%, transparent 24%),
+    radial-gradient(circle at 50% 58%, #ff0066 0 23%, transparent 26%),
+    radial-gradient(circle at 12% 30%, #ff2d00 0 17%, transparent 20%),
+    linear-gradient(180deg, #b00028, #4d0016 96%);
+  background-size: 150% 190%;
+  background-position: 0% 0%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.45em #ff4d1a55) drop-shadow(0 0 0.15em #ffb70355);
+  animation: fx-lava-drift 9s ease-in-out infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-lava::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  background:
+    radial-gradient(circle at 32% 46%, #fff2a8 0 15%, transparent 18%),
+    radial-gradient(circle at 78% 72%, #ff7b00 0 22%, transparent 25%),
+    radial-gradient(circle at 60% 18%, #ff2d6f 0 18%, transparent 21%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  mix-blend-mode: screen;
+  animation: fx-lava-blobs 6.5s ease-in-out infinite;
+}
+@keyframes fx-lava-drift {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+}
+@keyframes fx-lava-blobs {
+  0%, 100% { background-position: 100% 0%; }
+  50% { background-position: 0% 100%; }
+}
+
+/* 117 Chalk-Board — chalk dust writes the word onto a slate board */
+.fx-chalk {
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  padding: .36em .78em;
+  line-height: 1.15;
+  letter-spacing: .03em;
+  white-space: pre-wrap;
+  color: transparent;
+  border-radius: 0.3529em;
+  background:
+    radial-gradient(ellipse at 30% 16%, #ffffff10, transparent 55%),
+    repeating-linear-gradient(114deg, #ffffff05 0 0.0882em, transparent 0.0882em 0.2647em),
+    #24322b;
+  box-shadow:
+    inset 0 0 0 0.1176em #0f1814,
+    inset 0 0 1em #000000b3,
+    0 0.2353em 0.5294em #08070f88;
+}
+.fx-chalk::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: inherit;
+  color: #f6fdf9;
+  text-shadow: 0 0 0.0882em #ffffff8c, 0 0 0.2647em #ffffff33;
+  -webkit-mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='100'%3E%3Cfilter id='c' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -5 0 0 0 3.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='d' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -8 0 0 0 6.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E");
+  -webkit-mask-composite: source-in;
+  mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='100'%3E%3Cfilter id='c' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -5 0 0 0 3.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='d' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -8 0 0 0 6.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E");
+  mask-composite: intersect;
+  clip-path: inset(0 100% 0 0);
+  animation: fx-chalk-write 5.4s ease-in-out infinite;
+}
+.fx-chalk::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 6%;
+  width: 1em;
+  height: 1em;
+  margin: -0.5em 0 0 -0.5em;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff5c, #ffffff12 55%, transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  animation: fx-chalk-dust 5.4s ease-in-out infinite;
+}
+@keyframes fx-chalk-write {
+  0%, 8% { clip-path: inset(0 100% 0 0); }
+  52%, 86% { clip-path: inset(0 0 0 0); }
+  97%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+}
+@keyframes fx-chalk-dust {
+  0%, 5% { left: 4%; opacity: 0; }
+  12% { opacity: .85; }
+  50% { left: 96%; opacity: .55; }
+  58%, 100% { opacity: 0; }
+}
+
+/* 118 Synth-Sunset — a retro sunset gradient with scanlines and a perspective grid */
+.fx-synthwave {
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  padding: .42em .9em;
+  line-height: 1.1;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: pre-wrap;
+  color: transparent;
+  background: linear-gradient(180deg, #ffe9a8 0%, #ff8bd4 34%, #a44cff 62%, #2b1b6b 100%);
+  background-size: 100% 220%;
+  background-position: 0 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 0.2778em #ff3ea5b3) drop-shadow(0 0.0556em 0 #2b1b6b);
+  animation: fx-synthwave-sun 6s linear infinite;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-synthwave::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, #00000059 0 0.0278em, transparent 0.0278em 0.1111em);
+  mix-blend-mode: multiply;
+}
+.fx-synthwave::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -0.6111em;
+  width: 8.8889em;
+  height: 1.2222em;
+  margin-left: -4.4444em;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, #ff3ea577 0 0.0278em, transparent 0.0278em 1.1111em),
+    repeating-linear-gradient(0deg, #ff3ea577 0 0.0278em, transparent 0.0278em 0.6111em);
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 92%);
+  mask-image: linear-gradient(180deg, #000, transparent 92%);
+  transform: perspective(3.8889em) rotateX(74deg);
+  transform-origin: top center;
+  animation: fx-synthwave-grid 6s linear infinite;
+}
+@keyframes fx-synthwave-sun {
+  0% { background-position: 0 100%; }
+  50% { background-position: 0 62%; }
+  100% { background-position: 0 100%; }
+}
+@keyframes fx-synthwave-grid {
+  0% { transform: perspective(3.8889em) rotateX(74deg) translateY(0); opacity: .95; }
+  100% { transform: perspective(3.8889em) rotateX(74deg) translateY(0.6111em); opacity: .25; }
+}
+
+/* 119 Gradient-Frame — an animated conic-gradient border spins around the word */
+@property --gf-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.fx-gradientframe {
+  position: relative;
+  display: inline-block;
+  padding: .46em 1.05em;
+  line-height: 1.1;
+  letter-spacing: .06em;
+  white-space: pre-wrap;
+  color: var(--ink, currentColor);
+}
+.fx-gradientframe::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.4444em;
+  padding: 0.0833em;
+  background: conic-gradient(
+    from var(--gf-angle),
+    #ff4fd8,
+    #7a5cff,
+    #4ff8ff,
+    #ffd76a,
+    #ff4fd8
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: fx-gradientframe-spin 5.5s linear infinite;
+  pointer-events: none;
+}
+.fx-gradientframe::after {
+  content: '';
+  position: absolute;
+  inset: -0.2778em;
+  border-radius: 0.6111em;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--gf-angle),
+    #ff4fd83d,
+    #4ff8ff3d,
+    transparent 62%
+  );
+  filter: blur(0.3333em);
+  animation: fx-gradientframe-spin 5.5s linear infinite;
+  opacity: .8;
+}
+@keyframes fx-gradientframe-spin {
+  to { --gf-angle: 360deg; }
+}
+
+/* 120 Path-Ride — the letters ride an invisible curved path with offset-path */
+@property --ride {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+.fx-textpath {
+  position: relative;
+  display: inline-block;
+  width: var(--fx-pw, 10em);
+  height: var(--fx-ph, 4.3333em);
+  line-height: 1;
+  letter-spacing: .02em;
+  color: var(--ink, currentColor);
+  animation: fx-textpath-ride 5.4s cubic-bezier(.45, 0, .55, 1) infinite alternate;
+}
+.fx-textpath b {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  translate: -50% -50%;
+  offset-path: var(--fx-path, path('M 18 104 Q 150 16 282 104'));
+  offset-distance: calc(var(--d) + var(--ride));
+  offset-rotate: auto;
+}
+.fx-textpath b::after {
+  content: '';
+  position: absolute;
+  inset: -0.2667em -0.3333em;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, #ff4fd855, #4ff8ff33 60%, transparent 100%);
+  filter: blur(0.2em);
+  opacity: 0;
+  animation: fx-textpath-glow 2.1s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+@keyframes fx-textpath-ride {
+  from { --ride: 0%; }
+  to { --ride: var(--fx-ride, 40%); }
+}
+@keyframes fx-textpath-glow {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* 121 Aura — a grainy aurora gradient with a soft bloom drifting through the letters */
+.fx-aura {
+  position: relative;
+  line-height: 1.1;
+  letter-spacing: .04em;
+  white-space: pre-wrap;
+  color: transparent;
+  background:
+    radial-gradient(56% 120% at 18% 24%, var(--ink-2) 0 16%, transparent 60%),
+    radial-gradient(52% 118% at 82% 28%, var(--ink-3) 0 14%, transparent 58%),
+    radial-gradient(60% 128% at 52% 94%, #ffd76a 0 10%, transparent 56%),
+    linear-gradient(112deg, #6d4bff, var(--ink-2) 34%, var(--ink-3) 68%, #6d4bff);
+  background-size: 210% 210%, 200% 200%, 230% 230%, 260% 100%;
+  background-position: 0% 20%, 100% 10%, 40% 100%, 0 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter:
+    drop-shadow(0 0 0.3182em color-mix(in srgb, var(--ink-2) 45%, transparent))
+    drop-shadow(0 0 0.7727em color-mix(in srgb, var(--ink-3) 32%, transparent));
+  animation: fx-aura-drift 8s ease-in-out infinite alternate;
+  text-shadow: none;
+  -webkit-text-stroke-width: 0;
+}
+.fx-aura::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 3.1818em 3.1818em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  mix-blend-mode: overlay;
+  opacity: .45;
+  pointer-events: none;
+  animation: fx-aura-grain .9s steps(1) infinite;
+}
+.fx-aura::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: radial-gradient(40% 130% at 30% 35%, #ffffff 0 6%, transparent 58%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  mix-blend-mode: screen;
+  opacity: .5;
+  pointer-events: none;
+  animation: fx-aura-sheen 8s ease-in-out infinite alternate;
+}
+@keyframes fx-aura-drift {
+  0%   { background-position: 0% 20%, 100% 10%, 40% 100%, 0 50%; }
+  100% { background-position: 100% 80%, 0% 70%, 70% 0%, 100% 50%; }
+}
+@keyframes fx-aura-sheen {
+  0%   { background-position: -60% 0; }
+  100% { background-position: 160% 0; }
+}
+@keyframes fx-aura-grain {
+  0%   { background-position: 0 0; }
+  20%  { background-position: -0.5455em 0.2727em; }
+  40%  { background-position: 0.4091em -0.4545em; }
+  60%  { background-position: -0.3182em -0.1818em; }
+  80%  { background-position: 0.5em 0.3636em; }
+  100% { background-position: 0 0; }
+}
+
+/* 122 Curtain-Call — letters rise from behind a hard mask, hold, then exit */
+.fx-curtain {
+  display: inline-flex;
+  overflow: hidden;
+  padding: .04em .04em .14em;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  color: var(--ink);
+  flex-wrap: wrap;
+  justify-content: var(--ffo-justify, center);
+}
+.fx-curtain b {
+  display: inline-block;
+  font-weight: inherit;
+  color: var(--ink);
+  -webkit-text-fill-color: transparent;
+  background: linear-gradient(180deg, var(--ink) 38%, color-mix(in srgb, var(--ink-3) 72%, var(--ink)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: fx-curtain-rise 4.4s cubic-bezier(.76, 0, .24, 1) infinite;
+  animation-delay: calc(var(--i) * .07s);
+  will-change: transform;
+}
+@keyframes fx-curtain-rise {
+  0%, 6%    { transform: translateY(115%) rotate(3deg); opacity: 0; filter: blur(0.0789em); }
+  12%       { opacity: 1; filter: blur(0); }
+  34%, 64%  { transform: translateY(0) rotate(0); opacity: 1; filter: blur(0); }
+  84%, 100% { transform: translateY(-115%) rotate(-3deg); opacity: 0; filter: blur(0.0789em); }
+}
+
+/* 123 Margin-Note — a hand-drawn red-pen circle and underline annotate the word */
+.fx-annotate {
+  position: relative;
+  display: inline-block;
+  padding: .34em .72em .42em;
+  line-height: 1.1;
+  letter-spacing: .06em;
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+.fx-annotate svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  transform: rotate(-1.2deg);
+}
+.fx-annotate path {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: fx-annotate-draw 5.2s cubic-bezier(.45, 0, .2, 1) infinite;
+}
+.fx-annotate .fx-annotate-line {
+  stroke: color-mix(in srgb, var(--ink-2) 62%, var(--ink-3));
+  stroke-width: 3;
+  animation-name: fx-annotate-draw-line;
+}
+@keyframes fx-annotate-draw {
+  0%, 6%    { stroke-dashoffset: 100; opacity: 0; }
+  7%        { opacity: 1; }
+  24%, 84%  { stroke-dashoffset: 0; opacity: 1; }
+  94%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes fx-annotate-draw-line {
+  0%, 16%   { stroke-dashoffset: 100; opacity: 0; }
+  17%       { opacity: 1; }
+  34%, 86%  { stroke-dashoffset: 0; opacity: 1; }
+  95%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}

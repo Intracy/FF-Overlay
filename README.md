@@ -55,6 +55,8 @@ Webhooks ────────┘                                            
 
 **Alert-Designs**
 - Sounds direkt bei **MyInstants** suchen, probehören und mit einem Klick übernehmen (wird in die eigene Mediathek kopiert, läuft also ohne MyInstants)
+- Lila Knopf **„Diesen Alert testen“** in jedem Baukasten (Alert-Box, Varianten, Globale Bearbeitung, Alle Designs, Widgets): spielt genau den bearbeiteten Stand im Overlay ab – auch ungespeichert. Bei Varianten erfüllt das Test-Event automatisch die Bedingung (z. B. „ab 50 €“)
+- Vorschau mit Ton (🔊/🔇, gemerkt pro Browser): Der Sound spielt beim Öffnen und nach jeder Änderung an Sound oder Lautstärke einmal mit, die automatischen Wiederholungen bleiben stumm. Öffnest du das Overlay in einem normalen Browser-Tab statt in OBS, blockiert der Browser Ton bis zum ersten Klick – das Overlay zeigt dann einen Hinweis
 - GIFs und Sticker direkt über **GIPHY** suchen (Proxy, Key bleibt auf dem Server), eigene Uploads (GIF, PNG, WebP, WebM mit Transparenz, MP4, Sounds)
 - Text mit Platzhaltern `{user} {amount} {count} {months} {streak} {tier} {product} {gifter} {message}` (`{name}` funktioniert wie bei Streamlabs), Akzentfarbe für Name/Betrag, Kontur, Schatten, Google Fonts
 - **Animation Library** (Alert-Box → Animationen): 37 Text-Effekte aus [BrowserTextEffects](https://donlair.github.io/browsertexteffects/) (Beams, Decrypt, Matrix, Fireworks, Burn, VHS …) als Live-Vorschau mit dem eigenen Text, per Klick übernehmen; Schrift, Stärke, Farben, Kontur, Schatten und Emojis bleiben erhalten, Tempo und Effektfarben einstellbar

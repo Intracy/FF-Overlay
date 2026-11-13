@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import type { DB } from './db.js';
 import * as store from './db.js';
-import type { AlertTemplate, NormalizedEvent, OverlayInfo, Rule } from './shared/types.js';
+import type { AlertTemplate, Condition, NormalizedEvent, OverlayInfo, Rule } from './shared/types.js';
 import { CATALOG, type CatalogEntry } from './shared/catalog.js';
 import { defaultTemplate } from './templates/defaults.js';
 
@@ -126,6 +126,50 @@ export function applyGlobalEdit(db: DB, overlay: OverlayInfo, group: GlobalEditG
 }
 
 /** Beispiel-Events für Test-Buttons (Werte aus dem Katalog). */
+/**
+ * Passt ein Beispiel-Event so an, dass die Bedingungen einer Variante zutreffen (z. B. „Betrag ≥ 50 €“),
+ * damit „Diesen Alert testen“ genau die bearbeitete Variante zeigt.
+ */
+export function satisfyConditions(event: NormalizedEvent, conditions: Condition[]): NormalizedEvent {
+  const e = structuredClone(event) as unknown as Record<string, unknown>;
+  const set = (path: string, value: unknown) => {
+    const parts = path.split('.');
+    let cur = e;
+    for (const p of parts.slice(0, -1)) {
+      if (!cur[p] || typeof cur[p] !== 'object') cur[p] = p === 'amount' ? { value: 0, currency: 'EUR' } : {};
+      cur = cur[p] as Record<string, unknown>;
+    }
+    cur[parts.at(-1)!] = value;
+  };
+  const get = (path: string) => path.split('.').reduce<unknown>((c, p) => (c && typeof c === 'object' ? (c as Record<string, unknown>)[p] : undefined), e);
+  const numeric = (path: string, v: unknown) => (typeof get(path) === 'number' || /amount\.value|months|count/.test(path) ? Number(v) : v);
+  for (const c of conditions) {
+    if (!c.field || (c.value === undefined && !['empty', 'notEmpty', 'largestOfStream'].includes(c.op))) continue;
+    switch (c.op) {
+      case 'eq': case 'gte': case 'lte': case 'between':
+        set(c.field, numeric(c.field, c.value));
+        break;
+      case 'contains': {
+        const cur = String(get(c.field) ?? '');
+        if (!cur.toLowerCase().includes(String(c.value).toLowerCase())) set(c.field, cur ? `${cur} ${c.value}` : String(c.value));
+        break;
+      }
+      case 'notEmpty':
+        if (!String(get(c.field) ?? '').trim()) set(c.field, c.field === 'message' ? 'Testnachricht' : 'Test');
+        break;
+      case 'empty':
+        set(c.field, '');
+        break;
+      case 'neq':
+        if (String(get(c.field) ?? '').toLowerCase() === String(c.value).toLowerCase()) set(c.field, numeric(c.field, typeof get(c.field) === 'number' ? Number(c.value) + 1 : `${c.value}x`));
+        break;
+      default:
+        break;
+    }
+  }
+  return e as unknown as NormalizedEvent;
+}
+
 export function sampleEvent(type: NormalizedEvent['type'], subtype?: string, overrides: Partial<NormalizedEvent> = {}): NormalizedEvent {
   const entry = CATALOG.find((c) => c.trigger.type === type && (c.trigger.subtype ?? '') === (subtype ?? '')) ?? CATALOG.find((c) => c.trigger.type === type);
   return {

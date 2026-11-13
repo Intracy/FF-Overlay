@@ -91,6 +91,13 @@ export async function widgetRoutes(app: FastifyInstance, ctx: AppContext) {
     return { ok: true, sources: hub.widgetCount(w.id) };
   });
 
+  /** Widget-Daten neu an alle Browserquellen schicken (z. B. „Logos neu laden“) */
+  app.post<{ Params: { id: string } }>('/api/widgets/:id/refresh', async (req, reply) => {
+    if (!store.widgets.get(db, req.params.id)) return reply.code(404).send({ error: 'Widget nicht gefunden' });
+    service.push(req.params.id);
+    return { ok: true, sources: hub.widgetCount(req.params.id) };
+  });
+
   app.post<{ Params: { id: string } }>('/api/widgets/:id/poll/winner', async (req, reply) => {
     if (!service.pollWinner(req.params.id)) return reply.code(404).send({ error: 'Keine Abstimmung' });
     return { ok: true };

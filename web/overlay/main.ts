@@ -35,6 +35,21 @@ function setStatus(text: string) {
   statusEl.textContent = text;
 }
 
+/*
+ * In einem normalen Browser-Tab darf eine Seite erst nach einem Klick Ton abspielen (Autoplay-Sperre).
+ * OBS kennt diese Sperre nicht. Im Tab zeigen wir deshalb einen Hinweis; ein Klick schaltet den Ton frei.
+ */
+function showSoundHint() {
+  document.body.classList.add('sound-blocked');
+}
+document.addEventListener('pointerdown', () => {
+  if (!document.body.classList.contains('sound-blocked')) return;
+  document.body.classList.remove('sound-blocked');
+  // den laufenden Alert gleich mit Ton weiterspielen
+  current?.playing.setAudio(audio);
+  current?.playing.resumeSound?.();
+});
+
 function send(msg: unknown) {
   if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
 }
@@ -70,7 +85,7 @@ function connect() {
       case 'alert.show': {
         current?.playing.stop();
         const itemId = msg.alert.itemId;
-        const playing = playAlert(stage, msg.alert, { ...audio, portrait: isPortrait() ? overlayInfo?.portrait : undefined });
+        const playing = playAlert(stage, msg.alert, { ...audio, portrait: isPortrait() ? overlayInfo?.portrait : undefined, onAutoplayBlocked: showSoundHint });
         current = { itemId, playing };
         send({ t: 'alert.started', itemId });
         void playing.finished.then(() => {

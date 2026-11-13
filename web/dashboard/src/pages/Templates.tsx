@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, type AlertTemplate, type Overlay } from '../api';
 import { CATALOG } from '../../../../server/src/shared/catalog';
-import { FormatToggle, TemplatePreview, usePreviewFormat } from '../components/Preview';
+import { FormatToggle, SoundToggle, TemplatePreview, usePreviewFormat, usePreviewSound } from '../components/Preview';
+import { TestThisButton, useTestDraft } from '../components/TestButton';
 import { DesignFields } from '../components/DesignFields';
 import { Field, useAction, useLoad } from '../ui';
 
@@ -9,7 +10,10 @@ function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overla
   const [t, setT] = useState(initial);
   const [testType, setTestType] = useState('donation');
   const [format, setFormat] = usePreviewFormat();
+  const [sound, setSound] = usePreviewSound();
+  const [testOverlay, setTestOverlay] = useState('');
   const run = useAction();
+  const testDraft = useTestDraft();
   useEffect(() => setT(initial), [initial]);
   const dirty = JSON.stringify(t) !== JSON.stringify(initial);
 
@@ -18,10 +22,12 @@ function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overla
     if (saved) onSaved(saved);
   };
 
-  const testOn = async (overlayId: string) => {
-    if (dirty) await save();
-    const entry = CATALOG.find((c) => c.key === testType)!;
-    await run(() => api.post(`/api/templates/${t.id}/test`, { overlayId, type: entry.trigger.type, subtype: entry.trigger.subtype }), 'Test an Overlay gesendet');
+  // genau den bearbeiteten Entwurf testen – ohne vorher speichern zu müssen
+  const test = () => {
+    const overlay = overlays.find((o) => o.id === testOverlay) ?? overlays[0];
+    if (!overlay) return run(async () => { throw new Error('Kein Overlay vorhanden'); });
+    const entry = CATALOG.find((c) => c.key === testType) ?? CATALOG[0]!;
+    return testDraft(overlay.id, t, entry.trigger, [], `${t.name} als ${entry.label}`);
   };
 
   return (
@@ -44,15 +50,24 @@ function Editor({ initial, overlays, onSaved }: { initial: AlertTemplate; overla
           <div className="card stack preview-card">
             <div className="row between">
               <h3 style={{ margin: 0 }}>Vorschau {format === 'portrait' ? '9:16' : '16:9'}</h3>
-              <FormatToggle value={format} onChange={setFormat} />
+              <div className="preview-tools">
+                <SoundToggle value={sound} onChange={setSound} />
+                <FormatToggle value={format} onChange={setFormat} />
+              </div>
             </div>
-            <TemplatePreview template={t} portrait={format === 'portrait' ? overlays[0]?.portrait : undefined} />
-            <div className="row" style={{ flexWrap: 'wrap' }}>
-              <select value={testType} onChange={(e) => setTestType(e.target.value)} style={{ width: 'auto' }} aria-label="Beispiel-Event für Test">
+            <TemplatePreview template={t} portrait={format === 'portrait' ? overlays[0]?.portrait : undefined} sound={sound} />
+            <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
+              <span className="small muted">Test als</span>
+              <select value={testType} onChange={(e) => setTestType(e.target.value)} style={{ width: 'auto', flex: 1 }} aria-label="Beispiel-Event für Test">
                 {CATALOG.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
               </select>
-              {overlays.map((o) => <button key={o.id} className="small" onClick={() => testOn(o.id)}>Auf „{o.name}“ testen</button>)}
+              {overlays.length > 1 && (
+                <select value={testOverlay || overlays[0]!.id} onChange={(e) => setTestOverlay(e.target.value)} style={{ width: 'auto' }} aria-label="Overlay für Test">
+                  {overlays.map((o) => <option key={o.id} value={o.id}>auf „{o.name}“</option>)}
+                </select>
+              )}
             </div>
+            <TestThisButton block onTest={test} />
           </div>
           <DesignFields part="right" t={t} setT={setT} />
         </div>

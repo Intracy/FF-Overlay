@@ -3,7 +3,8 @@ import { api, type AlertTemplate, type GlobalSettings, type Overlay, type Rule }
 import type { Profile } from '../../../../server/src/shared/types';
 import { CATALOG, detectPreset, FREQUENCIES, TIERS, type CatalogEntry, type VariationPreset } from '../../../../server/src/shared/catalog';
 import { DesignFields, Section } from '../components/DesignFields';
-import { FormatToggle, TemplatePreview, usePreviewFormat } from '../components/Preview';
+import { FormatToggle, SoundToggle, TemplatePreview, usePreviewFormat, usePreviewSound } from '../components/Preview';
+import { TestThisButton, useTestDraft } from '../components/TestButton';
 import type { PortraitLayout } from '../../../../server/src/shared/types';
 import { CopyField, Field, Link, Modal, NumberInput, useAction, useLoad, useToast } from '../ui';
 import { BP_TYPES, WIDGET_INFO, type BpWidgetType } from '../../../../server/src/shared/widgets';
@@ -129,7 +130,7 @@ function TopBar({ view, overlayUrl, reload }: { view: View; overlayUrl: string; 
 
 // ---------- Allgemeine Einstellungen ----------
 
-function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample?: AlertTemplate; reload: () => void }) {
+function GeneralSettings({ overlay, sample, sampleKey, reload }: { overlay: Overlay; sample?: AlertTemplate; sampleKey?: string; reload: () => void }) {
   const [o, setO] = useState(overlay);
   const settings = useLoad(() => api.get<GlobalSettings>('/api/settings'));
   const [s, setS] = useState<GlobalSettings | null>(null);
@@ -202,7 +203,10 @@ function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample
       </Section>
       </div>
       <div className="col aside">
-      {sample && <PreviewCard template={sample} background={o.previewBackground} portrait={o.portrait} />}
+      {sample && (
+        <PreviewCard template={sample} background={o.previewBackground} portrait={o.portrait} testLabel="Test-Alert senden"
+          onTest={() => { const c = CATALOG.find((x) => x.key === sampleKey) ?? CATALOG.find((x) => x.key === 'donation')!; return run(() => api.post('/api/events/test', { type: c.trigger.type, subtype: c.trigger.subtype }), `Test: ${c.label} (mit gespeicherten Einstellungen)`); }} />
+      )}
       {s && (
         <Section title="Schimpfwort-Filter" badge="gilt für alle Overlays">
           <div className="row">
@@ -225,15 +229,24 @@ function GeneralSettings({ overlay, sample, reload }: { overlay: Overlay; sample
   );
 }
 
-function PreviewCard({ template, background, portrait }: { template: AlertTemplate; background: string; portrait: PortraitLayout }) {
+function PreviewCard({ template, background, portrait, onTest, testLabel }: {
+  template: AlertTemplate; background: string; portrait: PortraitLayout; onTest?: () => unknown; testLabel?: string;
+}) {
   const [format, setFormat] = usePreviewFormat();
+  const [sound, setSound] = usePreviewSound();
+  const [blocked, setBlocked] = useState(false);
   return (
     <div className="card preview-card">
       <div className="row between" style={{ marginBottom: 8 }}>
         <h3 style={{ margin: 0 }}>Vorschau {format === 'portrait' ? '9:16' : '16:9'}</h3>
-        <FormatToggle value={format} onChange={setFormat} />
+        <div className="preview-tools">
+          <SoundToggle value={sound} onChange={(v) => { setSound(v); setBlocked(false); }} />
+          <FormatToggle value={format} onChange={setFormat} />
+        </div>
       </div>
-      <TemplatePreview template={template} background={background} portrait={format === 'portrait' ? portrait : undefined} />
+      <TemplatePreview template={template} background={background} portrait={format === 'portrait' ? portrait : undefined} sound={sound} onSoundBlocked={() => setBlocked(true)} />
+      {blocked && sound && <p className="sound-blocked-hint">Der Browser hat den Ton blockiert – einmal irgendwo auf die Seite klicken, dann klingt die nächste Vorschau.</p>}
+      {onTest && <div style={{ marginTop: 10 }}><TestThisButton block onTest={onTest} label={testLabel} /></div>}
     </div>
   );
 }
@@ -255,7 +268,9 @@ const GLOBAL_GROUPS: Array<{ id: string; label: string }> = [
 function GlobalEdit({ view, reload }: { view: View; reload: () => void }) {
   const first = view.entries.find((e) => e.default?.template)?.default?.template;
   const [t, setT] = useState<AlertTemplate | null>(first ?? null);
+  const [testKey, setTestKey] = useState(view.entries.find((e) => e.default?.template)?.key ?? 'donation');
   const run = useAction();
+  const testDraft = useTestDraft();
   if (!t) return <div className="empty">Noch keine Alerts in diesem Thema.</div>;
   const apply = (group: string, label: string) =>
     confirm(`„${label}“ auf alle Alerts und Varianten dieses Themas anwenden?`) &&
@@ -275,7 +290,15 @@ function GlobalEdit({ view, reload }: { view: View; reload: () => void }) {
           <DesignFields part="left" t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
         </div>
         <div className="col aside">
-          <PreviewCard template={t} background={view.overlay.previewBackground} portrait={view.overlay.portrait} />
+          <PreviewCard template={t} background={view.overlay.previewBackground} portrait={view.overlay.portrait}
+            onTest={() => { const c = CATALOG.find((x) => x.key === testKey) ?? CATALOG[0]!; return testDraft(view.overlay.id, t, c.trigger, [], c.label); }}
+            testLabel="Diese Einstellungen testen" />
+          <div className="card row" style={{ gap: 8 }}>
+            <span className="small muted">Test als</span>
+            <select value={testKey} onChange={(e) => setTestKey(e.target.value)} style={{ width: 'auto', flex: 1 }} aria-label="Event für den Test">
+              {CATALOG.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+            </select>
+          </div>
           <DesignFields part="right" t={t} setT={(fn) => setT((x) => (x ? fn(x) : x))} />
         </div>
       </div>
@@ -330,12 +353,15 @@ function ConditionEditor({ entry, rule, onChange }: { entry: CatalogEntry; rule:
   );
 }
 
-function EntryEditor({ entry, item, isVariation, background, portrait, onSaved, onDeleted }: {
-  entry: CatalogEntry; item: Item; isVariation: boolean; background: string; portrait: PortraitLayout; onSaved: () => void; onDeleted: () => void;
+function EntryEditor({ entry, item, isVariation, overlayId, background, portrait, onSaved, onDeleted }: {
+  entry: CatalogEntry; item: Item; isVariation: boolean; overlayId: string; background: string; portrait: PortraitLayout; onSaved: () => void; onDeleted: () => void;
 }) {
   const [rule, setRule] = useState(item.rule);
   const [t, setT] = useState(item.template!);
   const run = useAction();
+  const testDraft = useTestDraft();
+  const testLabel = isVariation ? 'Diese Variante testen' : 'Diesen Alert testen';
+  const test = () => testDraft(overlayId, t, entry.trigger, isVariation ? rule.conditions : [], isVariation ? `${entry.label} › ${rule.name}` : entry.label);
   useEffect(() => { setRule(item.rule); setT(item.template!); }, [item]);
   const dirty = JSON.stringify(rule) !== JSON.stringify(item.rule) || JSON.stringify(t) !== JSON.stringify(item.template);
 
@@ -377,7 +403,7 @@ function EntryEditor({ entry, item, isVariation, background, portrait, onSaved, 
       <DesignFields part="left" t={t} setT={(fn) => setT((x) => fn(x))} />
       </div>
       <div className="col aside">
-        <PreviewCard template={t} background={background} portrait={portrait} />
+        <PreviewCard template={t} background={background} portrait={portrait} onTest={test} testLabel={testLabel} />
         <DesignFields part="right" t={t} setT={(fn) => setT((x) => fn(x))} />
       </div>
       </div>
@@ -537,7 +563,7 @@ export function AlertBoxPage() {
           <TopBar view={v} overlayUrl={overlay.url} reload={reload} />
           {sel.kind === 'bpsetup' && <BetterplaceSetup />}
           {sel.kind === 'bpwidget' && <BpWidgetPanel key={sel.type} type={sel.type} />}
-          {sel.kind === 'general' && <GeneralSettings overlay={v.overlay} sample={v.entries.find((e) => e.default?.template)?.default?.template ?? undefined} reload={reload} />}
+          {sel.kind === 'general' && <GeneralSettings overlay={v.overlay} sample={v.entries.find((e) => e.default?.template)?.default?.template ?? undefined} sampleKey={v.entries.find((e) => e.default?.template)?.key} reload={reload} />}
           {sel.kind === 'global' && <GlobalEdit view={v} reload={view.reload} />}
           {sel.kind === 'entry' && selectedEntry && !data?.default && (
             <div className="card stack" style={{ maxWidth: 'calc(50% - 8px)' }}>
@@ -547,7 +573,7 @@ export function AlertBoxPage() {
             </div>
           )}
           {sel.kind === 'entry' && selectedEntry && item?.template && (
-            <EntryEditor key={item.rule.id} entry={selectedEntry} item={item} isVariation={!!sel.ruleId} background={v.overlay.previewBackground} portrait={v.overlay.portrait}
+            <EntryEditor key={item.rule.id} entry={selectedEntry} item={item} isVariation={!!sel.ruleId} overlayId={v.overlay.id} background={v.overlay.previewBackground} portrait={v.overlay.portrait}
               onSaved={view.reload} onDeleted={() => { setSel({ kind: 'entry', key: selectedEntry.key }); view.reload(); }} />
           )}
           {sel.kind === 'entry' && item && !item.template && <div className="empty">Das Design dieses Alerts fehlt. <button className="small" onClick={() => toast('Bitte unter „Regeln“ ein Design zuweisen.')}>Hilfe</button></div>}

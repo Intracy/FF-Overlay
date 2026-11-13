@@ -13,6 +13,8 @@ export interface PlayOptions {
   muted: boolean;
   /** Hochformat (9:16): Alerts größer skalieren und in den sicheren Bereich setzen */
   portrait?: PortraitLayout;
+  /** Browser hat den Ton blockiert (Autoplay-Sperre, z. B. Overlay in einem normalen Browser-Tab ohne Klick) */
+  onAutoplayBlocked?: () => void;
 }
 
 export interface PlayingAlert {
@@ -20,6 +22,8 @@ export interface PlayingAlert {
   finished: Promise<void>;
   stop: () => void;
   setAudio: (o: PlayOptions) => void;
+  /** nach einer Autoplay-Sperre: Sound und Video-Ton nachträglich starten (nach einem Klick) */
+  resumeSound?: () => void;
 }
 
 const loadedFonts = new Set<string>();
@@ -336,8 +340,18 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
 
     box.style.visibility = 'visible';
     if (textWrap) textWrap.style.visibility = tpl.textDelay > 0 ? 'hidden' : 'visible';
-    video?.play().catch(() => undefined);
-    audio?.play().catch(() => undefined);
+    const blocked = (err: unknown) => {
+      if (err instanceof DOMException && err.name === 'NotAllowedError') opts.onAutoplayBlocked?.();
+    };
+    // ohne Ton weiterspielen, statt das Video ganz wegzulassen
+    video?.play().catch((err) => {
+      blocked(err);
+      if (video && !video.muted) {
+        video.muted = true;
+        void video.play().catch(() => undefined);
+      }
+    });
+    audio?.play().catch(blocked);
     const speed = tpl.animation.speedMs;
     const started = Date.now();
     if (anim) void animate(box, tpl.animation.in, speed);
@@ -401,6 +415,14 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
         video.volume = Math.min(1, tpl.media.volume * o.volume);
       }
       if (o.muted && alert.tts) window.speechSynthesis?.cancel();
+    },
+    resumeSound: () => {
+      if (stopped || audioOpts.muted) return;
+      if (audio && audio.paused && !audio.ended) void audio.play().catch(() => undefined);
+      if (video) {
+        video.muted = false;
+        void video.play().catch(() => undefined);
+      }
     },
   };
 }

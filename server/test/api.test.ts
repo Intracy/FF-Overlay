@@ -68,6 +68,36 @@ describe('API', () => {
     ws.close();
   });
 
+  it('testet einen ungespeicherten Entwurf genau so, wie er bearbeitet wird', async () => {
+    const [overlay] = (await api('GET', '/api/overlays')).json();
+    const [t] = (await api('GET', '/api/templates')).json();
+    const addr = app.server.address() as { port: number };
+    const ws = new WebSocket(`ws://127.0.0.1:${addr.port}/ws/overlay/${overlay.id}?key=${overlay.key}`);
+    const messages: any[] = [];
+    ws.on('message', (b) => messages.push(JSON.parse(b.toString())));
+    await new Promise((r) => ws.once('open', r));
+
+    const draft = { ...t, name: 'Entwurf', text: { ...t.text, format: 'ENTWURF {user} {amount}', color: '#123456' } };
+    const res = await api('POST', `/api/overlays/${overlay.id}/test-draft`, {
+      template: draft, type: 'donation', conditions: [{ field: 'amount.value', op: 'gte', value: 100 }],
+    });
+    expect(res.statusCode).toBe(200);
+    // Pause zwischen zwei Alerts (Alert-Verzögerung) abwarten
+    for (let i = 0; i < 40 && !messages.some((m) => m.t === 'alert.show'); i++) await new Promise((r) => setTimeout(r, 100));
+    const show = messages.find((m) => m.t === 'alert.show');
+    expect(show.alert.template.name).toBe('Entwurf');
+    expect(show.alert.template.text.color).toBe('#123456');
+    // Bedingung der Variante (≥ 100 €) ist im Beispiel-Event erfüllt
+    expect(show.alert.title.map((x: { text: string }) => x.text).join('').replace(/\u00a0/g, ' ')).toContain('100,00 €');
+    // gespeichertes Template bleibt unverändert
+    expect((await api('GET', '/api/templates')).json().find((x: { id: string }) => x.id === t.id).name).toBe(t.name);
+    ws.send(JSON.stringify({ t: 'alert.done', itemId: show.alert.itemId }));
+
+    expect((await api('POST', `/api/overlays/${overlay.id}/test-draft`, { template: { ...draft, text: { ...draft.text, color: 'rot' } } })).statusCode).toBe(400);
+    expect((await api('POST', '/api/overlays/gibtsnicht/test-draft', { template: draft })).statusCode).toBe(404);
+    ws.close();
+  });
+
   it('weist Overlays mit falschem Key ab', async () => {
     const [overlay] = (await api('GET', '/api/overlays')).json();
     const addr = app.server.address() as { port: number };

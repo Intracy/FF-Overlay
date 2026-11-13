@@ -5,7 +5,7 @@ import * as store from '../db.js';
 import { config } from '../config.js';
 import { overlayPatchSchema, ruleSchema, settingsSchema, templateSchema, testEventSchema } from '../schemas.js';
 import { requireAuth } from './auth.js';
-import { addVariation, alertboxView, applyGlobalEdit, createProfile, ensureDefault, GLOBAL_EDIT_GROUPS, removeRule, sampleEvent, type GlobalEditGroup } from '../alertbox.js';
+import { addVariation, alertboxView, applyGlobalEdit, createProfile, ensureDefault, GLOBAL_EDIT_GROUPS, removeRule, sampleEvent, satisfyConditions, type GlobalEditGroup } from '../alertbox.js';
 import { z } from 'zod';
 import { selectRule } from '../rules/engine.js';
 import { buildAlert, defaultTemplate } from '../templates/render.js';
@@ -155,6 +155,21 @@ export async function apiRoutes(app: FastifyInstance, ctx: AppContext) {
       return { ok: true };
     },
   );
+
+  /** „Diesen Alert testen“: den gerade bearbeiteten (auch ungespeicherten) Entwurf sofort im Overlay abspielen */
+  app.post<{ Params: { id: string } }>('/api/overlays/:id/test-draft', async (req, reply) => {
+    const b = z.object({
+      template: templateSchema,
+      type: z.string().max(40).optional(),
+      subtype: z.string().max(40).optional(),
+      conditions: ruleSchema.shape.conditions.optional(),
+    }).parse(req.body);
+    const q = pipeline.queue(req.params.id);
+    if (!q) return reply.code(404).send({ error: 'Overlay nicht gefunden' });
+    const event = satisfyConditions(sampleEvent((b.type ?? 'donation') as EventType, b.subtype || undefined), b.conditions ?? []);
+    q.enqueue(buildAlert(b.template, event));
+    return { ok: true };
+  });
 
   // ---------- Regeln ----------
   app.get<{ Querystring: { overlayId?: string } }>('/api/rules', async (req) => {

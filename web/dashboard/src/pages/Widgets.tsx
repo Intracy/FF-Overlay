@@ -4,6 +4,8 @@ import { CopyField, Field, NumberInput, useAction, useLoad } from '../ui';
 import { AnimSelect, Section } from '../components/DesignFields';
 import { Color, fromLocalInput, TextFields, toLocalInput, Toggle, TypeChecks } from '../components/WidgetFields';
 import { bpSections, BP_ICON } from './BpWidgetForms';
+import { TestThisButton } from '../components/TestButton';
+import { widgetTest } from '../../../../server/src/shared/widgetTest';
 import { IN_ANIMATIONS, OUT_ANIMATIONS } from '../../../shared/animations';
 import {
   isBpType, LABEL_KINDS, LIST_STYLES, WIDGET_INFO, type BossSettings, type BpData, type BossState, type CreditsSettings, type EventListSettings,
@@ -442,6 +444,7 @@ export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDelet
   const [bg, setBg] = useState('');
   const [live, setLive] = useState<WidgetData | null>(null);
   const [sample, setSample] = useState(false);
+  const [frameRun, setFrameRun] = useState(0);
   const w = detail.data;
 
   // Entwurf nur nach (Neu-)Laden übernehmen, nicht bei jeder Live-Aktualisierung
@@ -472,6 +475,24 @@ export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDelet
       }
     });
   const info = WIDGET_INFO[w.type];
+
+  // „Dieses Widget testen“: ungespeicherte Änderungen zuerst speichern (die Browserquelle zeigt den gespeicherten Stand),
+  // dann ein passendes Test-Event schicken
+  const test = async () => {
+    if (dirty) {
+      const r = await run(() => api.patch<W>(`/api/widgets/${id}`, { name, previewBackground: bg, settings: draft }));
+      if (!r) return;
+      detail.reload();
+      onRenamed();
+    }
+    const plan = widgetTest(w.type, draft);
+    if (plan.kind === 'credits') await run(() => api.post(`/api/widgets/${w.id}/credits/roll`), 'Credits laufen');
+    else if (plan.kind === 'reload') {
+      setFrameRun((n) => n + 1);
+      await run(() => api.post(`/api/widgets/${w.id}/refresh`), 'Widget neu geladen');
+    } else await run(() => api.post('/api/events/test', plan.event), `Test: ${plan.label}`);
+    setTimeout(refresh, 400);
+  };
 
   const sections = settingsSections(w.type, draft as WidgetSettingsMap[WidgetType], set);
   const half = Math.ceil(sections.length / 2);
@@ -505,7 +526,9 @@ export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDelet
               <h3 style={{ margin: 0 }}>Vorschau</h3>
               <label className="row small" style={{ gap: 6 }}>Hintergrund <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} style={{ width: 40, padding: 2 }} /></label>
             </div>
-            <WidgetPreview key={`${w.url}:${sample}`} w={w} background={bg} sample={sample} />
+            <WidgetPreview key={`${w.url}:${sample}:${frameRun}`} w={w} background={bg} sample={sample} />
+            <TestThisButton block onTest={test} label={dirty ? 'Speichern & dieses Widget testen' : 'Dieses Widget testen'}
+              title="Schickt ein passendes Test-Event – das Widget reagiert in der Vorschau und in OBS" />
             <Controls w={w} data={live ?? w.data} onChange={refresh} />
             {isBpType(w.type) && <Toggle label="Beispieldaten in der Vorschau (wie &preview=true bei betterplace)" value={sample} onChange={setSample} />}
             <TestButtons betterplace={isBpType(w.type)} />

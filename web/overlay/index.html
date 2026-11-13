@@ -13,11 +13,17 @@
         font: 600 13px/1.2 system-ui, sans-serif; color: #fff; background: rgba(0,0,0,.6); display: none;
       }
       body.debug #status { display: block; }
+      #sound-hint {
+        position: fixed; right: 12px; top: 12px; padding: 10px 14px; border-radius: 8px; border: 0; cursor: pointer;
+        font: 600 14px/1.3 system-ui, sans-serif; color: #fff; background: #9373c5; box-shadow: 0 4px 18px rgba(0,0,0,.35); display: none;
+      }
+      body.sound-blocked #sound-hint { display: block; }
     </style>
   </head>
   <body>
     <div id="stage"></div>
     <div id="status">verbinde …</div>
+    <button id="sound-hint" type="button">🔇 Der Browser blockiert den Ton – einmal klicken, um ihn zu aktivieren<br /><small>(in OBS nicht nötig)</small></button>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

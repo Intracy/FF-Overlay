@@ -62,7 +62,7 @@ function animate(el: HTMLElement, name: string, ms: number): Promise<void> {
   });
 }
 
-function buildTitle(alert: AlertPayload): HTMLElement {
+function buildTitle(alert: AlertPayload, animations: boolean): HTMLElement {
   const t = alert.template.text;
   const title = document.createElement('div');
   title.className = 'ffo-title';
@@ -82,7 +82,7 @@ function buildTitle(alert: AlertPayload): HTMLElement {
   for (const seg of alert.title) {
     const span = document.createElement('span');
     if (seg.highlight) span.style.color = t.highlightColor;
-    if (t.letterAnimation && t.letterAnimation !== 'none') {
+    if (animations && t.letterAnimation && t.letterAnimation !== 'none') {
       // Buchstaben wortweise bündeln, damit Zeilen nur zwischen Wörtern umbrechen (wichtig im schmalen Hochformat)
       for (const part of seg.text.split(/(\s+)/)) {
         if (!part) continue;
@@ -218,6 +218,8 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
   let audioOpts = opts;
   let resolveFinished!: () => void;
   const finished = new Promise<void>((r) => (resolveFinished = r));
+  // Ein-/Ausblend- und Text-Animationen nur mit Haken „Animationen verwenden“ (Animation Library läuft unabhängig davon)
+  const anim = tpl.animation.enabled !== false;
   const portrait = opts.portrait;
   // Im Hochformat wird die ganze Alert-Fläche per CSS-zoom vergrößert; innen rechnet alles mit der verkleinerten Fläche,
   // dadurch bleiben Bild- und Textgrenzen (max-width/-height) im sichtbaren Bereich.
@@ -279,7 +281,7 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
 
     textWrap = document.createElement('div');
     textWrap.className = 'ffo-text';
-    title = buildTitle(alert);
+    title = buildTitle(alert, anim);
     // Animation Library: Titel bleibt bis zum Effekt unsichtbar (behält aber seinen Platz)
     if (tpl.text.effect && TEXT_EFFECT_IDS.has(tpl.text.effect)) title.style.visibility = 'hidden';
     textWrap.appendChild(title);
@@ -338,14 +340,14 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
     audio?.play().catch(() => undefined);
     const speed = tpl.animation.speedMs;
     const started = Date.now();
-    void animate(box, tpl.animation.in, speed);
+    if (anim) void animate(box, tpl.animation.in, speed);
 
     if (tpl.textDelay > 0) {
       await sleep(tpl.textDelay);
       if (stopped) return cleanup();
       if (textWrap) textWrap.style.visibility = 'visible';
     }
-    if (title && tpl.text.intro) void animate(title, tpl.text.intro, speed);
+    if (anim && title && tpl.text.intro) void animate(title, tpl.text.intro, speed);
     if (title && tpl.text.effect && TEXT_EFFECT_IDS.has(tpl.text.effect)) {
       fx = runTextEffect(title, alert.title.map((s) => s.text).join(''), {
         effect: tpl.text.effect, speed: tpl.text.effectSpeed || 1, colors: tpl.text.effectColors ?? 'effect',
@@ -376,8 +378,8 @@ export function playAlert(root: HTMLElement, alert: AlertPayload, opts: PlayOpti
       await fx.done;
       if (stopped) return cleanup();
     }
-    if (title && tpl.text.outro) await animate(title, tpl.text.outro, speed);
-    await animate(box, tpl.animation.out, speed);
+    if (anim && title && tpl.text.outro) await animate(title, tpl.text.outro, speed);
+    if (anim) await animate(box, tpl.animation.out, speed);
     cleanup();
   })();
 

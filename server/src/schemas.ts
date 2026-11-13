@@ -72,7 +72,7 @@ export const templateSchema = z.object({
       }
     }, 'muss ein JSON-Objekt sein'),
   }),
-  animation: z.object({ in: animName, out: animName, speedMs: z.number().min(100).max(5000) }),
+  animation: z.object({ enabled: z.boolean(), in: animName, out: animName, speedMs: z.number().min(100).max(5000) }),
   duration: z.number().min(1000).max(120000),
   textDelay: z.number().min(0).max(60000),
 });

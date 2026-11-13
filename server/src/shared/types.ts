@@ -162,7 +162,8 @@ export interface AlertTemplate {
   };
   /** Eigener Code in einem Sandbox-Frame */
   custom: { enabled: boolean; html: string; css: string; js: string; fields: string };
-  animation: { in: string; out: string; speedMs: number };
+  /** enabled = Ein-/Ausblend-, Text-Intro/-Outro- und Buchstaben-Animationen verwenden (unabhängig von der Animation Library) */
+  animation: { enabled: boolean; in: string; out: string; speedMs: number };
   /** Gesamtdauer in ms */
   duration: number;
   /** Verzögerung des Texts in ms */

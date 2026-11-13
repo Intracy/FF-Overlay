@@ -42,7 +42,7 @@ export function defaultTemplate(id: string, name: string, format: string): Alert
     message: { show: true, font: 'Inter', size: 28, weight: 600, color: '#ffffff', minAmount: 0, allowEmotes: true },
     tts: { enabled: false, voice: '', lang: 'de-DE', minAmount: 0, volume: 0.8, includeTemplate: false, security: 1, repetitionBlock: 0 },
     custom: { enabled: false, html: DEFAULT_CUSTOM_HTML, css: DEFAULT_CUSTOM_CSS, js: '', fields: '{}' },
-    animation: { in: 'fadeInUp', out: 'fadeOut', speedMs: 800 },
+    animation: { enabled: false, in: 'fadeInUp', out: 'fadeOut', speedMs: 800 },
     duration: 8000,
     textDelay: 0,
   };

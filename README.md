@@ -57,7 +57,7 @@ Webhooks ────────┘                                            
 - GIFs und Sticker direkt über **GIPHY** suchen (Proxy, Key bleibt auf dem Server), eigene Uploads (GIF, PNG, WebP, WebM mit Transparenz, MP4, Sounds)
 - Text mit Platzhaltern `{user} {amount} {count} {months} {streak} {tier} {product} {gifter} {message}` (`{name}` funktioniert wie bei Streamlabs), Akzentfarbe für Name/Betrag, Kontur, Schatten, Google Fonts
 - **Animation Library** (Alert-Box → Animationen): 37 Text-Effekte aus [BrowserTextEffects](https://donlair.github.io/browsertexteffects/) (Beams, Decrypt, Matrix, Fireworks, Burn, VHS …) als Live-Vorschau mit dem eigenen Text, per Klick übernehmen; Schrift, Stärke, Farben, Kontur, Schatten und Emojis bleiben erhalten, Tempo und Effektfarben einstellbar
-- Ein-/Ausblend-Animationen mit Animate.css-Namen (Fade, Zoom, Bounce, Slide, Flip, Rotate, Specials), Text-Intro/-Outro und Buchstaben-Animationen (Welle, Hüpfen, Pulsieren, Gummiband, Tada, Wackeln, Schwanken)
+- Ein-/Ausblend-, Text-Intro/-Outro- und Buchstaben-Animationen (Animate.css) – per Haken „Animationen verwenden“ zuschaltbar, standardmäßig aus; die Animation Library läuft unabhängig davon (Fade, Zoom, Bounce, Slide, Flip, Rotate, Specials), Text-Intro/-Outro und Buchstaben-Animationen (Welle, Hüpfen, Pulsieren, Gummiband, Tada, Wackeln, Schwanken)
 - Layouts (Bild über/unter Text, Bild links, nur Text) oder manuelle Positionierung in %
 - Live-Vorschau im Editor mit exakt derselben Render-Logik wie im Overlay
 

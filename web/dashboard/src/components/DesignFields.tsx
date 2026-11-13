@@ -145,7 +145,13 @@ export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT
       )}
 
       {show('left') && (
-      <Section title="Animationen">
+      <Section title="Animationen" badge={[t.animation.enabled ? 'Animationen an' : '', t.text.effect ? 'Library' : ''].filter(Boolean).join(' + ') || 'aus'}>
+        <label className="check">
+          <input type="checkbox" checked={t.animation.enabled} onChange={(e) => up('animation', { enabled: e.target.checked })} />
+          Ein-/Ausblend- und Text-Animationen verwenden
+        </label>
+        {!t.animation.enabled && <p className="small muted" style={{ margin: 0 }}>Aus: Der Alert erscheint und verschwindet ohne Animation. Ein Effekt aus der Animation Library läuft unabhängig davon.</p>}
+        {t.animation.enabled && (
         <div className="fields">
           <Field label="Alert einblenden"><AnimSelect value={t.animation.in} onChange={(v) => up('animation', { in: v })} groups={IN_ANIMATIONS} /></Field>
           <Field label="Alert ausblenden"><AnimSelect value={t.animation.out} onChange={(v) => up('animation', { out: v })} groups={OUT_ANIMATIONS} /></Field>
@@ -158,6 +164,7 @@ export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT
           <Field label="Text-Outro"><AnimSelect value={t.text.outro} onChange={(outro) => up('text', { outro })} groups={OUT_ANIMATIONS} allowNone /></Field>
           <Field label="Animationsdauer (ms)"><NumberInput value={t.animation.speedMs} min={100} max={5000} step={100} onChange={(speedMs) => up('animation', { speedMs })} /></Field>
         </div>
+        )}
         <AnimationLibraryField t={t} setText={(p) => up('text', p)} />
       </Section>
       )}

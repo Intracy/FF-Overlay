@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AlertPayload, AlertTemplate, PortraitLayout, TextSegment } from '../../../../server/src/shared/types';
 import { playAlert, type PlayingAlert } from '../../../overlay/renderer';
 
@@ -30,16 +30,26 @@ export function TemplatePreview({ template, muted = true, background, portrait }
   const stage = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
   const [run, setRun] = useState(0);
+  // Nur echte Änderungen am Design starten die Vorschau neu – nicht jedes neue Objekt beim Neuzeichnen
+  const key = useMemo(() => JSON.stringify(template), [template]);
+  const portraitKey = portrait ? JSON.stringify(portrait) : '';
+  const latest = useRef({ template, portrait });
+  latest.current = { template, portrait };
 
   useEffect(() => {
     if (!frame.current) return;
-    const ro = new ResizeObserver(([e]) => setScale(e!.contentRect.width / stageW));
+    // auf ganze Pixel runden: verhindert ein Hin- und Herspringen (z. B. wenn eine Scrollleiste auftaucht)
+    const ro = new ResizeObserver(([e]) => {
+      const w = Math.round(e!.contentRect.width);
+      setScale((s) => (Math.abs(s * stageW - w) < 2 ? s : w / stageW));
+    });
     ro.observe(frame.current);
     return () => ro.disconnect();
   }, [stageW]);
 
   useEffect(() => {
     if (!stage.current) return;
+    const { template, portrait } = latest.current;
     const alert: AlertPayload = {
       itemId: `preview-${run}`, eventId: 'preview', template,
       title: sampleSegments(template.text.format),
@@ -49,13 +59,24 @@ export function TemplatePreview({ template, muted = true, background, portrait }
       tts: template.tts.enabled ? SAMPLE.message : undefined,
     };
     let playing: PlayingAlert | null = null;
-    // kurze Entprellung, damit Tippen nicht bei jedem Zeichen neu startet
+    let cancelled = false;
+    let again: ReturnType<typeof setTimeout> | undefined;
+    // Entprellung, damit Tippen und Schieberegler nicht bei jeder Änderung neu starten
     const t = setTimeout(() => {
       playing = playAlert(stage.current!, alert, { volume: 1, muted, portrait });
-      void playing.finished.then(() => setTimeout(() => setRun((r) => r + 1), 900));
-    }, 250);
-    return () => { clearTimeout(t); playing?.stop(); };
-  }, [template, run, muted, portrait]);
+      // nur ein regulär beendeter Durchlauf startet die Wiederholung (ein abgebrochener nicht)
+      void playing.finished.then(() => {
+        if (!cancelled) again = setTimeout(() => !cancelled && setRun((r) => r + 1), 900);
+      });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      clearTimeout(again);
+      playing?.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, run, muted, portraitKey]);
 
   return (
     <div className={`preview-frame${portrait ? ' portrait' : ''}`} ref={frame} style={background ? { background } : undefined}>

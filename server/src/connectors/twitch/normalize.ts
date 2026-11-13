@@ -1,4 +1,5 @@
 import type { NormalizedEvent } from '../../shared/types.js';
+import type { ChatMessage, ChatPart, ChatRole } from '../../shared/chat.js';
 
 /* Übersetzt Twitch-EventSub-Benachrichtigungen in das einheitliche Event-Format.
    Felder laut https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/ */
@@ -129,4 +130,63 @@ export const TWITCH_SCOPES = [
   'bits:read',
   'channel:read:redemptions',
   'channel:read:charity',
+  'user:read:chat',
 ];
+
+// ---------- Chat (channel.chat.message) ----------
+
+export type BadgeLookup = (setId: string, id: string) => { url: string; title: string } | undefined;
+
+const ROLE_BY_BADGE: Record<string, ChatRole> = { broadcaster: 'broadcaster', moderator: 'moderator', vip: 'vip', subscriber: 'subscriber', founder: 'subscriber', partner: 'verified' };
+const BADGE_TITLE: Record<string, string> = { broadcaster: 'Streamer', moderator: 'Moderator', vip: 'VIP', subscriber: 'Abonnent', founder: 'Gründer', partner: 'Verifiziert', premium: 'Prime', turbo: 'Turbo', bits: 'Bits' };
+
+export const twitchEmoteUrl = (id: string, animated = false) =>
+  `https://static-cdn.jtvnw.net/emoticons/v2/${encodeURIComponent(id)}/${animated ? 'animated' : 'static'}/dark/2.0`;
+
+/** Twitch-Chatnachricht (EventSub channel.chat.message v1) → Chat-Overlay-Nachricht */
+export function normalizeTwitchChat(e: TwitchEvent, badge: BadgeLookup = () => undefined, receivedAt = new Date().toISOString()): ChatMessage | null {
+  if (!e?.message_id || !e.message) return null;
+  const fragments: Array<{ type: string; text: string; emote?: { id: string; format?: string[] } }> = e.message.fragments ?? [{ type: 'text', text: e.message.text ?? '' }];
+  const parts: ChatPart[] = [];
+  for (const f of fragments) {
+    if (f.type === 'emote' && f.emote?.id) parts.push({ emote: f.emote.id, name: f.text, url: twitchEmoteUrl(f.emote.id, f.emote.format?.includes('animated')) });
+    else if (f.text) {
+      const last = parts.at(-1);
+      if (last && 'text' in last) last.text += f.text;
+      else parts.push({ text: f.text });
+    }
+  }
+  const badges = (e.badges ?? []) as Array<{ set_id: string; id: string; info?: string }>;
+  const roles = [...new Set(badges.map((b) => ROLE_BY_BADGE[b.set_id]).filter((r): r is ChatRole => !!r))];
+  const bits = e.cheer?.bits as number | undefined;
+  const text = String(e.message.text ?? '');
+  const isAction = e.message_type === 'action' || /^\u0001ACTION /.test(text);
+  return {
+    id: `twc_${e.message_id}`,
+    platform: 'twitch',
+    user: { id: e.chatter_user_id, name: e.chatter_user_name || e.chatter_user_login || 'Unbekannt', color: e.color || undefined },
+    roles,
+    badges: badges.map((b) => {
+      const found = badge(b.set_id, b.id);
+      return { id: `${b.set_id}/${b.id}`, title: found?.title ?? BADGE_TITLE[b.set_id] ?? b.set_id, url: found?.url };
+    }),
+    parts,
+    text,
+    action: isAction || undefined,
+    amount: bits ? `${bits} Bits` : undefined,
+    receivedAt,
+  };
+}
+
+export const TWITCH_CHAT_SCOPE = 'user:read:chat';
+
+/** Chat-Abos: brauchen den Scope user:read:chat (ältere Verbindungen müssen einmal neu verbunden werden) */
+export function twitchChatSubscriptions(broadcasterId: string) {
+  const c = { broadcaster_user_id: broadcasterId, user_id: broadcasterId };
+  return [
+    { type: 'channel.chat.message', version: '1', condition: c },
+    { type: 'channel.chat.message_delete', version: '1', condition: c },
+    { type: 'channel.chat.clear', version: '1', condition: c },
+    { type: 'channel.chat.clear_user_messages', version: '1', condition: c },
+  ];
+}

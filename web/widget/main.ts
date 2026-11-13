@@ -5,6 +5,7 @@ import type {
 } from '../../server/src/shared/widgets';
 import { animate, applyText, fmtNumber, h, type PubWidget, type Renderer } from './util';
 import { BP_RENDERERS } from './betterplace';
+import { chatRenderer } from './chat';
 
 /*
  * Widget-Browserquelle für OBS & Co.
@@ -370,6 +371,7 @@ function ticker(): Renderer {
 const FACTORIES: Record<WidgetData['type'], () => Renderer> = {
   event_list: eventList, goal, label, timer, boss, credits, ticker,
   ...BP_RENDERERS(root),
+  chat: () => chatRenderer(root),
 };
 
 // ---------- Verbindung ----------

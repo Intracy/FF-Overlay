@@ -50,6 +50,7 @@ Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienu
 - 💜 **betterplace-Integration:** alle Livestream-Alerts und -Widgets von betterplace, per Spenden-Webhook in Echtzeit
 - ✨ **Animation Library:** 123 Text-Effekte (Neon, Glitch, Split-Flap, Gold-Foil, Wax-Seal …), die deine Schrift und Farben übernehmen
 - 📱 **16:9 und 9:16 parallel:** jeder Alert läuft gleichzeitig quer und hochkant, im Hochformat größer skaliert für TikTok, Shorts und Reels
+- 💬 **Chat-Overlay:** Twitch- und YouTube-Chat einzeln oder zusammen, gestaltet wie die Alerts, mit Live-Vorschau
 - 🧩 **Widgets:** Ereignisliste, Ziele, Stream-Labels, Subathon-Timer, End-Credits, Stream-Boss und Spenden-Ticker
 - ▶️ **„Diesen Alert testen“:** spielt den gerade bearbeiteten Alert sofort im Overlay ab, auch ungespeichert
 - 🏠 **Selbst gehostet:** eine SQLite-Datei, läuft lokal, im Heimnetz oder per Docker auf dem NAS
@@ -65,6 +66,9 @@ Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienu
 | **Alert Feed** | **betterplace: Abstimmung mit Spenden** |
 | [![Alert Feed mit Event-Log, Warteschlange und Test-Alerts](docs/screenshots/alert-feed.png)](docs/screenshots/alert-feed.png) | [![betterplace-Abstimmung in der Alert-Box](docs/screenshots/betterplace.png)](docs/screenshots/betterplace.png) |
 | Event-Log, Warteschlange, Pause, Skip und Test-Alerts | Alle betterplace-Widgets direkt in der Alert-Box |
+| **Chat** | **Chat-Overlay in OBS** |
+| [![Chat-Editor mit Live-Vorschau](docs/screenshots/chat.png)](docs/screenshots/chat.png) | [![Chat-Overlay mit Twitch- und YouTube-Nachrichten](docs/screenshots/chat-overlay.png)](docs/screenshots/chat-overlay.png) |
+| Stil, Schriften, Farben und Animationen, sofort in der Vorschau | Twitch und YouTube in einem Chat, mit Plattform-Symbol und Abzeichen |
 | **Widgets** | **Regeln** |
 | [![Widget-Editor](docs/screenshots/widgets.png)](docs/screenshots/widgets.png) | [![Regel-Editor mit Prüfwerkzeug](docs/screenshots/rules.png)](docs/screenshots/rules.png) |
 | Jedes Widget ist eine eigene Browserquelle | Beliebig viele UND-Bedingungen pro Regel und die Prüfung „Welche Regel greift?“ |
@@ -125,6 +129,21 @@ Alle Livestream-Alerts von betterplace stehen in der Alert-Box unter **Spenden (
 - **Abstimmung mit Spenden:** Zuschauer*innen stimmen per `#1`, `#2` oder Stichwort im Kommentar ab, gezählt nach Betrag oder Anzahl, mit Gewinnanimation
 - **Spendenstand**, **Letzte Spende**, **Top-Spende**, **Leaderboard**, **Fortschrittsbalken**, **Letzter Kommentar**, **Logos der Organisationen**, **Milestones** und **Live Spenden-Feed** (auch als OBS-Dock)
 - Test-Modus mit Beispieldaten oder `&preview=true` pro Quelle
+
+### Chat-Overlay
+
+Unter dem Menüpunkt **Chat** baust du eine eigene Browserquelle (600 × 900) für den Chat:
+
+- **Quellen:** Twitch, YouTube oder beide zusammen in einem Chat, jede Nachricht mit Plattform-Symbol
+- **8 Stile:** Klar, Kästen, Sprechblasen, Karten, Umrandet, Neon, Milchglas und Minimal; neue Nachrichten unten oder oben, links oder rechts, Name und Text untereinander oder in einer Zeile
+- **Gestaltung wie bei den Alerts:** eigene Schrift, Größe und Stärke für Name und Nachricht, Namensfarbe (Twitch-Farbe, Plattformfarbe oder eigene), Akzentfarbe für Erwähnungen und Beträge, Kontur, Schatten, Hintergrundfarbe, Deckkraft und Ecken
+- **Animationen:** Ein- und Ausblenden (Animate.css) und auf Wunsch ein **Namens-Effekt aus der Animation Library**
+- **Twitch-Emotes** (auch animiert), Twitch-Abzeichen als Bild, Rollen für Mod, VIP, Sub, Mitglied und Kanalinhaber, YouTube-Profilbilder
+- **Super Chats, Super Sticker und Bits** erscheinen hervorgehoben mit Betrag
+- **Moderation:** Verzögerung, damit gelöschte Nachrichten nie erscheinen. Auf Twitch oder YouTube gelöschte Nachrichten und gebannte Nutzer:innen verschwinden automatisch. Im Dashboard blendest du einzelne Nachrichten oder alle einer Person aus
+- **Filter:** Befehle (`!…`), Links, Bots und eigene Namenslisten; Sperrliste und Schimpfwort-Filter der Alert-Box gelten auch hier
+- **Ausblenden nach x Sekunden**, maximale Anzahl Nachrichten und ein Sound bei neuen Nachrichten (Mediathek oder MyInstants)
+- **Live-Vorschau** mit laufenden Beispielnachrichten: jede Änderung ist sofort zu sehen, auch ungespeichert. Daneben siehst du den Live-Chat und hast Knöpfe für Testnachrichten
 
 ### Widgets
 
@@ -249,6 +268,13 @@ Liegen beide Quellen in derselben Szene, schaltest du eine mit `&mute=1` stumm, 
 </details>
 
 <details>
+<summary><b>Chat-Overlay in OBS</b></summary>
+
+Dashboard → **Chat** → **Chat-Overlay anlegen**, gestalten, **Speichern**, URL kopieren und als Browserquelle einfügen (600 × 900,
+Größe frei anpassbar). Mehrere Chat-Overlays sind möglich, z. B. eins nur für YouTube im Hochformat.
+</details>
+
+<details>
 <summary><b>Widgets</b></summary>
 
 Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern**, URL kopieren und als eigene Browserquelle einfügen.
@@ -272,7 +298,11 @@ Einmalig braucht jede Installation eigene, kostenlose App-Zugangsdaten. Du träg
 5 von 10.000 Einheiten pro Tag. Bei einer Abfrage alle 8 Sekunden reicht das für gut 4 Stunden Livestream täglich.
 Mehr Kontingent kannst du in der Google Cloud Console kostenlos beantragen.
 
-Twitch-Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`.
+Twitch-Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`, `user:read:chat`.
+
+**Chat-Overlay:** Twitch-Nachrichten kommen in Echtzeit über EventSub. Wer Twitch verbunden hat, bevor es den Chat gab, verbindet einmal neu,
+damit FF-Overlay die Berechtigung „Chat lesen“ (`user:read:chat`) bekommt. Der YouTube-Chat kommt nur während eines Livestreams und mit
+einigen Sekunden Verzögerung, weil die API abgefragt werden muss (`YOUTUBE_CHAT_POLL_SECONDS`).
 </details>
 
 <details>
@@ -376,14 +406,15 @@ server/src/
   queue/alertQueue.ts     Warteschlange pro Overlay (Pause, Skip, Timeout)
   templates/              Platzhalter → Text-Segmente, Standard-Designs
   widgets/                Berechnung aus dem Event-Log, Live-Updates, Validierung
-  routes/                 auth, api, connections, media (GIPHY, MyInstants), widgets, ws
+  chat/service.ts         Chat-Verlauf, Filter und Verteilung an die Chat-Overlays
+  routes/                 auth, api, chat, connections, media (GIPHY, MyInstants), widgets, ws
   shared/                 Gemeinsame Typen und Kataloge für Backend, Dashboard und Overlay
   db.ts                   SQLite-Schema, Migrationen und Zugriff
 server/test/              Vitest
 web/
   dashboard/              React-Dashboard
   overlay/                Browserquelle + gemeinsamer Renderer (auch für die Vorschau)
-  widget/                 Browserquelle für alle Widgets
+  widget/                 Browserquelle für alle Widgets und das Chat-Overlay
   vendor/                 Drittanbieter (Text-Effekte)
 scripts/                  start-local.sh, vendor-text-effects.mjs
 docs/screenshots/         Bilder für dieses README
@@ -408,7 +439,7 @@ docs/screenshots/         Bilder für dieses README
 - [ ] Safe Mode gegen Hate-Raids
 - [ ] Ausgehende Aktionen, z. B. OBS-Szenenwechsel per obs-websocket
 - [ ] Video-Link aus betterplace-Spenden im Alert abspielen
-- [ ] Widgets mit Chat-Anschluss: Chat-Box, Emote-Wand, Umfragen, Chat-Highlights
+- [ ] Weitere Chat-Widgets: Emote-Wand, Umfragen per Chat, Chat-Highlights
 
 Bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot und Zuschauer-GIFs vor Spenden (dafür bräuchte es eine eigene Spendenseite).
 

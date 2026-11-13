@@ -3,6 +3,7 @@ import type { Hub } from './ws/hub.js';
 import type { Pipeline } from './events/pipeline.js';
 import type { ConnectorManager } from './connectors/manager.js';
 import type { WidgetService } from './widgets/service.js';
+import type { ChatService } from './chat/service.js';
 
 export interface AppContext {
   db: DB;
@@ -10,4 +11,5 @@ export interface AppContext {
   pipeline: Pipeline;
   connectors: ConnectorManager;
   widgets: WidgetService;
+  chat: ChatService;
 }

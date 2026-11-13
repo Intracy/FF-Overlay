@@ -14,11 +14,13 @@ import { ConnectionsPage } from './pages/Connections';
 import { MediaPage } from './pages/Media';
 import { SettingsPage } from './pages/Settings';
 import { WidgetsPage } from './pages/Widgets';
+import { ChatPage } from './pages/Chat';
 
 const NAV = [
   { to: '/', label: 'Alert Feed' },
   { to: '/alertbox', label: 'Alert-Box' },
   { to: '/widgets', label: 'Widgets' },
+  { to: '/chat', label: 'Chat' },
   { to: '/rules', label: 'Regeln (erweitert)' },
   { to: '/templates', label: 'Alle Designs' },
   { to: '/overlays', label: 'Overlays' },
@@ -37,6 +39,7 @@ function Shell() {
     switch (path) {
       case '/alertbox': return <AlertBoxPage />;
       case '/widgets': return <WidgetsPage />;
+      case '/chat': return <ChatPage />;
       case '/rules': return <RulesPage />;
       case '/templates': return <TemplatesPage />;
       case '/overlays': return <OverlaysPage />;

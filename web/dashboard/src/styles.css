@@ -244,3 +244,11 @@ button.btn-test.block { width: 100%; padding-block: 10px; }
 .preview-tools { display: flex; align-items: center; gap: 8px; }
 button.sound-toggle.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .sound-blocked-hint { margin: 6px 0 0; font-size: 12px; color: var(--accent); }
+
+/* Live-Chat (Menüpunkt „Chat“) */
+.chat-feed { display: flex; flex-direction: column; gap: 2px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; margin: 0 -6px; }
+.chat-line { display: flex; gap: 10px; align-items: flex-start; padding: 7px 6px; border-radius: 8px; }
+.chat-line:hover { background: var(--panel-2); }
+.chat-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; flex: 0 0 auto; }
+.chat-line .chat-actions { display: flex; gap: 2px; opacity: 0; transition: opacity .15s; flex-wrap: wrap; justify-content: flex-end; max-width: 45%; }
+.chat-line:hover .chat-actions, .chat-line:focus-within .chat-actions { opacity: 1; }

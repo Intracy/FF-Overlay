@@ -9,6 +9,7 @@ import {
 import { betterplaceSource } from '../connectors/betterplace.js';
 import { buildBpData, logToDonation, mergeDonations, milestoneView, newlyReached, pollResults, sampleBpData } from './betterplace.js';
 import { formatAmount } from '../templates/render.js';
+import { CHAT_SAMPLES, chatVisible, sampleChatMessage, type ChatMessage } from '../shared/chat.js';
 import { eventCatalogKey } from '../shared/catalog.js';
 import {
   bossDamage, bossHit, bossInitial, creditsSections, eventLine, goalValue, labelText, listFilter, timerAdd, timerInitial, timerRemaining, timerSecondsFor,
@@ -27,6 +28,8 @@ export class WidgetService {
     private session: () => Session,
     /** Erzeugt Events (Milestone erreicht) – läuft durch die normale Pipeline in die Alert-Box */
     private emit: (event: NormalizedEvent) => void = () => undefined,
+    /** letzte Chat-Nachrichten (Chat-Overlay) */
+    private chatRecent: (limit: number) => ChatMessage[] = () => [],
   ) {}
 
   // ---------- betterplace ----------
@@ -171,6 +174,13 @@ export class WidgetService {
         const s = w.settings as WidgetSettingsMap['boss'];
         return { type: 'boss', state: this.state<BossState>(w, () => bossInitial(s)), serverNow: now };
       }
+      case 'chat': {
+        const s = w.settings as WidgetSettingsMap['chat'];
+        const messages = preview
+          ? CHAT_SAMPLES.slice(0, s.maxMessages).map((_, i) => sampleChatMessage(i))
+          : this.chatRecent(100).filter((m) => chatVisible(s, m)).slice(-s.maxMessages);
+        return { type: 'chat', messages, preview };
+      }
       case 'ticker': {
         const s = w.settings as WidgetSettingsMap['ticker'];
         const items = store.events.recentVisible(this.db, 200).filter((x) => listFilter(s, x.event)).slice(0, s.maxItems)
@@ -215,6 +225,7 @@ export class WidgetService {
       this.checkMilestones(e.platform === 'test');
     }
     for (const w of store.widgets.list(this.db)) {
+      if (w.type === 'chat') continue; // Chat-Overlays bekommen Nachrichten direkt vom ChatService
       if (w.type === 'timer') {
         const s = w.settings as WidgetSettingsMap['timer'];
         const t = this.state<TimerState>(w, () => timerInitial(s));

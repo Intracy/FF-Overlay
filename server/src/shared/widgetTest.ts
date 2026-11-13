@@ -19,7 +19,8 @@ export interface WidgetTestEvent {
 export type WidgetTest =
   | { kind: 'event'; event: WidgetTestEvent; label: string }
   | { kind: 'credits'; label: string }
-  | { kind: 'reload'; label: string };
+  | { kind: 'reload'; label: string }
+  | { kind: 'chat'; label: string };
 
 const NAMES = ['Maxi H.', 'rubber duck', 'Unicorn<3', 'Pixelpaula', 'TestViewer', 'Kaffeekobold'];
 const pick = <T,>(list: T[], rnd: () => number) => list[Math.floor(rnd() * list.length) % list.length]!;
@@ -80,6 +81,8 @@ export function widgetTest(type: WidgetType, settings: unknown, rnd: () => numbe
       ])));
     case 'credits':
       return { kind: 'credits', label: 'Credits abspielen' };
+    case 'chat':
+      return { kind: 'chat', label: 'Testnachrichten' };
     case 'bp_logos':
       return { kind: 'reload', label: 'Logos neu laden' };
     case 'bp_poll': {

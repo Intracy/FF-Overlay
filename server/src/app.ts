@@ -13,6 +13,8 @@ import * as store from './db.js';
 import { Hub } from './ws/hub.js';
 import { Pipeline } from './events/pipeline.js';
 import { ConnectorManager } from './connectors/manager.js';
+import { ChatService } from './chat/service.js';
+import { chatRoutes } from './routes/chat.js';
 import type { AppContext } from './context.js';
 import { seedIfEmpty } from './seed.js';
 import { authRoutes } from './routes/auth.js';
@@ -42,11 +44,14 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
     emit: (event) => pipeline.ingest(event),
     onStatus: () => hub.broadcastDashboard({ t: 'connectors', status: connectors.statuses() }),
     onBetterplaceStats: () => widgets.onBetterplaceStats(),
+    chat: (message) => chat.ingest(message),
+    chatRemove: (removal) => chat.remove(removal),
     log: app.log,
   });
-  const widgets: WidgetService = new WidgetService(db, hub, () => pipeline.session, (event) => pipeline.ingest(event));
+  const chat = new ChatService(db, hub);
+  const widgets: WidgetService = new WidgetService(db, hub, () => pipeline.session, (event) => pipeline.ingest(event), (n) => chat.recent(n));
   pipeline.listeners.push((entry) => widgets.onEvent(entry));
-  const ctx: AppContext = { db, hub, pipeline, connectors, widgets };
+  const ctx: AppContext = { db, hub, pipeline, connectors, widgets, chat };
 
   await app.register(fastifyCookie, { secret: config.appSecret });
   await app.register(fastifyMultipart);
@@ -67,6 +72,7 @@ export async function buildApp(opts: { dbFile?: string; logger?: boolean } = {})
   await app.register(async (i) => mediaRoutes(i, ctx));
   await app.register(async (i) => wsRoutes(i, ctx));
   await app.register(async (i) => widgetRoutes(i, ctx));
+  await app.register(async (i) => chatRoutes(i, ctx));
 
   fs.mkdirSync(config.mediaDir, { recursive: true });
   await app.register(fastifyStatic, { root: config.mediaDir, prefix: '/media/', decorateReply: false, maxAge: '7d' });

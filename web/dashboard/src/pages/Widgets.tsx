@@ -6,6 +6,8 @@ import { Color, fromLocalInput, TextFields, toLocalInput, Toggle, TypeChecks } f
 import { bpSections, BP_ICON } from './BpWidgetForms';
 import { TestThisButton } from '../components/TestButton';
 import { widgetTest } from '../../../../server/src/shared/widgetTest';
+import { chatSections } from './Chat';
+import type { ChatSettings } from '../../../../server/src/shared/chat';
 import { IN_ANIMATIONS, OUT_ANIMATIONS } from '../../../shared/animations';
 import {
   isBpType, LABEL_KINDS, LIST_STYLES, WIDGET_INFO, type BossSettings, type BpData, type BossState, type CreditsSettings, type EventListSettings,
@@ -22,7 +24,7 @@ type W = Widget & { url: string };
 type Detail = W & { data: WidgetData };
 
 const TYPES = Object.keys(WIDGET_INFO) as WidgetType[];
-export const ICON: Record<WidgetType, string> = { event_list: '☰', goal: '▰', label: 'Aa', timer: '⏱', credits: '🎬', boss: '⚔', ticker: '⇆', ...BP_ICON };
+export const ICON: Record<WidgetType, string> = { event_list: '☰', goal: '▰', label: 'Aa', timer: '⏱', credits: '🎬', boss: '⚔', ticker: '⇆', chat: '💬', ...BP_ICON };
 
 type SetS<T> = (patch: Partial<T>) => void;
 
@@ -312,6 +314,7 @@ function settingsSections(type: WidgetType, s: WidgetSettingsMap[WidgetType], se
       case 'credits': return CreditsForm({ s: s as CreditsSettings, set });
       case 'boss': return BossForm({ s: s as BossSettings, set });
       case 'ticker': return TickerForm({ s: s as TickerSettings, set });
+      case 'chat': return chatSections(s as ChatSettings, set);
       default: return bpSections(type, s, set);
     }
   };
@@ -320,9 +323,18 @@ function settingsSections(type: WidgetType, s: WidgetSettingsMap[WidgetType], se
 
 // ---------- Vorschau & Steuerung ----------
 
-function WidgetPreview({ w, background, sample }: { w: W; background: string; sample?: boolean }) {
+function WidgetPreview({ w, background, sample, draft }: { w: W; background: string; sample?: boolean; draft?: object }) {
   const info = WIDGET_INFO[w.type];
   const wrap = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLIFrameElement>(null);
+  // Chat-Overlay: ungespeicherte Einstellungen sofort in der Vorschau zeigen
+  const post = () => {
+    if (w.type === 'chat' && draft) frame.current?.contentWindow?.postMessage({ t: 'ffo-chat-draft', settings: draft }, location.origin);
+  };
+  useEffect(() => {
+    const t = setTimeout(post, 120);
+    return () => clearTimeout(t);
+  }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
   const [scale, setScale] = useState(0.5);
   useEffect(() => {
     const el = wrap.current;
@@ -334,6 +346,8 @@ function WidgetPreview({ w, background, sample }: { w: W; background: string; sa
   return (
     <div ref={wrap} className="widget-preview" style={{ height: info.height * scale, background }}>
       <iframe
+        ref={frame}
+        onLoad={() => setTimeout(post, 600)}
         title="Widget-Vorschau"
         src={`${w.url.replace(/^https?:\/\/[^/]+/, '')}${w.type === 'credits' ? '&play=1' : ''}${sample ? '&preview=1' : ''}`}
         style={{ width: info.width, height: info.height, transform: `scale(${scale})`, colorScheme: 'light' }}
@@ -407,9 +421,21 @@ function Controls({ w, data, onChange }: { w: W; data: WidgetData; onChange: () 
   return null;
 }
 
-function TestButtons({ betterplace }: { betterplace?: boolean }) {
+function TestButtons({ betterplace, chat }: { betterplace?: boolean; chat?: boolean }) {
   const run = useAction();
   const fire = (body: object, label: string) => void run(() => api.post('/api/events/test', body), `Test: ${label}`);
+  if (chat) {
+    const send = (body: object, label: string) => void run(() => api.post('/api/chat/test', body), label);
+    return (
+      <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+        <span className="small muted">Testnachrichten:</span>
+        <button className="small" onClick={() => send({ platform: 'twitch', count: 3 }, 'Twitch-Testnachrichten')}>Twitch</button>
+        <button className="small" onClick={() => send({ platform: 'youtube', count: 3 }, 'YouTube-Testnachrichten')}>YouTube</button>
+        <button className="small" onClick={() => send({ count: 6 }, 'Testnachrichten')}>Beide</button>
+        <button className="small ghost" onClick={() => void run(() => api.post('/api/chat/remove', { all: true, platform: 'test' }), 'Testnachrichten entfernt')}>Testnachrichten entfernen</button>
+      </div>
+    );
+  }
   if (betterplace) {
     return (
       <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
@@ -436,16 +462,18 @@ function TestButtons({ betterplace }: { betterplace?: boolean }) {
   );
 }
 
-export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDeleted: () => void; onRenamed: () => void }) {
+export function WidgetEditor({ id, onDeleted, onRenamed, extra }: { id: string; onDeleted: () => void; onRenamed: () => void; extra?: ReactNode }) {
   const detail = useLoad(() => api.get<Detail>(`/api/widgets/${id}`), [id]);
   const run = useAction();
   const [draft, setDraft] = useState<object | null>(null);
   const [name, setName] = useState('');
   const [bg, setBg] = useState('');
   const [live, setLive] = useState<WidgetData | null>(null);
-  const [sample, setSample] = useState(false);
+  const [sampleChoice, setSample] = useState<boolean | null>(null);
   const [frameRun, setFrameRun] = useState(0);
   const w = detail.data;
+  // Chat-Overlay: Vorschau standardmäßig mit laufenden Beispielnachrichten
+  const sample = sampleChoice ?? w?.type === 'chat';
 
   // Entwurf nur nach (Neu-)Laden übernehmen, nicht bei jeder Live-Aktualisierung
   useEffect(() => {
@@ -487,6 +515,7 @@ export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDelet
     }
     const plan = widgetTest(w.type, draft);
     if (plan.kind === 'credits') await run(() => api.post(`/api/widgets/${w.id}/credits/roll`), 'Credits laufen');
+    else if (plan.kind === 'chat') await run(() => api.post('/api/chat/test', { count: 4 }), 'Testnachrichten gesendet');
     else if (plan.kind === 'reload') {
       setFrameRun((n) => n + 1);
       await run(() => api.post(`/api/widgets/${w.id}/refresh`), 'Widget neu geladen');
@@ -526,13 +555,15 @@ export function WidgetEditor({ id, onDeleted, onRenamed }: { id: string; onDelet
               <h3 style={{ margin: 0 }}>Vorschau</h3>
               <label className="row small" style={{ gap: 6 }}>Hintergrund <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} style={{ width: 40, padding: 2 }} /></label>
             </div>
-            <WidgetPreview key={`${w.url}:${sample}:${frameRun}`} w={w} background={bg} sample={sample} />
+            <WidgetPreview key={`${w.url}:${sample}:${frameRun}`} w={w} background={bg} sample={sample} draft={draft} />
             <TestThisButton block onTest={test} label={dirty ? 'Speichern & dieses Widget testen' : 'Dieses Widget testen'}
               title="Schickt ein passendes Test-Event – das Widget reagiert in der Vorschau und in OBS" />
             <Controls w={w} data={live ?? w.data} onChange={refresh} />
             {isBpType(w.type) && <Toggle label="Beispieldaten in der Vorschau (wie &preview=true bei betterplace)" value={sample} onChange={setSample} />}
-            <TestButtons betterplace={isBpType(w.type)} />
+            {w.type === 'chat' && <Toggle label="Beispielnachrichten in der Vorschau" hint="Änderungen erscheinen sofort, auch ungespeichert" value={sample} onChange={setSample} />}
+            <TestButtons betterplace={isBpType(w.type)} chat={w.type === 'chat'} />
           </div>
+          {extra}
           {sections.slice(half)}
         </div>
       </div>
@@ -544,7 +575,9 @@ export function WidgetsPage() {
   const list = useLoad(() => api.get<W[]>('/api/widgets'));
   const run = useAction();
   const [selected, setSelected] = useState<string | null>(null);
-  const current = selected ?? list.data?.[0]?.id ?? null;
+  // Chat-Overlays haben einen eigenen Menüpunkt
+  const widgets = (list.data ?? []).filter((w) => w.type !== 'chat');
+  const current = selected ?? widgets[0]?.id ?? null;
 
   const create = async (type: WidgetType) => {
     const w = await run(() => api.post<W>('/api/widgets', { type }), `${WIDGET_INFO[type].label} angelegt`);
@@ -568,9 +601,9 @@ export function WidgetsPage() {
         <div className="stack">
           <div className="card stack" style={{ gap: 6 }}>
             <h3 style={{ margin: 0 }}>Deine Widgets</h3>
-            {list.data?.length === 0 && <p className="small muted" style={{ margin: 0 }}>Noch keine – lege unten eins an.</p>}
+            {widgets.length === 0 && <p className="small muted" style={{ margin: 0 }}>Noch keine – lege unten eins an.</p>}
             <div className="ab-nav" style={{ position: 'static' }}>
-              {list.data?.map((w) => (
+              {widgets.map((w) => (
                 <button key={w.id} className={`item ${current === w.id ? 'active' : ''}`} onClick={() => setSelected(w.id)}>
                   {ICON[w.type]} {w.name}
                 </button>
@@ -579,7 +612,7 @@ export function WidgetsPage() {
           </div>
           <div className="card stack" style={{ gap: 6 }}>
             <h3 style={{ margin: 0 }}>Neues Widget</h3>
-            {TYPES.filter((t) => !isBpType(t)).map((t) => (
+            {TYPES.filter((t) => !isBpType(t) && t !== 'chat').map((t) => (
               <button key={t} className="widget-type" onClick={() => void create(t)}>
                 <b>{ICON[t]} {WIDGET_INFO[t].label}</b>
                 <span className="small muted">{WIDGET_INFO[t].description}</span>

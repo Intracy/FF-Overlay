@@ -6,7 +6,7 @@ import { decrypt, encrypt } from '../../lib/crypto.js';
 import type { ConnectorStatus } from '../../shared/types.js';
 import type { Connector, ConnectorEnv } from '../types.js';
 import { refreshTokens, type TwitchTokens } from './auth.js';
-import { normalizeTwitch, twitchSubscriptions } from './normalize.js';
+import { normalizeTwitch, normalizeTwitchChat, TWITCH_CHAT_SCOPE, twitchChatSubscriptions, twitchSubscriptions } from './normalize.js';
 
 export interface TwitchConnectionData {
   userId: string;
@@ -36,6 +36,8 @@ export class TwitchConnector implements Connector {
   private seen = new Set<string>();
   private state: ConnectorStatus['state'] = 'disconnected';
   private detail = '';
+  /** Twitch-Badges (set_id/id → Bild), einmal pro Verbindung geladen */
+  private badges = new Map<string, { url: string; title: string }>();
 
   constructor(private db: DB, readonly id: string, private env: ConnectorEnv) {}
 
@@ -141,7 +143,12 @@ export class TwitchConnector implements Connector {
         if (this.seen.has(id)) return;
         this.seen.add(id);
         if (this.seen.size > 2000) this.seen = new Set([...this.seen].slice(-1000));
-        const event = normalizeTwitch(msg.payload.subscription.type, msg.payload.event, id, msg.metadata.message_timestamp);
+        const subType = msg.payload.subscription.type as string;
+        if (subType.startsWith('channel.chat.')) {
+          this.onChat(subType, msg.payload.event, msg.metadata.message_timestamp);
+          return;
+        }
+        const event = normalizeTwitch(subType, msg.payload.event, id, msg.metadata.message_timestamp);
         if (event) this.env.emit(event);
       } else if (type === 'revocation') {
         this.setState('error', `Subscription widerrufen: ${msg.payload.subscription.type} (${msg.payload.subscription.status}) – bitte neu verbinden`);
@@ -169,11 +176,37 @@ export class TwitchConnector implements Connector {
     }, this.keepaliveMs);
   }
 
+  private onChat(type: string, e: any, at: string) {
+    if (type === 'channel.chat.message') {
+      const m = normalizeTwitchChat(e, (set, id) => this.badges.get(`${set}/${id}`), at);
+      if (m) this.env.chat?.(m);
+    } else if (type === 'channel.chat.message_delete') this.env.chatRemove?.({ ids: [`twc_${e.message_id}`] });
+    else if (type === 'channel.chat.clear_user_messages') this.env.chatRemove?.({ userId: e.target_user_id, platform: 'twitch' });
+    else if (type === 'channel.chat.clear') this.env.chatRemove?.({ all: true, platform: 'twitch' });
+  }
+
+  /** Badge-Bilder (global + Kanal) für das Chat-Overlay */
+  private async loadBadges(broadcasterId: string) {
+    for (const path of ['/chat/badges/global', `/chat/badges?broadcaster_id=${encodeURIComponent(broadcasterId)}`]) {
+      try {
+        const res = await this.helix(path);
+        if (!res.ok) continue;
+        const j = (await res.json()) as { data: Array<{ set_id: string; versions: Array<{ id: string; image_url_2x: string; title: string }> }> };
+        for (const set of j.data ?? []) for (const v of set.versions) this.badges.set(`${set.set_id}/${v.id}`, { url: v.image_url_2x, title: v.title });
+      } catch (err) {
+        this.env.log.warn({ err: String(err) }, 'Twitch: Badges nicht geladen');
+      }
+    }
+  }
+
   private async subscribeAll() {
     const d = this.data();
     if (!d || !this.sessionId) return;
     const failures: string[] = [];
-    for (const sub of twitchSubscriptions(d.userId)) {
+    // Chat nur mit passender Berechtigung (ältere Verbindungen: einmal neu verbinden)
+    const chatAllowed = (d.scopes ?? []).includes(TWITCH_CHAT_SCOPE);
+    if (chatAllowed) void this.loadBadges(d.userId);
+    for (const sub of [...twitchSubscriptions(d.userId), ...(chatAllowed ? twitchChatSubscriptions(d.userId) : [])]) {
       try {
         const res = await this.helix('/eventsub/subscriptions', {
           method: 'POST',
@@ -188,7 +221,7 @@ export class TwitchConnector implements Connector {
       this.env.log.warn({ failures }, 'Twitch: einige Subscriptions fehlgeschlagen');
       this.setState('error', `Nicht abonniert: ${failures.join(', ')}`);
     } else {
-      this.setState('connected');
+      this.setState('connected', chatAllowed ? '' : 'Chat fehlt: bitte einmal neu mit Twitch verbinden (neue Berechtigung „Chat lesen“)');
     }
   }
 }

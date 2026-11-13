@@ -91,10 +91,28 @@ const bpMilestones = z.object({
 });
 const bpFeed = z.object({ sort: z.enum(['newest', 'highest']), showComments: z.boolean(), onlyWithAmount: z.boolean(), max: num(5, 200), name: text, amount: text, comment: text });
 
+// ---------- Chat-Overlay ----------
+const mediaUrl = z.string().max(2000).refine((u) => u === '' || u.startsWith('/media/') || /^https:\/\//.test(u), 'nur https:// oder /media/');
+const chat = z.object({
+  sources: z.object({ twitch: z.boolean(), youtube: z.boolean() }),
+  theme: z.enum(['clean', 'boxed', 'bubble', 'card', 'outline', 'neon', 'glass', 'minimal']),
+  direction: z.enum(['up', 'down']), align: z.enum(['left', 'right']), inline: z.boolean(),
+  maxMessages: num(1, 50), hideAfter: num(0, 3600), delay: num(0, 60),
+  name: text, nameColor: z.enum(['user', 'platform', 'custom']), message: text, highlightColor: color,
+  strokeWidth: num(0, 20), strokeColor: color, shadow: z.boolean(),
+  background: z.object({ color, opacity: pct, radius: num(0, 60), padding: num(0, 60), gap: num(0, 60) }),
+  showPlatform: z.boolean(), showBadges: z.boolean(), showAvatar: z.boolean(), emoteSize: num(50, 300),
+  animIn: anim, animOut: anim, speedMs: num(100, 10_000),
+  nameEffect: z.string().regex(/^[a-z]{0,20}$/), effectSpeed: num(0.25, 5), effectColors: z.enum(['effect', 'text']),
+  showHighlights: z.boolean(), hideCommands: z.boolean(), hideLinks: z.boolean(), hiddenUsers: z.string().max(4000),
+  sound: z.object({ url: mediaUrl, volume: num(0, 1) }),
+});
+
 export const WIDGET_SCHEMAS: Record<WidgetType, z.ZodObject> = {
   event_list: eventList, goal, label, timer, credits, boss, ticker,
   bp_all: bpAll, bp_poll: bpPoll, bp_total: bpTotal, bp_last: bpLast, bp_top: bpTop, bp_leaderboard: bpLeaderboard,
   bp_progress: bpProgress, bp_comment: bpComment, bp_logos: bpLogos, bp_milestones: bpMilestones, bp_feed: bpFeed,
+  chat,
 };
 
 export const widgetCreateSchema = z.object({

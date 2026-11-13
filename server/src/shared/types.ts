@@ -1,3 +1,4 @@
+import type { ChatMessage, ChatRemoval } from './chat.js';
 // Gemeinsame Typen für Backend, Dashboard und Overlay.
 // Das Dashboard importiert diese Datei nur als Typen (kein Laufzeitcode).
 
@@ -290,7 +291,9 @@ export type ServerToDashboard =
   | { t: 'event'; entry: EventLogEntry }
   | { t: 'event.update'; id: string; status: EventStatus; reason: string }
   | { t: 'queue'; state: QueueState }
-  | { t: 'connectors'; status: ConnectorStatus[] };
+  | { t: 'connectors'; status: ConnectorStatus[] }
+  | { t: 'chat'; message: ChatMessage }
+  | { t: 'chat.remove'; removal: ChatRemoval };
 
 export interface ConnectorStatus {
   id: string;

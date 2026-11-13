@@ -6,7 +6,7 @@ import { decrypt, encrypt } from '../../lib/crypto.js';
 import type { ConnectorStatus } from '../../shared/types.js';
 import type { Connector, ConnectorEnv } from '../types.js';
 import { refreshGoogle } from './auth.js';
-import { normalizeSubscriber, normalizeYouTube, type YtChatMessage, type YtSubscriber } from './normalize.js';
+import { normalizeSubscriber, normalizeYouTube, normalizeYouTubeChat, youTubeChatRemoval, type YtChatMessage, type YtSubscriber } from './normalize.js';
 
 export interface YouTubeConnectionData {
   channelId: string;
@@ -172,6 +172,15 @@ export class YouTubeConnector implements Connector {
       for (const m of j.items) {
         const e = normalizeYouTube(m);
         if (e) this.env.emit(e);
+      }
+    }
+    // Chat-Overlay: beim ersten Abruf die letzten 20 Nachrichten als Verlauf, danach alles Neue
+    for (const m of this.chatPrimed ? j.items : j.items.slice(-20)) {
+      const removal = youTubeChatRemoval(m);
+      if (removal) this.env.chatRemove?.(removal);
+      else {
+        const c = normalizeYouTubeChat(m);
+        if (c) this.env.chat?.(c);
       }
     }
     this.chatPrimed = true;

@@ -1,11 +1,13 @@
 import { BRAND_COLOR } from './brand.js';
 import { BP_DEFAULTS, BP_INFO, type BpData, type BpSettingsMap, type BpWidgetType } from './bpWidgets.js';
+import { chatDefaults, type ChatMessage, type ChatRemoval, type ChatSettings } from './chat.js';
 export * from './bpWidgets.js';
 // Widgets nach dem Vorbild der Streamlabs-Widgets, die auf dieselben Events reagieren wie die Alert-Box.
 // Reine Daten und Typen – Backend, Dashboard und Widget-Seite benutzen diese Datei.
 
 export type StreamWidgetType = 'event_list' | 'goal' | 'label' | 'timer' | 'credits' | 'boss' | 'ticker';
-export type WidgetType = StreamWidgetType | BpWidgetType;
+/** 'chat' = Chat-Overlay (eigener Menüpunkt „Chat“, technisch ein Widget mit eigener Browserquelle) */
+export type WidgetType = StreamWidgetType | BpWidgetType | 'chat';
 
 export interface TextStyle {
   font: string;
@@ -170,6 +172,7 @@ export interface WidgetSettingsMap extends BpSettingsMap {
   credits: CreditsSettings;
   boss: BossSettings;
   ticker: TickerSettings;
+  chat: ChatSettings;
 }
 
 export interface Widget<T extends WidgetType = WidgetType> {
@@ -204,12 +207,15 @@ export type WidgetData =
   | { type: 'credits'; sections: Array<{ key: string; heading: string; lines: string[] }> }
   | { type: 'boss'; state: BossState; serverNow: number }
   | { type: 'ticker'; items: Array<{ id: string; name: string; amount: string; message: string; type: string }> }
-  | { type: BpWidgetType; bp: BpData; serverNow: number };
+  | { type: BpWidgetType; bp: BpData; serverNow: number }
+  | { type: 'chat'; messages: ChatMessage[]; preview: boolean };
 
 export type ServerToWidget =
   | { t: 'snapshot'; widget: Omit<Widget, 'key' | 'state'>; data: WidgetData }
   | { t: 'credits.roll' }
   | { t: 'poll.winner' }
+  | { t: 'chat.message'; message: ChatMessage }
+  | { t: 'chat.remove'; removal: ChatRemoval }
   | { t: 'reload' };
 
 const text = (size: number, weight = 700): TextStyle => ({ font: 'Poppins', size, weight, color: '#ffffff' });
@@ -245,6 +251,7 @@ export const WIDGET_DEFAULTS: { [K in WidgetType]: () => WidgetSettingsMap[K] } 
     initialName: 'Streamer', barColor: BRAND_COLOR, barBgColor: '#241a35', barTextColor: '#ffffff', text: text(24, 700), killAnimation: 'hinge',
   }),
   ticker: () => ({ types: ['donation', 'charity', 'cheer', 'yt_superchat'], maxItems: 10, format: '{name}: {amount}', speed: 80, text: text(32, 700), amountColor: BRAND_COLOR, separator: '•' }),
+  chat: chatDefaults,
 };
 
 export const WIDGET_INFO: Record<WidgetType, { label: string; description: string; width: number; height: number }> = {
@@ -256,6 +263,7 @@ export const WIDGET_INFO: Record<WidgetType, { label: string; description: strin
   credits: { label: 'End-Credits', description: 'Abspann mit allen Unterstützern der Session', width: 1920, height: 1080 },
   boss: { label: 'Stream-Boss', description: 'Viewer kämpfen per Follow, Sub, Bits und Spende um den Titel', width: 600, height: 160 },
   ticker: { label: 'Spenden-Ticker', description: 'Laufband mit den letzten Spenden und Cheers', width: 1920, height: 70 },
+  chat: { label: 'Chat-Overlay', description: 'Chat aus Twitch und YouTube, einzeln oder zusammen', width: 600, height: 900 },
 };
 
 export const LABEL_KINDS: Record<LabelKind, string> = {

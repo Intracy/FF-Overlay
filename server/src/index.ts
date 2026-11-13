@@ -3,11 +3,11 @@ import { buildApp } from './app.js';
 
 assertConfig((msg) => console.warn(`[config] ${msg}`));
 
-const { app, ctx } = await buildApp();
+const { app, projects } = await buildApp();
 
 await app.listen({ port: config.port, host: config.host });
 app.log.info(`FF-Overlay läuft auf ${config.publicUrl}`);
-await ctx.connectors.startAll();
+await projects.startAll();
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.on(sig, async () => {

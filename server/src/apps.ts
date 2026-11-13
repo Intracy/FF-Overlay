@@ -25,7 +25,12 @@ export interface AppCredentials {
 }
 
 const KEY = 'apps';
-const read = (db: DB) => store.settings.get<StoredApps>(db, KEY, {});
+/** App-Zugangsdaten gelten für alle Projekte und liegen in der Datenbank des Haupt-Projekts */
+let systemDb: DB | null = null;
+export function setSystemDb(db: DB) {
+  systemDb = db;
+}
+const read = (db: DB) => store.settings.get<StoredApps>(systemDb ?? db, KEY, {});
 const dec = (v?: string) => {
   if (!v) return '';
   try {
@@ -74,5 +79,5 @@ export function saveApps(db: DB, patch: { twitchClientId?: string; twitchClientS
   if (patch.googleClientId !== undefined) next.googleClientId = patch.googleClientId.trim();
   if (patch.googleClientSecret !== undefined) next.googleClientSecret = patch.googleClientSecret.trim() ? encrypt(patch.googleClientSecret.trim()) : '';
   if (patch.giphyApiKey !== undefined) next.giphyApiKey = patch.giphyApiKey.trim() ? encrypt(patch.giphyApiKey.trim()) : '';
-  store.settings.set(db, KEY, next);
+  store.settings.set(systemDb ?? db, KEY, next);
 }

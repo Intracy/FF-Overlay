@@ -8,6 +8,48 @@ export interface MediaAsset { id: string; name: string; kind: 'image' | 'video' 
 export interface Connection { id: string; platform: string; label: string; enabled: boolean; data: Record<string, any> }
 export interface GiphyItem { id: string; title: string; preview: string; url: string; width: number; height: number }
 
+// ---------- Aktuelles Projekt (Overlay-Profil) ----------
+// Jede Anfrage trägt das Projekt im Header; das Cookie gilt für Navigationen (z. B. Twitch-Anmeldung per Weiterleitung).
+
+const PROJECT_KEY = 'ffo-project';
+
+export function currentProject(): string {
+  try {
+    return localStorage.getItem(PROJECT_KEY) || 'default';
+  } catch {
+    return 'default';
+  }
+}
+
+function setProjectCookie(id: string) {
+  document.cookie = `ffp=${encodeURIComponent(id)}; path=/; SameSite=Lax; max-age=31536000`;
+}
+setProjectCookie(currentProject());
+
+/** In ein anderes Projekt wechseln: Dashboard lädt neu, damit alle Daten aus dem neuen Projekt kommen */
+export function switchProject(id: string, to = '/') {
+  try {
+    localStorage.setItem(PROJECT_KEY, id);
+  } catch {
+    /* egal */
+  }
+  setProjectCookie(id);
+  location.href = to;
+}
+
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  createdAt: string;
+  isDefault: boolean;
+  overlays: number;
+  widgets: number;
+  connections: Array<{ platform: string; label: string; state: string }>;
+  live: boolean;
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -15,7 +57,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
-  const init: RequestInit = { method, credentials: 'same-origin', headers: {} };
+  const init: RequestInit = { method, credentials: 'same-origin', headers: { 'x-ff-project': currentProject() } };
   if (body instanceof FormData) init.body = body;
   else if (body !== undefined) {
     init.body = JSON.stringify(body);

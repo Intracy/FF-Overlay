@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ServerToDashboard } from '../../../server/src/shared/types';
-import { api, type ConnectorStatus, type EventLogEntry, type QueueState } from './api';
+import { api, currentProject, type ConnectorStatus, type EventLogEntry, type QueueState } from './api';
 import type { ChatMessage } from '../../../server/src/shared/chat';
 
 interface LiveState {
@@ -32,7 +32,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     let timer: number | undefined;
 
     const connect = () => {
-      ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/dashboard`);
+      ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/dashboard?p=${encodeURIComponent(currentProject())}`);
       ws.onopen = () => { retry.current = 0; setConnected(true); };
       ws.onmessage = (m) => {
         const msg = JSON.parse(m.data) as ServerToDashboard;

@@ -15,8 +15,10 @@ import { MediaPage } from './pages/Media';
 import { SettingsPage } from './pages/Settings';
 import { WidgetsPage } from './pages/Widgets';
 import { ChatPage } from './pages/Chat';
+import { ProjectSwitcher, ProjectsPage } from './pages/Projects';
 
 const NAV = [
+  { to: '/projects', label: 'Projekte' },
   { to: '/', label: 'Alert Feed' },
   { to: '/alertbox', label: 'Alert-Box' },
   { to: '/widgets', label: 'Widgets' },
@@ -40,6 +42,7 @@ function Shell() {
       case '/alertbox': return <AlertBoxPage />;
       case '/widgets': return <WidgetsPage />;
       case '/chat': return <ChatPage />;
+      case '/projects': return <ProjectsPage />;
       case '/rules': return <RulesPage />;
       case '/templates': return <TemplatesPage />;
       case '/overlays': return <OverlaysPage />;
@@ -54,8 +57,9 @@ function Shell() {
     <div className={`app ${popout ? 'popout' : ''}`}>
       <nav className="side" aria-label="Hauptnavigation">
         <div className="brand"><span className="logo">F</span>FF-Overlay</div>
+        <ProjectSwitcher />
         {NAV.map((n) => (
-          <Link key={n.to} to={n.to} className={path === n.to ? 'active' : ''}>
+          <Link key={n.to} to={n.to} className={`${path === n.to ? 'active' : ''}${n.to === '/projects' ? ' nav-projects' : ''}`}>
             {n.label}
             {n.to === '/connections' && problems > 0 && <span className="badge err">{problems}</span>}
           </Link>

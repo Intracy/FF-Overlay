@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';
 import * as store from '../db.js';
+import { mediaUsedElsewhere } from '../projects.js';
 import { config } from '../config.js';
 import { giphyKey } from '../apps.js';
 import { requireAuth } from './auth.js';
@@ -144,7 +145,7 @@ export async function mediaRoutes(app: FastifyInstance, ctx: AppContext) {
 
   app.delete<{ Params: { id: string } }>('/api/media/:id', async (req) => {
     const m = store.media.get(db, req.params.id);
-    if (m?.source === 'upload' || m?.source === 'myinstants') fs.rmSync(path.join(config.mediaDir, path.basename(m.url)), { force: true });
+    if ((m?.source === 'upload' || m?.source === 'myinstants') && !mediaUsedElsewhere(m.url)) fs.rmSync(path.join(config.mediaDir, path.basename(m.url)), { force: true });
     return { ok: store.media.remove(db, req.params.id) };
   });
 

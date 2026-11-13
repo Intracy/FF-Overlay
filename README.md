@@ -27,6 +27,7 @@ Ohne Cloud-Konto und ohne Abo, und deine Daten bleiben bei dir.
 - [Screenshots](#screenshots)
 - [Design](#design)
 - [Funktionen](#funktionen)
+- [Projekte für mehrere Streams](#projekte-für-mehrere-streams)
 - [So funktioniert es](#so-funktioniert-es)
 - [Schnellstart](#schnellstart)
 - [Einrichtung](#einrichtung)
@@ -48,6 +49,7 @@ und hat das dunkle FF-Design der anderen FF-Tools (FF-Broadcast): schwarze Fläc
 
 **Highlights**
 
+- 🗂️ **Projekte:** mehrere getrennte Alert-Systeme für verschiedene Streams und Konten, mit einem Klick umschalten
 - 🔔 **Alert-Box wie bei Streamlabs:** Standard-Alerts und Varianten pro Event-Typ, Themen, globale Bearbeitung und eine Live-Vorschau mit Ton
 - 💜 **betterplace-Integration:** alle Livestream-Alerts und -Widgets von betterplace, per Spenden-Webhook in Echtzeit
 - ✨ **Animation Library:** 123 Text-Effekte (Neon, Glitch, Split-Flap, Gold-Foil, Wax-Seal …), die deine Schrift und Farben übernehmen
@@ -75,6 +77,11 @@ und hat das dunkle FF-Design der anderen FF-Tools (FF-Broadcast): schwarze Fläc
 | **Widgets** | **Regeln** |
 | [![Widget-Editor](docs/screenshots/widgets.png)](docs/screenshots/widgets.png) | [![Regel-Editor mit Prüfwerkzeug](docs/screenshots/rules.png)](docs/screenshots/rules.png) |
 | Jedes Widget ist eine eigene Browserquelle | Beliebig viele UND-Bedingungen pro Regel und die Prüfung „Welche Regel greift?“ |
+
+| Projekte |
+| :---: |
+| [![Projektübersicht mit Projektauswahl in der Seitenleiste](docs/screenshots/projects.png)](docs/screenshots/projects.png) |
+| Mehrere Overlay-Profile für verschiedene Streams, umschaltbar oben in der Seitenleiste |
 
 <details>
 <summary><b>Widgets im Overlay</b> und <b>Verbindungen</b></summary>
@@ -106,6 +113,24 @@ Das Dashboard nutzt dasselbe Design wie [FF-Broadcast](https://github.com/Intrac
 
 Das Design steckt in `web/dashboard/src/theme.css` und überschreibt nur das Aussehen. Layout und Anordnung kommen aus `styles.css`.
 Overlays und Widgets in OBS gestaltest du unabhängig davon selbst; neue Alert-Designs starten mit der Akzentfarbe **#9373c5**.
+
+---
+
+## Projekte für mehrere Streams
+
+Ganz oben steht die **Projektverwaltung**: Jedes Projekt ist ein komplett eigenes Alert-System – zum Beispiel für deinen
+Hauptkanal, einen Zweitkanal, einen Charity-Marathon oder ein Event, das über andere Konten läuft.
+
+- **Alles getrennt:** eigene Verbindungen (Twitch, YouTube, betterplace, Webhooks), Overlays mit eigenen URLs, Alert-Box,
+  Designs, Regeln, Widgets, Chat-Overlays, Mediathek, Einstellungen und Event-Log. Alerts aus einem Projekt erscheinen nur in dessen Overlays
+- **Umschalten:** oben in der Seitenleiste das Projekt wählen – danach zeigen alle Menüpunkte das gewählte Projekt
+- **Alle gleichzeitig aktiv:** Jedes Projekt läuft im Hintergrund weiter, auch wenn du gerade ein anderes bearbeitest
+- **Anlegen:** neu mit Standard-Designs oder als Kopie eines bestehenden Projekts (Designs, Regeln, Overlays, Widgets, Mediathek –
+  ohne Verbindungen und mit neuen geheimen Keys). Name, Beschreibung und Farbe frei wählbar
+- **Löschen:** trennt die Verbindungen; die Datenbank bleibt als Sicherung in `data/projects/` liegen
+- **Gemeinsam für alle Projekte:** die App-Zugangsdaten (Twitch-App, Google-Client, GIPHY) und der Dashboard-Login
+
+Das bisherige Setup ist das **Haupt-Projekt** (umbenennbar, gekennzeichnet mit „Standard“). Vorhandene Overlay-, Widget- und Webhook-URLs funktionieren unverändert weiter.
 
 ---
 
@@ -249,7 +274,7 @@ cp .env.example .env      # APP_SECRET, PUBLIC_URL und ggf. ADMIN_PASSWORD setze
 docker compose up -d --build
 ```
 
-Datenbank und Uploads liegen in `./data`. Für ein Backup sicherst du diesen Ordner.
+Datenbank und Uploads liegen in `./data` (weitere Projekte in `./data/projects`). Für ein Backup sicherst du diesen Ordner.
 
 ### Manuell / Produktion
 
@@ -437,6 +462,7 @@ server/src/
   chat/service.ts         Chat-Verlauf, Filter und Verteilung an die Chat-Overlays
   routes/                 auth, api, chat, connections, media (GIPHY, MyInstants), widgets, ws
   shared/                 Gemeinsame Typen und Kataloge für Backend, Dashboard und Overlay
+  projects.ts             Projekte: eigene Datenbank und Laufzeit pro Projekt, Zuordnung von Anfragen und URLs
   db.ts                   SQLite-Schema, Migrationen und Zugriff
 server/test/              Vitest
 web/
@@ -456,6 +482,7 @@ docs/screenshots/         Bilder für dieses README
 - **Widgets rechnen aus dem Event-Log:** Ziele, Labels, Credits und Listen werden bei jeder Änderung neu berechnet. So wird nichts doppelt gezählt, und Testdaten lassen sich sauber entfernen. Nur Timer und Boss haben eigenen Zustand.
 - **Warteschlange im Backend:** Pause, Skip und Replay wirken sofort, und mehrere Browserquellen (16:9 und 9:16) bleiben synchron.
 - **Twitch per WebSocket statt Webhook:** dafür ist kein öffentlicher HTTPS-Endpunkt nötig.
+- **Eine Datenbank pro Projekt:** Projekte sind vollständig getrennt und lassen sich einzeln sichern. Das Dashboard schickt das gewählte Projekt bei jeder Anfrage mit; Browserquellen und Webhooks findet der Server über ihre ID bzw. ihren Token.
 - **Ein Renderer für Overlay und Vorschau:** das Dashboard zeigt exakt das, was in OBS erscheint.
 </details>
 

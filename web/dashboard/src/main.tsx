@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import './theme.css';
 import { api } from './api';
 import { Link, Router, ToastProvider, useRouter } from './ui';
 import { LiveProvider, useLive } from './live';

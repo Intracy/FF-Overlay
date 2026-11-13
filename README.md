@@ -7,11 +7,11 @@
 Alerts, Widgets und Spenden-Overlays wie bei Streamlabs oder StreamElements, aber auf deinem eigenen Rechner oder NAS.
 Ohne Cloud-Konto und ohne Abo, und deine Daten bleiben bei dir.
 
-![Node.js ≥ 22](https://img.shields.io/badge/Node.js-%E2%89%A5%2022-9373c5?logo=nodedotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-9373c5?logo=typescript&logoColor=white)
-![React 19](https://img.shields.io/badge/React-19-9373c5?logo=react&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-eine%20Datei-9373c5?logo=sqlite&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-ready-9373c5?logo=docker&logoColor=white)
+![Node.js ≥ 22](https://img.shields.io/badge/Node.js-%E2%89%A5%2022-8b5cf6?logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-8b5cf6?logo=typescript&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-8b5cf6?logo=react&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-eine%20Datei-8b5cf6?logo=sqlite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-8b5cf6?logo=docker&logoColor=white)
 
 ![Ein Spenden-Alert im Querformat (16:9) und parallel im Hochformat (9:16)](docs/screenshots/overlay.jpg)
 
@@ -25,6 +25,7 @@ Ohne Cloud-Konto und ohne Abo, und deine Daten bleiben bei dir.
 
 - [Was ist FF-Overlay?](#was-ist-ff-overlay)
 - [Screenshots](#screenshots)
+- [Design](#design)
 - [Funktionen](#funktionen)
 - [So funktioniert es](#so-funktioniert-es)
 - [Schnellstart](#schnellstart)
@@ -42,7 +43,8 @@ Ohne Cloud-Konto und ohne Abo, und deine Daten bleiben bei dir.
 FF-Overlay empfängt Ereignisse aus deinem Stream: Follows, Subs, Bits, Raids, Super Chats und Spenden.
 Eine **Regel-Engine** entscheidet, welcher Alert dazu passt. Der Alert erscheint dann animiert in einer **Browserquelle**,
 die du in OBS, Streamlabs Desktop, vMix oder jede andere Software mit Browserquelle einfügst.
-Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienung der Streamlabs-Alert-Box orientiert.
+Alles Weitere stellst du in einem **Web-Dashboard** ein. Es orientiert sich in der Bedienung an der Streamlabs-Alert-Box
+und hat das dunkle FF-Design der anderen FF-Tools (FF-Broadcast): schwarze Flächen, violetter Akzent, schmale Überschriften in Großbuchstaben.
 
 **Highlights**
 
@@ -53,6 +55,7 @@ Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienu
 - 💬 **Chat-Overlay:** Twitch- und YouTube-Chat einzeln oder zusammen, gestaltet wie die Alerts, mit Live-Vorschau
 - 🧩 **Widgets:** Ereignisliste, Ziele, Stream-Labels, Subathon-Timer, End-Credits, Stream-Boss und Spenden-Ticker
 - ▶️ **„Diesen Alert testen“:** spielt den gerade bearbeiteten Alert sofort im Overlay ab, auch ungespeichert
+- 🎨 **Dashboard im FF-Design:** gleiche Schriften, Farben und Bedienelemente wie FF-Broadcast, Schriften lokal ohne Google Fonts
 - 🏠 **Selbst gehostet:** eine SQLite-Datei, läuft lokal, im Heimnetz oder per Docker auf dem NAS
 
 ---
@@ -62,13 +65,13 @@ Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienu
 | Alert-Box | Animation Library |
 | :---: | :---: |
 | [![Alert-Box mit Editor und Live-Vorschau](docs/screenshots/alert-box.png)](docs/screenshots/alert-box.png) | [![Animation Library mit 123 Text-Effekten](docs/screenshots/animation-library.png)](docs/screenshots/animation-library.png) |
-| Einstellungen links, Live-Vorschau mit Ton und Test-Knopf rechts | 123 Effekte in 8 Kategorien, live mit dem eigenen Text |
+| Einstellungen links, Live-Vorschau mit Ton und lila Test-Knopf rechts | 123 Effekte in 8 Kategorien, live mit dem eigenen Text und Filter-Chips |
 | **Alert Feed** | **betterplace: Abstimmung mit Spenden** |
 | [![Alert Feed mit Event-Log, Warteschlange und Test-Alerts](docs/screenshots/alert-feed.png)](docs/screenshots/alert-feed.png) | [![betterplace-Abstimmung in der Alert-Box](docs/screenshots/betterplace.png)](docs/screenshots/betterplace.png) |
-| Event-Log, Warteschlange, Pause, Skip und Test-Alerts | Alle betterplace-Widgets direkt in der Alert-Box |
+| Event-Log mit Status-Abzeichen, Warteschlange, Pause, Skip und Test-Alerts | Alle betterplace-Widgets direkt in der Alert-Box, mit Beispieldaten |
 | **Chat** | **Chat-Overlay in OBS** |
 | [![Chat-Editor mit Live-Vorschau](docs/screenshots/chat.png)](docs/screenshots/chat.png) | [![Chat-Overlay mit Twitch- und YouTube-Nachrichten](docs/screenshots/chat-overlay.png)](docs/screenshots/chat-overlay.png) |
-| Stil, Schriften, Farben und Animationen, sofort in der Vorschau | Twitch und YouTube in einem Chat, mit Plattform-Symbol und Abzeichen |
+| Stil, Schriften, Farben und Animationen, sofort in der Vorschau, daneben der Live-Chat | So sieht die Browserquelle aus: Twitch und YouTube in einem Chat |
 | **Widgets** | **Regeln** |
 | [![Widget-Editor](docs/screenshots/widgets.png)](docs/screenshots/widgets.png) | [![Regel-Editor mit Prüfwerkzeug](docs/screenshots/rules.png)](docs/screenshots/rules.png) |
 | Jedes Widget ist eine eigene Browserquelle | Beliebig viele UND-Bedingungen pro Regel und die Prüfung „Welche Regel greift?“ |
@@ -84,7 +87,25 @@ Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienu
 
 </details>
 
-<sub>Alle Screenshots stammen aus einer Demo-Installation mit Testdaten.</sub>
+<sub>Alle Screenshots stammen aus einer Demo-Installation mit Testdaten. Dashboard-Bilder im FF-Design; die Bilder der Browserquellen zeigen, was in OBS erscheint.</sub>
+
+---
+
+## Design
+
+Das Dashboard nutzt dasselbe Design wie [FF-Broadcast](https://github.com/Intracy/FF-Broadcast), damit sich alle FF-Tools gleich anfühlen:
+
+![FF-Design im Dashboard: Seitenleiste, Schalter, Eingaben, Vorschau mit Segment-Umschalter und lila Test-Knopf](docs/screenshots/design.png)
+
+| | |
+| --- | --- |
+| **Schriften** | **IBM Plex Sans** für Text, **Barlow Condensed** für Überschriften (schmal, in Großbuchstaben), **IBM Plex Mono** für URLs und Code. Alle lokal ausgeliefert, ohne Google Fonts |
+| **Farben** | Schwarzer Hintergrund mit leichtem violettem Schein, dunkle Karten mit Verlauf und Schatten, Akzent **#8b5cf6** mit violettem Verlauf |
+| **Bedienelemente** | Abgerundete Knöpfe mit Lichtkante, Hauptknöpfe und „Diesen Alert testen“ im Verlauf, Eingaben mit violettem Fokus-Ring, Schalter statt Häkchen, Abzeichen in Großbuchstaben, Segment-Umschalter für 16:9 / 9:16 |
+| **Flächen** | Menüs, Dialoge und Meldungen mit Glas-Effekt; aktive Menüpunkte hell hinterlegt mit Akzentkante |
+
+Das Design steckt in `web/dashboard/src/theme.css` und überschreibt nur das Aussehen. Layout und Anordnung kommen aus `styles.css`.
+Overlays und Widgets in OBS gestaltest du unabhängig davon selbst; neue Alert-Designs starten mit der Akzentfarbe **#9373c5**.
 
 ---
 
@@ -172,6 +193,13 @@ Unter **Regeln (erweitert)** geht FF-Overlay über Streamlabs hinaus:
 - Event-Feed mit Filtern, Lesestatus, Replay und Popout-Fenster
 - Pro Overlay: Pause, Skip, Stumm, Master-Lautstärke, Queue leeren, Quellen neu laden und eine Anzeige der verbundenen Quellen
 - Test-Alerts für jeden Event-Typ, die durch dieselben Filter und Regeln laufen wie echte Events
+
+### Dashboard
+
+- Dunkles FF-Design wie FF-Broadcast (siehe [Design](#design)), lokal ausgelieferte Schriften
+- Einstellungen links, Vorschau rechts: die Vorschau bleibt beim Scrollen sichtbar
+- Lila Test-Knopf in jedem Baukasten, Vorschau mit Ton an/aus und 16:9/9:16-Umschalter
+- Alert Feed auch als Popout-Fenster, z. B. als Dock in OBS
 
 ### Weiteres
 
@@ -412,7 +440,7 @@ server/src/
   db.ts                   SQLite-Schema, Migrationen und Zugriff
 server/test/              Vitest
 web/
-  dashboard/              React-Dashboard
+  dashboard/              React-Dashboard (styles.css = Layout, theme.css = FF-Design, assets/fonts = Schriften)
   overlay/                Browserquelle + gemeinsamer Renderer (auch für die Vorschau)
   widget/                 Browserquelle für alle Widgets und das Chat-Overlay
   vendor/                 Drittanbieter (Text-Effekte)
@@ -450,6 +478,7 @@ Bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot und Zuschau
 | Komponente | Lizenz | Verwendung |
 | --- | --- | --- |
 | [CSS Text Effects](https://github.com/ckissi/colorion-text-effects) von Colorion | MIT | Animation Library, angepasst mit `scripts/vendor-text-effects.mjs` (Schrift aus dem Alert, px → em, beliebiger Text, Zeilenumbruch) |
+| [IBM Plex Sans/Mono](https://github.com/IBM/plex), [Barlow Condensed](https://github.com/jpt/barlow) | SIL Open Font License 1.1 | Schriften des Dashboards (lokal ausgeliefert, Design wie FF-Broadcast) |
 | [Animate.css](https://animate.style/) 4 | MIT | Ein- und Ausblend-Animationen |
 | [GIPHY](https://developers.giphy.com/) | API-Nutzungsbedingungen | GIF-Suche („Powered By GIPHY“ im Picker) |
 | [MyInstants](https://www.myinstants.com/) | – | Sound-Suche; übernommene Sounds landen in der eigenen Mediathek |

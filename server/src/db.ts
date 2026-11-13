@@ -277,7 +277,7 @@ export const connections = {
 // ---------- Media ----------
 
 export interface MediaAsset {
-  id: string; name: string; kind: 'image' | 'video' | 'audio'; url: string; source: 'upload' | 'giphy'; giphyId?: string; createdAt: string;
+  id: string; name: string; kind: 'image' | 'video' | 'audio'; url: string; source: 'upload' | 'giphy' | 'myinstants'; giphyId?: string; createdAt: string;
 }
 
 export const media = {

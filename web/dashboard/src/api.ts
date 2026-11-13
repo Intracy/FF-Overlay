@@ -4,7 +4,7 @@ import type {
 
 export type { AlertTemplate, ConnectorStatus, EventLogEntry, EventType, GlobalSettings, OverlayInfo, QueueState, Rule };
 export type Overlay = OverlayInfo & { url: string };
-export interface MediaAsset { id: string; name: string; kind: 'image' | 'video' | 'audio'; url: string; source: 'upload' | 'giphy'; giphyId?: string; createdAt: string }
+export interface MediaAsset { id: string; name: string; kind: 'image' | 'video' | 'audio'; url: string; source: 'upload' | 'giphy' | 'myinstants'; giphyId?: string; createdAt: string }
 export interface Connection { id: string; platform: string; label: string; enabled: boolean; data: Record<string, any> }
 export interface GiphyItem { id: string; title: string; preview: string; url: string; width: number; height: number }
 

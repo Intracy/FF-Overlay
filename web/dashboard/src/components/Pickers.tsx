@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, type GiphyItem, type MediaAsset } from '../api';
 import { Modal, useAction, useLoad } from '../ui';
 
@@ -64,9 +64,14 @@ export function GiphyPicker({ onPick, onClose }: { onPick: (m: MediaAsset) => vo
 export function MediaPicker({ kind, onPick, onClose }: { kind: 'visual' | 'audio'; onPick: (m: MediaAsset) => void; onClose: () => void }) {
   const media = useLoad(() => api.get<MediaAsset[]>('/api/media'));
   const list = (media.data ?? []).filter((m) => (kind === 'audio' ? m.kind === 'audio' : m.kind !== 'audio'));
+  const [instants, setInstants] = useState(false);
   return (
     <Modal title={kind === 'audio' ? 'Sound auswählen' : 'Bild oder Video auswählen'} onClose={onClose} wide>
-      <UploadButton onUploaded={(m) => { media.reload(); onPick(m); }} accept={kind === 'audio' ? 'audio/*' : 'image/*,video/mp4,video/webm'} />
+      <div className="row">
+        <UploadButton onUploaded={(m) => { media.reload(); onPick(m); }} accept={kind === 'audio' ? 'audio/*' : 'image/*,video/mp4,video/webm'} />
+        {kind === 'audio' && <button onClick={() => setInstants(true)}>MyInstants durchsuchen</button>}
+      </div>
+      {instants && <MyInstantsPicker onPick={(m) => { setInstants(false); media.reload(); onPick(m); }} onClose={() => setInstants(false)} />}
       <div className="media-grid" style={{ marginTop: 12 }}>
         {!list.length && <div className="empty">Noch nichts in der Mediathek.</div>}
         {list.map((m) => (
@@ -85,7 +90,7 @@ export function MediaThumb({ m }: { m: MediaAsset }) {
     <div className="thumb">
       {m.kind === 'image' && <img src={m.url} alt="" loading="lazy" />}
       {m.kind === 'video' && <video src={m.url} muted loop autoPlay playsInline />}
-      {m.kind === 'audio' && <span style={{ fontSize: 34 }}>♪</span>}
+      {m.kind === 'audio' && <button className="ghost" style={{ fontSize: 30 }} onClick={(e) => { e.stopPropagation(); void new Audio(m.url).play(); }} aria-label={`${m.name} anhören`} title="Anhören">♪</button>}
     </div>
   );
 }
@@ -108,5 +113,92 @@ export function UploadButton({ onUploaded, accept }: { onUploaded: (m: MediaAsse
         if (m) onUploaded(m);
       }} />
     </label>
+  );
+}
+
+interface Instant { slug: string; name: string; sound: string; color: string; description: string; tags: string }
+
+/**
+ * Sound-Buttons von MyInstants durchsuchen, probehören und in die Mediathek übernehmen.
+ * Der Sound wird auf den eigenen Server kopiert – im Stream hängt nichts an myinstants.com.
+ */
+export function MyInstantsPicker({ onPick, onClose }: { onPick: (m: MediaAsset) => void; onClose: () => void }) {
+  const [q, setQ] = useState('');
+  const [items, setItems] = useState<Instant[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [count, setCount] = useState(0);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [playing, setPlaying] = useState('');
+  const [busy, setBusy] = useState('');
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const run = useAction();
+
+  const search = async (p = 1) => {
+    setError('');
+    setLoading(true);
+    try {
+      const r = await api.get<{ items: Instant[]; count: number; hasMore: boolean }>(`/api/myinstants/search?q=${encodeURIComponent(q)}&page=${p}`);
+      setItems((prev) => (p > 1 ? [...prev, ...r.items] : r.items));
+      setPage(p);
+      setHasMore(r.hasMore);
+      setCount(r.count);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void search(1); return () => audio.current?.pause(); }, []);
+
+  const toggle = (i: Instant) => {
+    audio.current?.pause();
+    if (playing === i.slug) return setPlaying('');
+    const a = new Audio(i.sound);
+    a.volume = 0.6;
+    a.onended = () => setPlaying('');
+    audio.current = a;
+    setPlaying(i.slug);
+    void a.play().catch(() => setPlaying(''));
+  };
+
+  const pick = async (i: Instant) => {
+    setBusy(i.slug);
+    const m = await run(() => api.post<MediaAsset>('/api/media/myinstants', { slug: i.slug, name: i.name, sound: i.sound }), `„${i.name}“ in die Mediathek übernommen`);
+    setBusy('');
+    if (m) {
+      audio.current?.pause();
+      onPick(m);
+    }
+  };
+
+  return (
+    <Modal title="Sound bei MyInstants suchen" onClose={onClose} wide>
+      <form className="row" onSubmit={(e) => { e.preventDefault(); void search(1); }} style={{ marginBottom: 12 }}>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="z. B. airhorn, applaus, bruh, wow" style={{ flex: 1, width: 'auto' }} autoFocus />
+        <button className="primary" type="submit">Suchen</button>
+      </form>
+      {error && <div className="empty">{error}</div>}
+      {!error && !loading && !items.length && <div className="empty">Keine Sounds gefunden.</div>}
+      <div className="instants-grid">
+        {items.map((i) => (
+          <div key={i.slug} className="instant">
+            <button className={`instant-btn${playing === i.slug ? ' playing' : ''}`} style={{ '--c': i.color } as React.CSSProperties} onClick={() => toggle(i)} aria-label={`${i.name} anhören`} title="Anhören">
+              {playing === i.slug ? '■' : '▶'}
+            </button>
+            <div className="instant-name" title={i.description || i.name}>{i.name}</div>
+            <button className="small primary" disabled={!!busy} onClick={() => void pick(i)}>{busy === i.slug ? 'Lade …' : 'Übernehmen'}</button>
+          </div>
+        ))}
+      </div>
+      <div className="row between" style={{ marginTop: 12 }}>
+        <span className="small muted">
+          Sounds von <a href="https://www.myinstants.com" target="_blank" rel="noreferrer">myinstants.com</a>{count ? ` · ${count.toLocaleString('de-DE')} Treffer` : ''} · Rechte am Sound prüfen, bevor du ihn im Stream nutzt.
+        </span>
+        {hasMore && <button className="small" disabled={loading} onClick={() => void search(page + 1)}>{loading ? 'Lade …' : 'Mehr laden'}</button>}
+      </div>
+    </Modal>
   );
 }

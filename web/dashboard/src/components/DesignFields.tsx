@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { AlertTemplate, MediaAsset } from '../api';
 import { IN_ANIMATIONS, LETTER_ANIMATIONS, LETTER_LABEL, OUT_ANIMATIONS } from '../../../shared/animations';
-import { GiphyPicker, MediaPicker } from './Pickers';
+import { GiphyPicker, MediaPicker, MyInstantsPicker } from './Pickers';
 import { AnimationLibraryField } from './AnimationLibrary';
 import { Field, NumberInput } from '../ui';
 import { DEFAULT_CUSTOM_CSS, DEFAULT_CUSTOM_HTML } from '../../../../server/src/templates/defaults';
@@ -67,7 +67,7 @@ function useVoices() {
 /** part: 'left' = Allgemein, Medien, Sound, Animationen; 'right' = Schrift, Nachricht, TTS, eigener Code (für das zweispaltige Layout). */
 export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT: (fn: (t: AlertTemplate) => AlertTemplate) => void; part?: 'all' | 'left' | 'right' }) {
   const show = (p: 'left' | 'right') => part === 'all' || part === p;
-  const [picker, setPicker] = useState<'giphy' | 'visual' | 'audio' | null>(null);
+  const [picker, setPicker] = useState<'giphy' | 'visual' | 'audio' | 'myinstants' | null>(null);
   const [codeTab, setCodeTab] = useState<'html' | 'css' | 'js' | 'fields'>('html');
   const voices = useVoices();
 
@@ -137,6 +137,7 @@ export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT
       <Section title="Sound" badge={t.sound.url ? `${Math.round(t.sound.volume * 100)} %` : 'keiner'}>
         <div className="row">
           <button onClick={() => setPicker('audio')}>{t.sound.url ? 'Sound ändern' : 'Sound wählen'}</button>
+          <button onClick={() => setPicker('myinstants')}>MyInstants durchsuchen</button>
           {t.sound.url && <button className="ghost" onClick={() => up('sound', { url: '' })}>Entfernen</button>}
           {t.sound.url && <button className="ghost" onClick={() => { const a = new Audio(t.sound.url); a.volume = t.sound.volume; void a.play(); }}>▶ Anhören</button>}
         </div>
@@ -262,6 +263,7 @@ export function DesignFields({ t, setT, part = 'all' }: { t: AlertTemplate; setT
       {picker === 'giphy' && <GiphyPicker onPick={setMedia} onClose={() => setPicker(null)} />}
       {picker === 'visual' && <MediaPicker kind="visual" onPick={setMedia} onClose={() => setPicker(null)} />}
       {picker === 'audio' && <MediaPicker kind="audio" onPick={(m) => { up('sound', { url: m.url }); setPicker(null); }} onClose={() => setPicker(null)} />}
+      {picker === 'myinstants' && <MyInstantsPicker onPick={(m) => { up('sound', { url: m.url }); setPicker(null); }} onClose={() => setPicker(null)} />}
     </div>
   );
 }

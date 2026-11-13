@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { api, type MediaAsset } from '../api';
-import { GiphyPicker, MediaThumb, UploadButton } from '../components/Pickers';
+import { GiphyPicker, MediaThumb, MyInstantsPicker, UploadButton } from '../components/Pickers';
 import { useAction, useLoad } from '../ui';
 
 export function MediaPage() {
   const media = useLoad(() => api.get<MediaAsset[]>('/api/media'));
   const [giphy, setGiphy] = useState(false);
+  const [instants, setInstants] = useState(false);
   const run = useAction();
   return (
     <>
@@ -16,6 +17,7 @@ export function MediaPage() {
         </div>
         <div className="row">
           <button onClick={() => setGiphy(true)}>GIPHY durchsuchen</button>
+          <button onClick={() => setInstants(true)}>MyInstants-Sounds</button>
           <UploadButton onUploaded={media.reload} />
         </div>
       </div>
@@ -31,6 +33,7 @@ export function MediaPage() {
           </div>
         ))}
       </div>
+      {instants && <MyInstantsPicker onPick={() => { setInstants(false); media.reload(); }} onClose={() => setInstants(false)} />}
       {giphy && <GiphyPicker onPick={() => { setGiphy(false); media.reload(); }} onClose={() => setGiphy(false)} />}
     </>
   );

@@ -1,108 +1,199 @@
+<div align="center">
+
 # FF-Overlay
 
-Selbst gehostetes Stream-Alert-System: Events von **Twitch**, **betterplace** und **eigenen Webhooks** laufen durch eine **Regel-Engine** und erscheinen als animierte Alerts in einer **Browserquelle** (OBS, vMix, Streamlabs Desktop …). Konfiguriert wird alles in einem Web-Dashboard.
+**Selbst gehostetes Stream-Alert-System für Twitch, YouTube und betterplace**
 
-Das Projekt setzt Phase 1 (MVP) des Konzepts „Stream-Alert-System“ um, ergänzt um betterplace-Polling und generische Webhooks.
+Alerts, Widgets und Spenden-Overlays wie bei Streamlabs oder StreamElements, aber auf deinem eigenen Rechner oder NAS.
+Ohne Cloud-Konto und ohne Abo, und deine Daten bleiben bei dir.
 
-```
-Twitch EventSub ─┐
-betterplace API ─┼─► Connectoren ─► Event-Normalizer ─► Filter ─► Regel-Engine ─► Alert-Queue ─► Overlay (OBS)
-Webhooks ────────┘                                                                    ▲
-                                                Dashboard (REST + WebSocket) ─────────┘
-```
+![Node.js ≥ 22](https://img.shields.io/badge/Node.js-%E2%89%A5%2022-9373c5?logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-9373c5?logo=typescript&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-9373c5?logo=react&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-eine%20Datei-9373c5?logo=sqlite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-9373c5?logo=docker&logoColor=white)
+
+![Ein Spenden-Alert im Querformat (16:9) und parallel im Hochformat (9:16)](docs/screenshots/overlay.jpg)
+
+<sub>Ein Spenden-Alert läuft gleichzeitig im Querformat (16:9) und im Hochformat (9:16), hier mit dem Text-Effekt „Neon-Haus“ aus der Animation Library.</sub>
+
+</div>
+
+---
+
+## Inhalt
+
+- [Was ist FF-Overlay?](#was-ist-ff-overlay)
+- [Screenshots](#screenshots)
+- [Funktionen](#funktionen)
+- [So funktioniert es](#so-funktioniert-es)
+- [Schnellstart](#schnellstart)
+- [Einrichtung](#einrichtung)
+- [Konfiguration](#konfiguration)
+- [Sicherheit & Datenschutz](#sicherheit--datenschutz)
+- [Entwicklung](#entwicklung)
+- [Roadmap](#roadmap)
+- [Drittanbieter](#drittanbieter)
+
+---
+
+## Was ist FF-Overlay?
+
+FF-Overlay empfängt Ereignisse aus deinem Stream: Follows, Subs, Bits, Raids, Super Chats und Spenden.
+Eine **Regel-Engine** entscheidet, welcher Alert dazu passt. Der Alert erscheint dann animiert in einer **Browserquelle**,
+die du in OBS, Streamlabs Desktop, vMix oder jede andere Software mit Browserquelle einfügst.
+Alles Weitere stellst du in einem **Web-Dashboard** ein, das sich an der Bedienung der Streamlabs-Alert-Box orientiert.
+
+**Highlights**
+
+- 🔔 **Alert-Box wie bei Streamlabs:** Standard-Alerts und Varianten pro Event-Typ, Themen, globale Bearbeitung und eine Live-Vorschau mit Ton
+- 💜 **betterplace-Integration:** alle Livestream-Alerts und -Widgets von betterplace, per Spenden-Webhook in Echtzeit
+- ✨ **Animation Library:** 123 Text-Effekte (Neon, Glitch, Split-Flap, Gold-Foil, Wax-Seal …), die deine Schrift und Farben übernehmen
+- 📱 **16:9 und 9:16 parallel:** jeder Alert läuft gleichzeitig quer und hochkant, im Hochformat größer skaliert für TikTok, Shorts und Reels
+- 🧩 **Widgets:** Ereignisliste, Ziele, Stream-Labels, Subathon-Timer, End-Credits, Stream-Boss und Spenden-Ticker
+- ▶️ **„Diesen Alert testen“:** spielt den gerade bearbeiteten Alert sofort im Overlay ab, auch ungespeichert
+- 🏠 **Selbst gehostet:** eine SQLite-Datei, läuft lokal, im Heimnetz oder per Docker auf dem NAS
+
+---
+
+## Screenshots
+
+| Alert-Box | Animation Library |
+| :---: | :---: |
+| [![Alert-Box mit Editor und Live-Vorschau](docs/screenshots/alert-box.png)](docs/screenshots/alert-box.png) | [![Animation Library mit 123 Text-Effekten](docs/screenshots/animation-library.png)](docs/screenshots/animation-library.png) |
+| Einstellungen links, Live-Vorschau mit Ton und Test-Knopf rechts | 123 Effekte in 8 Kategorien, live mit dem eigenen Text |
+| **Alert Feed** | **betterplace: Abstimmung mit Spenden** |
+| [![Alert Feed mit Event-Log, Warteschlange und Test-Alerts](docs/screenshots/alert-feed.png)](docs/screenshots/alert-feed.png) | [![betterplace-Abstimmung in der Alert-Box](docs/screenshots/betterplace.png)](docs/screenshots/betterplace.png) |
+| Event-Log, Warteschlange, Pause, Skip und Test-Alerts | Alle betterplace-Widgets direkt in der Alert-Box |
+| **Widgets** | **Regeln** |
+| [![Widget-Editor](docs/screenshots/widgets.png)](docs/screenshots/widgets.png) | [![Regel-Editor mit Prüfwerkzeug](docs/screenshots/rules.png)](docs/screenshots/rules.png) |
+| Jedes Widget ist eine eigene Browserquelle | Beliebig viele UND-Bedingungen pro Regel und die Prüfung „Welche Regel greift?“ |
+
+<details>
+<summary><b>Widgets im Overlay</b> und <b>Verbindungen</b></summary>
+
+<br>
+
+![Widgets in der Browserquelle: Ereignisliste, Ziel, Timer, betterplace All-Inclusive, Abstimmung, Stream-Boss](docs/screenshots/widgets-overlay.png)
+
+![Verbindungen: Twitch, YouTube, betterplace und eigene Webhooks](docs/screenshots/connections.png)
+
+</details>
+
+<sub>Alle Screenshots stammen aus einer Demo-Installation mit Testdaten.</sub>
+
+---
 
 ## Funktionen
 
-**Quellen**
-- **Twitch** über EventSub-WebSocket (funktioniert hinter NAT, kein öffentlicher Webhook nötig): Follow, Sub, Resub (Monate, Streak, Nachricht), Gift-Subs inkl. anonym, Bits, Raids, Kanalpunkte, Stream online/offline. Anmeldung per Klick und Gerätecode, automatischer Token-Refresh, Reconnect nach Twitch-Vorgaben.
-- **YouTube** Live über die Data API v3: Super Chats, Super Sticker, neue Mitglieder, Mitglieds-Meilensteine, verschenkte Mitgliedschaften, neue öffentliche Abos, Stream online/offline. Anmeldung per Klick und Gerätecode.
-- **betterplace** Spendenaktionen: sofort per **Spenden-Webhook** (Format `donation_announced` v0.2) oder über die Public API v4 (Polling ≥ 15 s mit ETag, Duplikat-Filter; vorhandene Spenden lösen beim Einrichten keinen Alert aus). Kommt der erste Webhook an, stellt FF-Overlay automatisch um – ohne doppelte Alerts. Spendenstand, Zielbetrag und Logos der Organisationen kommen immer über die API.
-- **Eigene Webhooks** für Ko-fi, Streamer.bot, Zapier oder eigene Tools.
+### Quellen
 
-**Alert-Box im Aufbau von Streamlabs** (Menüpunkt „Alert-Box“)
-- Navigation wie Streamlabs: *Allgemeine Einstellungen*, *Globale Bearbeitung*, dann pro Plattform jeder Event-Typ mit Standard-Alert und Varianten („Variation hinzufügen“ mit Standard- oder aktuellen Einstellungen, „Variationen verwalten“ mit Reihenfolge, Pausieren, Löschen)
-- Varianten-Bedingungen aus dem Streamlabs-Katalog: zufällig mit Häufigkeit (sehr selten … sehr häufig), Betrag/Bits/Monate/Streak mindestens oder genau, Abo-Stufe, Mindestanzahl Gift-Subs, anonym verschenkt, Raid-Größe, bestimmtes Power-Up, Belohnungsname, größte Spende des Streams
-- **Themen** (Profile): mehrere komplette Alert-Box-Konfigurationen pro Overlay, umschaltbar, als Kopie oder leer anlegbar
-- **Ereignisse filtern** pro Overlay und **Test**-Menü für jeden Event-Typ
-- **Allgemeine Einstellungen**: Alert-Verzögerung, **Moderationsverzögerung** (Sekunden oder unbegrenzt, Freigabe/Ablehnen im Alert Feed), **Alert-Parry** (neuer Alert unterbricht den laufenden), Vorschau-Hintergrund, Session-Reset bei Stream-Start, Schimpfwort-Filter (Sternchen oder ausblenden, Standardliste, Namen anonymisieren, auf Event-Log anwenden, eigene Wörter, Blacklist)
-- **Globale Bearbeitung**: Allgemein, Animationen, Bild, Video-Lautstärke, Positionierung, Sound, Schrift, Nachrichtenschrift und TTS mit „Auf alle Alerts anwenden“
-- Pro Alert: **Text-in-Sprache** (Stimme, Sprache, Mindestbetrag, Spam-Sicherheit aus/niedrig/mittel/hoch, Wiederholungssperre, Lautstärke, Vorlage mitlesen), **Twitch-Emotes** in Nachrichten, **eigenes HTML/CSS/JS** mit eigenen Feldern in einem abgeschotteten Sandbox-Frame
-- Zusätzliche Twitch-Events: **Power-Ups** und **Charity-Spenden**
+| Quelle | Events | Anbindung |
+| --- | --- | --- |
+| **Twitch** | Follow, Sub, Resub (Monate, Streak, Nachricht), Gift-Subs (auch anonym), Bits, Raids, Kanalpunkte, Power-Ups, Charity-Spenden, Stream online/offline | EventSub über WebSocket: funktioniert hinter NAT, ohne öffentlichen Webhook. Anmeldung per Klick und Gerätecode, automatischer Token-Refresh |
+| **YouTube** | Super Chats, Super Sticker, neue Mitglieder, Mitglieds-Meilensteine, verschenkte Mitgliedschaften, neue öffentliche Abos, Stream online/offline | Data API v3. Anmeldung per Klick und Gerätecode |
+| **betterplace** | Spenden mit Name, Betrag, Kommentar und Video-Link; Spendenstand, Ziel und Logos der Organisationen | Spenden-Webhook (`donation_announced` v0.2) in Echtzeit oder Public API v4 (Polling mit ETag); kommt der erste Webhook an, stellt FF-Overlay automatisch um, ohne doppelte Alerts |
+| **Eigene Webhooks** | Alle Event-Typen | JSON per POST, z. B. von Ko-fi, Streamer.bot oder Zapier |
 
-**Spenden (betterplace)** – alle Livestream-Alerts von betterplace, in der Alert-Box unter „Spenden (betterplace)“
-- **Spendenalert mit GIFs & Sounds** und **Milestone erreicht** als Alerts mit Varianten, GIF, Sound, TTS
-- **All-Inclusive-Alert** (Spendenstand, letzte Spende, Top-Spende; Themes Standard, Pixel, Sakura, Pride oder selbst gestaltet)
-- **Abstimmung mit Spenden** (Antworten per `#1`, `#2` oder Stichwort im Spendenkommentar, nach Betrag oder Anzahl, Gewinnanimation)
-- **Spendenstand**, **Letzte Spende**, **Top-Spende** (Liste oder rotierend), **Leaderboard der Spender*innen**, **Fortschrittsbalken** (Zielbetrag der Aktion oder eigener), **Letzter Kommentar**, **Logos der Organisationen**, **Milestones** („Nächster Milestone“-Anzeige + Alert oder nur Alert), **Live Spenden-Feed** (auch als OBS-Dock)
-- Schrift, Größe, Stärke und Farbe je Textart wie bei betterplace, Textausrichtung, ein- oder mehrzeilig
-- **Test-Modus** für alle betterplace-Widgets oder `&preview=true` pro Quelle
+### Alert-Box
 
-**Widgets wie bei Streamlabs** (Menüpunkt „Widgets“, jedes mit eigener Browserquellen-URL)
-- **Ereignisliste**: die letzten Events im Stream, 10 Stile (Carbon, Chevrons, Crisscross, Slick, Fiber, Hearts, Honeycomb, Retro, Solid, Stripes), Themenfarbe, Event-Typen, Mindest-Bits/-Raider, max. Einträge, Ausblendzeit, Spiegeln, Ein-/Ausblend-Animation
-- **Ziel**: Fortschrittsbalken für Spenden, Charity, Bits, Follower oder Subs (Subs/Resubs/Gifts wählbar), Startwert, Start- und Enddatum, Standard- oder Kompakt-Layout, Farben; „Neu starten“
-- **Stream-Label**: 20 Labels wie letzter Follower/Sub/Spender, höchste Spende, Top-Spender, Top-Sub-Schenker, Spendensumme, Bits gesamt – für Session, heute, 7 oder 30 Tage, mit eigenem Format
-- **Subathon-Timer**: Startzeit, Obergrenze, Sekunden je Follow/Sub/Resub/Gift-Sub/100 Bits/1 €/Raid/Kanalpunkte, zeigt hinzugefügte Zeit; Start, Pause, Zurücksetzen und Zeit ± im Dashboard
-- **End-Credits**: Abspann der Session (Follower, Abonnenten, Sub-Schenker, Spender, Charity, Bits, Raids) als Klassisch, Weltraum-Crawl oder Sternenhimmel; Dauer oder Tempo, Schleife, Start per Knopf, beim Laden oder wenn die Quelle in OBS sichtbar wird
-- **Stream-Boss**: Zuschauer machen mit Follows, Subs, Bits, Spenden und Raids Schaden; wer den Boss besiegt, wird neuer Boss (feste, steigende oder Overkill-HP), Selbstheilung, Besiegt-Animation
-- **Spenden-Ticker**: Laufband mit den letzten Spenden und Cheers
-- Test-Knöpfe direkt am Widget und „Testdaten entfernen“, damit Tests nicht in Zielen und Credits bleiben
+- **Aufbau wie bei Streamlabs:** *Allgemeine Einstellungen* und *Globale Bearbeitung*, darunter für jede Plattform jeder Event-Typ mit Standard-Alert und Varianten
+- **Varianten:** zufällig mit Häufigkeit, Betrag/Bits/Monate/Streak mindestens oder genau, Abo-Stufe, Anzahl Gift-Subs, anonym, Raid-Größe, Power-Up, Belohnungsname, größte Spende des Streams
+- **Themen (Profile):** mehrere komplette Konfigurationen pro Overlay, mit einem Klick umschaltbar
+- **Allgemeine Einstellungen:** Alert-Verzögerung, Moderationsverzögerung mit Freigabe im Alert Feed, Alert-Parry (ein neuer Alert unterbricht den laufenden), Schimpfwort-Filter, Sperrliste
+- **Globale Bearbeitung:** Schrift, Sound, Animationen, Positionierung oder TTS einmal einstellen und auf alle Alerts anwenden
+- **Lila Knopf „Diesen Alert testen“** in jedem Baukasten: spielt genau den bearbeiteten Stand im Overlay ab, auch ungespeichert. Bei Varianten erfüllt das Test-Event automatisch die Bedingung, z. B. „ab 50 €“
+- **Live-Vorschau** mit derselben Render-Logik wie im Overlay, umschaltbar zwischen 16:9 und 9:16, mit Ton an/aus
 
-**Regeln** (mehr als Streamlabs: beliebig viele UND-Bedingungen pro Regel; unter „Regeln (erweitert)“)
-- Auslöser: Event-Typ + optional Subtyp (Sub/Resub/Gift) und Plattform
-- Bedingungen: mindestens, höchstens, genau, nicht, zwischen, enthält, Regex, leer/nicht leer, **größter Betrag dieses Streams**, **erstes Event dieses Users**, **Zufall in %**
-- Priorität (höchste gewinnt) und Gewichtung (Zufall unter Gleichen), „nur wenn live“
-- Begründung im Event-Log: *„Regel ‚Große Spende‘, weil amount.value ≥ 50“* und ein Prüf-Werkzeug „Welche Regel greift?“
+### Alert-Designs
 
-**Alert-Designs**
-- Sounds direkt bei **MyInstants** suchen, probehören und mit einem Klick übernehmen (wird in die eigene Mediathek kopiert, läuft also ohne MyInstants)
-- Lila Knopf **„Diesen Alert testen“** in jedem Baukasten (Alert-Box, Varianten, Globale Bearbeitung, Alle Designs, Widgets): spielt genau den bearbeiteten Stand im Overlay ab – auch ungespeichert. Bei Varianten erfüllt das Test-Event automatisch die Bedingung (z. B. „ab 50 €“)
-- Vorschau mit Ton (🔊/🔇, gemerkt pro Browser): Der Sound spielt beim Öffnen und nach jeder Änderung an Sound oder Lautstärke einmal mit, die automatischen Wiederholungen bleiben stumm. Öffnest du das Overlay in einem normalen Browser-Tab statt in OBS, blockiert der Browser Ton bis zum ersten Klick – das Overlay zeigt dann einen Hinweis
-- GIFs und Sticker direkt über **GIPHY** suchen (Proxy, Key bleibt auf dem Server), eigene Uploads (GIF, PNG, WebP, WebM mit Transparenz, MP4, Sounds)
-- Text mit Platzhaltern `{user} {amount} {count} {months} {streak} {tier} {product} {gifter} {message}` (`{name}` funktioniert wie bei Streamlabs), Akzentfarbe für Name/Betrag, Kontur, Schatten, Google Fonts
-- **Animation Library** (Alert-Box → Animationen): alle 123 CSS-Text-Effekte von [text-effects.colorion.co](https://text-effects.colorion.co/) (Neon, Glitch, Split-Flap, Gold-Foil, Wax-Seal, Synthwave …) in 8 Kategorien als Live-Vorschau mit dem eigenen Text, per Klick übernehmen. Schrift, Größe, Stärke, Text- und Akzentfarbe, Kontur, Schatten, Emojis und Buchstaben-Animation kommen aus den Alert-Einstellungen; Tempo und Akzentfarben (Original Magenta/Cyan oder eigene) einstellbar. Der Effekt läuft, solange der Alert zu sehen ist
-- Ein-/Ausblend-, Text-Intro/-Outro- und Buchstaben-Animationen (Animate.css) – per Haken „Animationen verwenden“ zuschaltbar, standardmäßig aus; die Animation Library läuft unabhängig davon (Fade, Zoom, Bounce, Slide, Flip, Rotate, Specials), Text-Intro/-Outro und Buchstaben-Animationen (Welle, Hüpfen, Pulsieren, Gummiband, Tada, Wackeln, Schwanken)
-- Layouts (Bild über/unter Text, Bild links, nur Text) oder manuelle Positionierung in %
-- Live-Vorschau im Editor mit exakt derselben Render-Logik wie im Overlay
+- **Text** mit Platzhaltern `{user}` `{amount}` `{count}` `{months}` `{streak}` `{tier}` `{product}` `{gifter}` `{message}`, Akzentfarbe für Name und Betrag, Kontur, Schatten und Google Fonts
+- **Bilder, GIFs und Videos:** GIPHY-Suche (der Key bleibt auf dem Server) oder eigene Uploads (GIF, PNG, WebP, WebM mit Transparenz, MP4)
+- **Sounds:** eigene Uploads oder direkt bei **MyInstants** suchen, probehören und übernehmen. Der Sound landet in der eigenen Mediathek
+- **Animation Library:** alle 123 Effekte von [text-effects.colorion.co](https://text-effects.colorion.co/). Schrift, Größe, Stärke, Farben, Kontur, Schatten, Emojis und Buchstaben-Animation kommen aus den Alert-Einstellungen; Tempo und Akzentfarben sind einstellbar
+- **Ein- und Ausblend-Animationen** (Animate.css), Text-Intro/-Outro und Buchstaben-Animationen (Welle, Hüpfen, Pulsieren …). Sie sind per Haken zuschaltbar, die Animation Library läuft unabhängig davon
+- **Layouts:** Bild über, unter oder links vom Text, nur Text, oder frei positionieren in %
+- **Text-in-Sprache:** Stimme, Sprache, Mindestbetrag, Spam-Schutz und Wiederholungssperre
+- **Twitch-Emotes** in Nachrichten, **eigenes HTML/CSS/JS** in einer abgeschotteten Sandbox
 
-**Alert Feed (Live-Steuerung)**
-- Event-Feed mit Filtern, Lesebestätigung, Replay, Popout-Fenster
-- Pro Overlay: Pause/Fortsetzen, Skip, Stumm, Master-Lautstärke, Queue leeren, Browserquellen neu laden, Anzeige verbundener Quellen
-- Test-Alerts für jeden Event-Typ, die durch dieselben Filter und Regeln laufen
+### Spenden mit betterplace
 
-**Weiteres**
-- Mehrere Overlays mit eigener URL, Queue und eigenen Regeln – jedes zusätzlich als Hochformat-Variante (9:16)
-- Globale Filter: Mindestbetrag, Sperrliste, Schimpfwort-Filter (zensieren oder ausblenden; Namen werden anonymisiert)
-- Gift-Bündelung: Einzel-Subs der Gift-Empfänger erscheinen nur im Log, der Alert kommt vom Gift-Event
-- Event-Log wird nach `EVENT_RETENTION_DAYS` (Standard 30) gelöscht
+Alle Livestream-Alerts von betterplace stehen in der Alert-Box unter **Spenden (betterplace)**:
+
+- **Spendenalert mit GIFs & Sounds** und **Milestone erreicht**, mit Varianten, GIF, Sound und TTS
+- **All-Inclusive-Alert** mit Spendenstand, letzter Spende und Top-Spende (Themes: Standard, Pixel, Sakura, Pride oder eigenes Design)
+- **Abstimmung mit Spenden:** Zuschauer*innen stimmen per `#1`, `#2` oder Stichwort im Kommentar ab, gezählt nach Betrag oder Anzahl, mit Gewinnanimation
+- **Spendenstand**, **Letzte Spende**, **Top-Spende**, **Leaderboard**, **Fortschrittsbalken**, **Letzter Kommentar**, **Logos der Organisationen**, **Milestones** und **Live Spenden-Feed** (auch als OBS-Dock)
+- Test-Modus mit Beispieldaten oder `&preview=true` pro Quelle
+
+### Widgets
+
+Jedes Widget hat eine eigene Browserquellen-URL. Änderungen erscheinen sofort in OBS, ohne dass du die Quelle neu laden musst.
+
+| Widget | Beschreibung |
+| --- | --- |
+| **Ereignisliste** | Die letzten Events, 10 Stile (Carbon, Chevrons, Honeycomb, Retro …), Filter nach Typ und Mindestwert |
+| **Ziel** | Fortschritt für Spenden, Charity, Bits, Follower oder Subs, mit Start- und Enddatum |
+| **Stream-Label** | 20 Labels (letzter Follower, Top-Spender, Spendensumme …) für Session, Tag, Woche oder Monat |
+| **Subathon-Timer** | Sekunden pro Follow/Sub/Bits/€/Raid, mit Obergrenze; Start, Pause und ± im Dashboard |
+| **End-Credits** | Abspann der Session als Klassisch, Weltraum-Crawl oder Sternenhimmel |
+| **Stream-Boss** | Zuschauer*innen machen Schaden; wer den Boss besiegt, wird der neue Boss |
+| **Spenden-Ticker** | Laufband mit den letzten Spenden und Cheers |
+
+### Regeln
+
+Unter **Regeln (erweitert)** geht FF-Overlay über Streamlabs hinaus:
+
+- Auslöser sind Event-Typ, Subtyp und Plattform. Pro Regel sind beliebig viele UND-Bedingungen möglich: mindestens, höchstens, zwischen, enthält, Regex, *größter Betrag dieses Streams*, *erstes Event dieses Users*, *Zufall in %*
+- Bei mehreren passenden Regeln entscheiden Priorität und Gewichtung; „nur wenn live“ ist pro Regel einstellbar
+- Das Event-Log nennt die Begründung, z. B. *„Regel ‚Große Spende', weil amount.value ≥ 50“*. Das Werkzeug „Welche Regel greift?“ prüft beliebige Beispiel-Events
+
+### Alert Feed und Live-Steuerung
+
+- Event-Feed mit Filtern, Lesestatus, Replay und Popout-Fenster
+- Pro Overlay: Pause, Skip, Stumm, Master-Lautstärke, Queue leeren, Quellen neu laden und eine Anzeige der verbundenen Quellen
+- Test-Alerts für jeden Event-Typ, die durch dieselben Filter und Regeln laufen wie echte Events
+
+### Weiteres
+
+- Mehrere Overlays mit eigener URL, Warteschlange und eigenen Regeln
+- Gift-Bündelung: die Einzel-Subs der Beschenkten landen nur im Log, der Alert kommt vom Gift-Event
+- Das Event-Log wird automatisch nach `EVENT_RETENTION_DAYS` (Standard 30) aufgeräumt
+
+---
+
+## So funktioniert es
+
+```
+Twitch EventSub ─┐
+YouTube API ─────┤
+betterplace ─────┼─► Connectoren ─► Normalisierung ─► Filter ─► Regel-Engine ─► Warteschlange ─► Overlay 16:9
+Webhooks ────────┘                                                    │                    └──► Overlay 9:16
+                                                                      └──► Widgets (Browserquellen)
+                          Dashboard (REST + WebSocket) steuert alles live
+```
+
+Jede Quelle liefert Events im **selben Format**. Regeln, Designs und Overlays funktionieren deshalb unabhängig davon,
+ob eine Spende von betterplace, von YouTube oder aus einem eigenen Webhook kommt.
+
+---
 
 ## Schnellstart
 
-Voraussetzung: Node.js ≥ 22 (macOS: `brew install node`).
+**Voraussetzung:** Node.js ≥ 22 (macOS: `brew install node`)
 
-**Zum Ausprobieren – ein Befehl:**
+### Lokal ausprobieren, ein Befehl
 
 ```bash
+git clone https://github.com/Intracy/FF-Overlay.git
+cd FF-Overlay
 ./scripts/start-local.sh        # oder: npm run local
 ```
 
-Das Skript legt beim ersten Start eine `.env` an, installiert die Abhängigkeiten, baut alles, startet auf http://localhost:3000 und öffnet das Dashboard direkt – ohne Login. Mit `--dev` startet es stattdessen den Entwicklungsmodus mit Hot Reload.
+Das Skript legt beim ersten Start eine `.env` an, installiert alles, baut das Projekt und öffnet das Dashboard auf
+**http://localhost:3000**, ohne Login. Mit `--dev` startet es den Entwicklungsmodus mit Hot Reload.
 
-**Manuell:**
-
-```bash
-cp .env.example .env      # Werte eintragen
-npm install
-npm run dev               # Backend :3000 + Dashboard mit Hot Reload :5173
-```
-
-Dashboard: http://localhost:5173 (ohne `ADMIN_PASSWORD` ohne Login).
-Beim ersten Start legt FF-Overlay ein „Haupt-Overlay“ mit Standard-Designs und -Regeln an.
-
-Produktion ohne Docker:
-
-```bash
-npm run build && NODE_ENV=production npm start   # alles auf Port 3000
-```
+Beim ersten Start legt FF-Overlay ein **Haupt-Overlay** mit Standard-Designs und -Regeln an. Unter **Alert Feed → Test-Alerts** kannst du sofort loslegen.
 
 ### Docker (z. B. auf dem NAS)
 
@@ -111,56 +202,107 @@ cp .env.example .env      # APP_SECRET, PUBLIC_URL und ggf. ADMIN_PASSWORD setze
 docker compose up -d --build
 ```
 
-Daten (SQLite-Datenbank + Uploads) liegen in `./data`. Backup = diesen Ordner sichern.
+Datenbank und Uploads liegen in `./data`. Für ein Backup sicherst du diesen Ordner.
+
+### Manuell / Produktion
+
+```bash
+cp .env.example .env
+npm install
+npm run build && NODE_ENV=production npm start    # alles auf Port 3000
+```
+
+### Aktualisieren
+
+```bash
+git pull && npm install && npm run build    # danach den Server neu starten
+```
+
+---
 
 ## Einrichtung
 
-### Overlay in OBS
-1. Dashboard → **Overlays** → URL kopieren (sie enthält einen geheimen Key – nicht im Stream zeigen).
-2. OBS → Quelle hinzufügen → **Browser** → URL einfügen, 1920 × 1080.
-3. „Audio über OBS steuern“ aktivieren, damit Alert-Sounds im Mixer landen.
-4. Hängt man `&debug=1` an die URL, zeigt die Quelle ihren Verbindungsstatus.
+<details open>
+<summary><b>Overlay in OBS einfügen</b></summary>
 
-Ist der Key einmal sichtbar geworden: **Key erneuern** – alte Quellen werden sofort getrennt.
+1. Dashboard → **Alert-Box** (oder **Overlays**) → URL kopieren. Sie enthält einen geheimen Key, zeige sie nicht im Stream.
+2. In OBS: Quelle hinzufügen → **Browser** → URL einfügen, Größe **1920 × 1080**.
+3. „Audio über OBS steuern“ aktivieren, damit die Alert-Sounds im Mixer landen.
+4. Mit `&debug=1` am Ende der URL zeigt die Quelle ihren Verbindungsstatus.
 
-### Querformat und Hochformat gleichzeitig
-Jedes Overlay hat zwei URLs, die parallel und synchron laufen (gleiche Warteschlange, gleiche Alerts):
-- **16:9:** die normale URL, Browserquelle 1920 × 1080
-- **9:16:** dieselbe URL mit `&format=9x16`, Browserquelle 1080 × 1920 – z. B. für die Hochkant-Leinwand (OBS „Vertical Canvas“) bei TikTok, Shorts oder Reels
+Ist der Key einmal sichtbar geworden, klicke auf **Key erneuern**. Alte Quellen werden dann sofort getrennt.
+</details>
 
-Im Hochformat werden die Alerts größer skaliert (Standard 160 %), oben platziert und halten Abstand zu den Bedienelementen der Apps. Einstellbar unter **Alert-Box → Allgemeine Einstellungen → Hochformat 9:16**; die Vorschau in Alert-Box und „Alle Designs“ lässt sich auf 9:16 umschalten. Ohne `format` entscheidet das Seitenverhältnis der Browserquelle. Liegen beide Quellen in derselben Szene, mit `&mute=1` eine davon stummschalten, sonst kommt der Sound doppelt.
+<details>
+<summary><b>Querformat (16:9) und Hochformat (9:16) gleichzeitig</b></summary>
 
-### Widgets in OBS
-Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern** → URL kopieren und als eigene Browserquelle einfügen (die passende Größe steht unter der URL). Änderungen erscheinen sofort in OBS, ohne die Quelle neu zu laden. Für die End-Credits in den Eigenschaften der Browserquelle „Quelle beim Ausblenden herunterfahren“ **aus** lassen; mit „Abspielen, wenn die Quelle sichtbar wird“ starten sie beim Szenenwechsel.
+Jedes Overlay hat zwei URLs, die synchron laufen (gleiche Warteschlange, gleiche Alerts):
 
-### Twitch & YouTube verbinden
-Dashboard → **Verbindungen** → „Mit Twitch verbinden“ bzw. „Mit YouTube verbinden“. Es erscheint ein kurzer Code; auf `twitch.tv/activate` bzw. `google.com/device` (auch am Handy) anmelden, Code eingeben, fertig. Das funktioniert ohne Weiterleitungs-URL – also auch mit `localhost`, im Heimnetz oder auf dem NAS.
+| Format | URL | Browserquelle |
+| --- | --- | --- |
+| 16:9 | normale URL | 1920 × 1080 |
+| 9:16 | URL mit `&format=9x16` | 1080 × 1920, z. B. für die vertikale Leinwand in OBS |
 
-Einmalig braucht jede Installation eigene, kostenlose App-Zugangsdaten (Twitch und Google geben Zugriff nur an registrierte Apps). Eintragen unter **Verbindungen → App-Zugangsdaten** oder in der `.env`:
+Im Hochformat werden die Alerts größer skaliert (Standard 160 %) und halten Abstand zu den Bedienelementen von TikTok,
+Shorts und Reels. Einstellbar unter **Alert-Box → Allgemeine Einstellungen → Hochformat 9:16**.
+Liegen beide Quellen in derselben Szene, schaltest du eine mit `&mute=1` stumm, sonst kommt der Sound doppelt.
+</details>
 
-- **Twitch:** https://dev.twitch.tv/console/apps → App registrieren (Zwei-Faktor-Anmeldung nötig), Redirect-URL `http://localhost`, **Client-Typ „Öffentlich“** → Client-ID eintragen. Ein Secret braucht es dann nicht.
-- **YouTube:** Google-Cloud-Projekt anlegen, **YouTube Data API v3** aktivieren, OAuth-Zustimmungsbildschirm „Extern“ und **veröffentlichen** (im Testmodus läuft die Anmeldung nach 7 Tagen ab), Client vom Typ **„Fernseher und Geräte mit begrenzter Eingabe“** anlegen → Client-ID und Secret eintragen.
+<details>
+<summary><b>Widgets</b></summary>
 
-Twitch-Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`. Anmeldungen per Gerätecode verfallen, wenn FF-Overlay 30 Tage lang nicht läuft – dann einmal neu verbinden. Die bisherige Anmeldung per Weiterleitung (`/auth/twitch/start`, braucht Client-Secret und Redirect-URL `<PUBLIC_URL>/auth/twitch/callback`) funktioniert weiterhin.
+Dashboard → **Widgets** → Widget anlegen, einstellen, **Speichern**, URL kopieren und als eigene Browserquelle einfügen.
+Die passende Größe steht unter der URL. Für die End-Credits „Quelle beim Ausblenden herunterfahren“ in OBS **aus** lassen.
+</details>
 
-**YouTube-Kontingent:** Super Chats & Mitgliedschaften gibt es nur über den Live-Chat der Data API. FF-Overlay prüft jede Minute, ob ein Stream läuft, und liest dann den Chat mindestens alle `YOUTUBE_CHAT_POLL_SECONDS` (Standard 8 s). Eine Chat-Abfrage kostet 5 von 10.000 Einheiten pro Tag – das reicht für gut 4 Stunden Livestream täglich. Mehr Kontingent lässt sich in der Google Cloud Console kostenlos beantragen. Neue Abos erscheinen nur, wenn das Abo öffentlich ist.
+<details>
+<summary><b>Twitch und YouTube verbinden</b></summary>
 
-### betterplace-Webhook
-1. Dashboard → **Alert-Box → Spenden (betterplace) → Verbindung & Webhook** (oder **Verbindungen**): Spendenaktion verbinden, Webhook-URL kopieren.
-2. betterplace → Spendenaktion → **Alerts für deinen Charity Stream → Spenden-Webhook → Webhook einrichten**: URL einfügen, „Übernehmen“, Webhook **an**, „Testspende senden“.
+Dashboard → **Verbindungen** → „Mit Twitch verbinden“ bzw. „Mit YouTube verbinden“. Es erscheint ein kurzer Code.
+Den gibst du auf `twitch.tv/activate` bzw. `google.com/device` ein, auch am Handy. Eine Weiterleitungs-URL ist nicht nötig,
+das klappt also auch mit `localhost` oder auf dem NAS.
 
-betterplace ruft die Adresse aus dem Internet auf. `PUBLIC_URL` muss deshalb öffentlich erreichbar sein (z. B. `cloudflared tunnel --url http://localhost:3000` oder Reverse-Proxy auf dem NAS) – mit `localhost` kommen Spenden weiterhin über die API-Abfrage (alle 20 s). Der Webhook liefert Anzeigename, Betrag (beide können verborgen sein), Kommentar, laufende Nummer und bei moderierten Aktionen einen Video-Link.
+Einmalig braucht jede Installation eigene, kostenlose App-Zugangsdaten. Du trägst sie unter
+**Verbindungen → App-Zugangsdaten** oder in der `.env` ein:
 
-### Text-in-Sprache
-TTS nutzt die Sprachausgabe der Browserquelle (Web Speech API). Welche Stimmen es gibt, hängt vom Rechner ab, auf dem OBS läuft (macOS und Windows bringen deutsche Stimmen mit). Die Stimmenliste im Dashboard zeigt die Stimmen des Rechners, auf dem das Dashboard offen ist; fehlt die gewählte Stimme in OBS, wird die Standardstimme der Sprache genutzt.
+- **Twitch:** [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps) → App registrieren (Zwei-Faktor-Anmeldung nötig), Redirect-URL `http://localhost`, **Client-Typ „Öffentlich“**, dann die Client-ID eintragen
+- **YouTube:** Google-Cloud-Projekt anlegen, **YouTube Data API v3** aktivieren, OAuth-Zustimmungsbildschirm „Extern“ **veröffentlichen** (im Testmodus läuft die Anmeldung nach 7 Tagen ab), Client vom Typ **„Fernseher und Geräte mit begrenzter Eingabe“** anlegen, dann Client-ID und Secret eintragen
 
-### GIPHY
-Key unter https://developers.giphy.com/dashboard/ anlegen (API- oder SDK-Key) und unter **Verbindungen → App-Zugangsdaten → GIPHY** eintragen (wird verschlüsselt gespeichert) – oder als `GIPHY_API_KEY` in der `.env`. Fehlt der Key, fragt die GIF-Suche direkt danach. Neue Keys sind Beta-Keys (100 Aufrufe/Stunde); für mehr ein Production-Upgrade beantragen. Die Kennzeichnung „Powered By GIPHY“ ist im Picker enthalten.
+**YouTube-Kontingent:** Super Chats und Mitgliedschaften gibt es nur über den Live-Chat der API. Eine Abfrage kostet
+5 von 10.000 Einheiten pro Tag. Bei einer Abfrage alle 8 Sekunden reicht das für gut 4 Stunden Livestream täglich.
+Mehr Kontingent kannst du in der Google Cloud Console kostenlos beantragen.
 
-### betterplace
-Dashboard → **Verbindungen** → Link oder ID der Spendenaktion einfügen. Die Public API ist laut betterplace auf dem Weg zur Deprecation; für Charity-Streams bietet betterplace auch Spenden-Webhooks an (charitystream@betterplace.org) – die lassen sich später als eigener Connector ergänzen.
+Twitch-Scopes: `moderator:read:followers`, `channel:read:subscriptions`, `bits:read`, `channel:read:redemptions`, `channel:read:charity`.
+</details>
 
-### Eigener Webhook
+<details>
+<summary><b>betterplace: Spendenaktion und Webhook</b></summary>
+
+1. Dashboard → **Alert-Box → Spenden (betterplace) → Verbindung & Webhook**: Link oder ID der Spendenaktion einfügen und die Webhook-URL kopieren.
+2. Auf betterplace: Spendenaktion → **Alerts für deinen Charity Stream → Spenden-Webhook → Webhook einrichten**, URL einfügen, Webhook **an**, „Testspende senden“.
+
+betterplace ruft die Webhook-Adresse aus dem Internet auf. `PUBLIC_URL` muss dafür öffentlich erreichbar sein, z. B. über
+`cloudflared tunnel --url http://localhost:3000` oder einen Reverse-Proxy auf dem NAS. Ohne öffentliche Adresse kommen
+Spenden weiterhin über die API-Abfrage an, etwa alle 20 Sekunden.
+</details>
+
+<details>
+<summary><b>GIPHY</b></summary>
+
+Lege unter [developers.giphy.com](https://developers.giphy.com/dashboard/) einen API- oder SDK-Key an und trage ihn unter
+**Verbindungen → App-Zugangsdaten → GIPHY** ein. Dort wird er verschlüsselt gespeichert. Alternativ setzt du ihn als `GIPHY_API_KEY` in der `.env`.
+Fehlt der Key, fragt die GIF-Suche direkt danach.
+</details>
+
+<details>
+<summary><b>Text-in-Sprache</b></summary>
+
+TTS nutzt die Sprachausgabe der Browserquelle (Web Speech API). Welche Stimmen verfügbar sind, hängt vom Rechner ab, auf dem OBS läuft;
+macOS und Windows bringen deutsche Stimmen mit. Fehlt die gewählte Stimme, wird die Standardstimme der Sprache genutzt.
+</details>
+
+<details>
+<summary><b>Eigener Webhook</b></summary>
 
 ```bash
 curl -X POST "<Webhook-URL aus dem Dashboard>" \
@@ -168,72 +310,120 @@ curl -X POST "<Webhook-URL aus dem Dashboard>" \
   -d '{"type":"donation","user":"Max","amount":5,"currency":"EUR","message":"Danke!"}'
 ```
 
-Felder: `type` (follow, subscription, cheer, donation, raid, redemption, custom), `subtype`, `user`, `amount`, `currency`, `message`, `count`, `months`, `tier`, `product`, optional `id` (zum Deduplizieren).
+Felder: `type` (follow, subscription, cheer, donation, raid, redemption, custom), `subtype`, `user`, `amount`, `currency`,
+`message`, `count`, `months`, `tier`, `product`, optional `id` zum Deduplizieren.
+</details>
 
-## Umgebungsvariablen
+<details>
+<summary><b>Ton in der Vorschau und im Browser-Tab</b></summary>
 
-| Variable | Pflicht | Bedeutung |
+Die Vorschau im Dashboard spielt den Sound beim Öffnen und nach jeder Änderung an Sound oder Lautstärke einmal mit,
+die automatischen Wiederholungen bleiben stumm. Öffnest du das Overlay in einem normalen Browser-Tab statt in OBS,
+blockiert der Browser den Ton bis zum ersten Klick. Das Overlay zeigt dann einen Hinweis. OBS braucht das nicht.
+</details>
+
+---
+
+## Konfiguration
+
+| Variable | Standard | Bedeutung |
 | --- | --- | --- |
-| `PUBLIC_URL` | ja | Öffentliche Basis-URL (für Overlay-URLs und Twitch-OAuth) |
-| `ADMIN_PASSWORD` | – | Passwort fürs Dashboard; leer = kein Login. Setzen, sobald das Dashboard außerhalb deines Rechners erreichbar ist |
-| `APP_SECRET` | in Produktion | ≥ 32 Zeichen; signiert Cookies und verschlüsselt OAuth-Tokens (AES-256-GCM) |
-| `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | optional | Twitch-App (alternativ im Dashboard; Secret nur bei vertraulichem Client) |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | optional | Google-Client für YouTube (alternativ im Dashboard) |
+| `PUBLIC_URL` | `http://localhost:3000` | Öffentliche Basis-URL für Overlay-, Widget- und Webhook-URLs |
+| `ADMIN_PASSWORD` | leer | Passwort fürs Dashboard; leer bedeutet kein Login. **Setzen, sobald das Dashboard von außen erreichbar ist** |
+| `APP_SECRET` | – | ≥ 32 Zeichen, Pflicht in Produktion; signiert Cookies und verschlüsselt Tokens (AES-256-GCM) |
+| `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | – | Twitch-App (alternativ im Dashboard) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | – | Google-Client für YouTube (alternativ im Dashboard) |
+| `GIPHY_API_KEY` | – | GIPHY-Suche (alternativ im Dashboard) |
 | `YOUTUBE_CHAT_POLL_SECONDS` | `8` | Mindestabstand der YouTube-Chat-Abfrage |
-| `GIPHY_API_KEY` | für GIPHY | GIPHY-Suche |
-| `PORT` | – | Standard 3000 |
-| `DATA_DIR` | – | Standard `./data` |
-| `BETTERPLACE_POLL_SECONDS` | – | Standard 20, minimal 15 |
-| `EVENT_RETENTION_DAYS` | – | Standard 30 |
+| `BETTERPLACE_POLL_SECONDS` | `20` | Abfrage-Intervall der betterplace-API (mindestens 15) |
+| `EVENT_RETENTION_DAYS` | `30` | Aufbewahrung des Event-Logs |
+| `PORT` | `3000` | Port des Servers |
+| `DATA_DIR` | `./data` | Datenbank und Uploads |
 
-## Projektstruktur
+---
 
-```
-server/src/
-  index.ts, app.ts          Start & Fastify-Setup (REST, WebSocket, statische Dateien)
-  shared/types.ts           Gemeinsame Typen für Backend, Dashboard, Overlay
-  connectors/               twitch/ (OAuth, EventSub, Normalisierung), betterplace.ts, webhook.ts, manager.ts
-  events/pipeline.ts        Filter → Regel-Engine → Queue, Event-Log, Stream-Session
-  rules/engine.ts           Bedingungen, Priorität, Gewichtung, Begründung
-  queue/alertQueue.ts       Warteschlange pro Overlay (Pause, Skip, Timeout)
-  templates/render.ts       Platzhalter → Text-Segmente (Overlay setzt nur Text, kein HTML)
-  widgets/                  Berechnung (Ziele, Labels, Credits, Timer, Boss, betterplace), Service mit Live-Updates, Validierung
-  shared/widgets.ts         Widget-Typen und Standardwerte (betterplace: shared/bpWidgets.ts)
-  routes/                   auth, api, connections (+ Twitch-OAuth, Webhooks), media (+ GIPHY-Proxy), widgets, ws
-  db.ts                     SQLite-Schema & Zugriff
-server/test/                Vitest: Engine, Normalisierung, Queue, Widgets, API inkl. WebSocket-Ende-zu-Ende
-web/
-  index.html, dashboard/    React-Dashboard
-  overlay/                  Browserquelle + gemeinsamer Renderer (auch für die Editor-Vorschau)
-  widget/                   Browserquelle für alle Widgets
-  shared/animations.ts      Animationslisten
-```
+## Sicherheit & Datenschutz
+
+- **Ein geheimer Key pro Overlay und Widget**, jederzeit erneuerbar. Alte Quellen werden dann sofort getrennt
+- **Optionaler Dashboard-Login** mit signiertem Cookie und Rate-Limit
+- **Verschlüsselte Zugangsdaten:** OAuth-Tokens, Client-Secrets und der GIPHY-Key liegen AES-256-GCM-verschlüsselt in der Datenbank
+- **Zuschauertexte werden nur als Text gerendert**, nie als HTML. Eigenes HTML läuft in einer abgeschotteten Sandbox
+- **Medien-URLs** sind nur `https://` oder eigene Uploads
+- **Keine Cloud:** alle Daten liegen in einer SQLite-Datei in `./data`
+
+---
 
 ## Entwicklung
 
 ```bash
-npm test          # Vitest
-npm run typecheck # Backend + Frontend
-npm run build     # dist/web + dist/server
+npm run dev        # Backend :3000 + Dashboard mit Hot Reload :5173
+npm test           # Vitest (Engine, Normalisierung, Queue, Widgets, API inkl. WebSocket)
+npm run typecheck  # Backend + Frontend
+npm run build      # dist/web + dist/server
 ```
 
-## Entscheidungen
+**Technik:** Node.js 22 · TypeScript · Fastify 5 (REST + WebSocket) · better-sqlite3 · zod · React 19 · Vite · Vitest
 
-- **SQLite statt PostgreSQL** (abweichend vom Konzept): Single-User, eine Datei, kein zusätzlicher Dienst – ideal zum Selbsthosten auf NAS oder Mini-Server. Regeln und Designs liegen als JSON; ein späterer Wechsel auf PostgreSQL betrifft nur `db.ts`.
-- **Widgets rechnen aus dem Event-Log**: Ziele, Labels, Credits, Liste und Ticker werden bei jeder Änderung neu aus dem Log berechnet (keine doppelte Zählung, Testdaten lassen sich sauber entfernen). Nur Timer und Boss haben eigenen Zustand.
-- **Queue im Backend**: Pause, Skip und Replay wirken sofort, mehrere Browserquellen bleiben synchron. Kommt von einer Quelle kein „fertig“, gibt ein Timeout die Queue frei.
-- **Twitch per WebSocket statt Webhook**: kein öffentlicher HTTPS-Endpunkt nötig.
-- **Sicherheit**: Overlay-Key pro Overlay (rotierbar), optionaler Dashboard-Login (signiertes Cookie, Rate-Limit), verschlüsselte Tokens, Medien-URLs nur `https://` oder eigene Uploads, Zuschauertexte nur als Text gerendert.
+<details>
+<summary><b>Projektstruktur</b></summary>
 
-## Noch offen (Phase 2/3 des Konzepts)
+```
+server/src/
+  index.ts, app.ts        Start & Fastify-Setup (REST, WebSocket, statische Dateien)
+  connectors/             Twitch (OAuth, EventSub), YouTube, betterplace, Webhooks, Gerätecode-Anmeldung
+  events/pipeline.ts      Filter → Regel-Engine → Queue, Event-Log, Stream-Session
+  rules/engine.ts         Bedingungen, Priorität, Gewichtung, Begründung
+  queue/alertQueue.ts     Warteschlange pro Overlay (Pause, Skip, Timeout)
+  templates/              Platzhalter → Text-Segmente, Standard-Designs
+  widgets/                Berechnung aus dem Event-Log, Live-Updates, Validierung
+  routes/                 auth, api, connections, media (GIPHY, MyInstants), widgets, ws
+  shared/                 Gemeinsame Typen und Kataloge für Backend, Dashboard und Overlay
+  db.ts                   SQLite-Schema, Migrationen und Zugriff
+server/test/              Vitest
+web/
+  dashboard/              React-Dashboard
+  overlay/                Browserquelle + gemeinsamer Renderer (auch für die Vorschau)
+  widget/                 Browserquelle für alle Widgets
+  vendor/                 Drittanbieter (Text-Effekte)
+scripts/                  start-local.sh, vendor-text-effects.mjs
+docs/screenshots/         Bilder für dieses README
+```
+</details>
 
-- YouTube-Chat per streamList (gRPC, schneller und sparsamer), Cloud-Stimmen für TTS (z. B. Amazon Polly wie bei Streamlabs)
-- Safe Mode gegen Hate-Raids
-- Von Streamlabs bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot-Einlösungen, Twitch-Clips bei Großspenden, Zuschauer-GIFs vor Spenden (braucht eine eigene Spendenseite)
-- Ausgehende Aktionen (z. B. OBS-Szenenwechsel per obs-websocket); Video-Link aus betterplace-Spenden im Alert abspielen; betterplaces eigene Abstimmungsauswahl im Spendenformular (kommt nicht über den Webhook)
-- Weitere Streamlabs-Widgets, die einen Chat-Anschluss brauchen: Chat-Box, Emote-Wand, Tip-Jar, Umfragen, Chat-Highlights
+<details>
+<summary><b>Architekturentscheidungen</b></summary>
 
+- **SQLite statt PostgreSQL:** ein Nutzer, eine Datei, kein zusätzlicher Dienst. Das passt gut zum Selbsthosten. Ein späterer Wechsel betrifft nur `db.ts`.
+- **Widgets rechnen aus dem Event-Log:** Ziele, Labels, Credits und Listen werden bei jeder Änderung neu berechnet. So wird nichts doppelt gezählt, und Testdaten lassen sich sauber entfernen. Nur Timer und Boss haben eigenen Zustand.
+- **Warteschlange im Backend:** Pause, Skip und Replay wirken sofort, und mehrere Browserquellen (16:9 und 9:16) bleiben synchron.
+- **Twitch per WebSocket statt Webhook:** dafür ist kein öffentlicher HTTPS-Endpunkt nötig.
+- **Ein Renderer für Overlay und Vorschau:** das Dashboard zeigt exakt das, was in OBS erscheint.
+</details>
+
+---
+
+## Roadmap
+
+- [ ] YouTube-Chat per streamList (schneller und sparsamer), Cloud-Stimmen für TTS
+- [ ] Safe Mode gegen Hate-Raids
+- [ ] Ausgehende Aktionen, z. B. OBS-Szenenwechsel per obs-websocket
+- [ ] Video-Link aus betterplace-Spenden im Alert abspielen
+- [ ] Widgets mit Chat-Anschluss: Chat-Box, Emote-Wand, Umfragen, Chat-Highlights
+
+Bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot und Zuschauer-GIFs vor Spenden (dafür bräuchte es eine eigene Spendenseite).
+
+---
 
 ## Drittanbieter
 
-- `web/vendor/colorion-text-effects`: [CSS Text Effects](https://github.com/ckissi/colorion-text-effects) von Colorion, MIT-Lizenz. Erzeugt mit `node scripts/vendor-text-effects.mjs <Klon des Repos>`: Schrift aus dem Alert statt fester Schrift, px → em (wächst mit der Schriftgröße), beliebiger Text statt Beispielwort, Umbruch zwischen Wörtern, ohne prefers-reduced-motion.
+| Komponente | Lizenz | Verwendung |
+| --- | --- | --- |
+| [CSS Text Effects](https://github.com/ckissi/colorion-text-effects) von Colorion | MIT | Animation Library, angepasst mit `scripts/vendor-text-effects.mjs` (Schrift aus dem Alert, px → em, beliebiger Text, Zeilenumbruch) |
+| [Animate.css](https://animate.style/) | Hippocratic License | Ein- und Ausblend-Animationen |
+| [GIPHY](https://developers.giphy.com/) | API-Nutzungsbedingungen | GIF-Suche („Powered By GIPHY“ im Picker) |
+| [MyInstants](https://www.myinstants.com/) | – | Sound-Suche; übernommene Sounds landen in der eigenen Mediathek |
+
+<div align="center">
+<br>
+<sub>Gebaut für die <b>FrankenFinals</b> und alle, die ihre Stream-Alerts selbst in der Hand haben wollen 💜</sub>
+</div>

@@ -1,0 +1,216 @@
+/*
+ * FF-Design (übernommen aus FF-Broadcast): Schriften, Farben und Flächen.
+ * Nur das Aussehen wird überschrieben – Layout, Abstände und Anordnung kommen weiter aus styles.css.
+ * Schriften lokal ausgeliefert (SIL Open Font License 1.1, siehe assets/fonts/OFL-*.txt).
+ */
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('./assets/fonts/ibm-plex-sans-var.woff2') format('woff2-variations'), url('./assets/fonts/ibm-plex-sans-var.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face { font-family: 'IBM Plex Mono'; src: url('./assets/fonts/ibm-plex-mono-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./assets/fonts/ibm-plex-mono-500.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./assets/fonts/ibm-plex-mono-600.woff2') format('woff2'); font-weight: 600 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url('./assets/fonts/barlow-condensed-600.woff2') format('woff2'); font-weight: 400 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url('./assets/fonts/barlow-condensed-700.woff2') format('woff2'); font-weight: 700 900; font-style: normal; font-display: swap; }
+
+/* ---------- Farben ---------- */
+:root {
+  /* Farbwelt von FF-Broadcast */
+  --fb-bg: #000;
+  --fb-bg-2: #08080a;
+  --fb-surface: #111114;
+  --fb-surface-2: #18181c;
+  --fb-surface-3: #222228;
+  --fb-border: #1f1f25;
+  --fb-border-2: #2c2c34;
+  --fb-text: #f4f4f6;
+  --fb-text-2: #b4b4bf;
+  --fb-muted: #7c7c88;
+  --fb-accent: #8b5cf6;
+  --fb-accent-2: #a78bfa;
+  --fb-green: #22c55e;
+  --fb-green-text: #4ade80;
+  --fb-yellow: #facc15;
+  --fb-red: #ef4444;
+  --fb-red-text: #f87171;
+  --card-bg: linear-gradient(180deg, #0f0f13 0%, #0a0a0d 100%);
+  --card-border: #1c1c23;
+  --hover-border: #2c2c36;
+  --glass: color-mix(in srgb, #0b0b0e 72%, transparent);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--fb-accent) 30%, transparent);
+  --elev-1: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 8px 24px -12px rgba(0, 0, 0, .6);
+  --elev-2: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 24px 60px -20px rgba(0, 0, 0, .75);
+  --accent-grad: linear-gradient(135deg, #9b6cff 0%, #7c3aed 100%);
+  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-cond: 'Barlow Condensed', 'Oswald', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+
+  /* bestehende Variablen des Dashboards auf die neue Farbwelt legen */
+  --bg: var(--fb-bg);
+  --panel: var(--fb-surface);
+  --panel-2: var(--fb-surface-2);
+  --line: var(--fb-border-2);
+  --text: var(--fb-text);
+  --muted: var(--fb-muted);
+  --accent: var(--fb-accent);
+  --accent-ink: #fff;
+  --live: var(--fb-red);
+  --ok: var(--fb-green-text);
+  --warn: var(--fb-yellow);
+  --err: var(--fb-red-text);
+  --radius: 16px;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--font);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: radial-gradient(1200px 500px at 85% -10%, color-mix(in srgb, var(--fb-accent) 9%, transparent), transparent 70%), var(--fb-bg);
+  background-attachment: fixed;
+}
+::selection { background: color-mix(in srgb, var(--fb-accent) 45%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--fb-border-2) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--fb-border-2); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+a { color: var(--fb-accent-2); }
+
+/* ---------- Schrift: Überschriften schmal und in Großbuchstaben ---------- */
+h1 { font-family: var(--font-cond); font-weight: 700; font-size: 32px; line-height: 1.05; letter-spacing: .015em; text-transform: uppercase; }
+h2 { font-family: var(--font-cond); font-weight: 700; font-size: 21px; letter-spacing: .02em; text-transform: uppercase; }
+h3 { font-family: var(--font); font-size: 11.5px; font-weight: 600; letter-spacing: .12em; color: var(--fb-text-2); }
+p.lead { color: var(--fb-text-2); }
+.muted { color: var(--fb-muted); }
+
+/* ---------- Seitenleiste ---------- */
+nav.side { background: var(--glass); backdrop-filter: saturate(160%) blur(14px); border-right-color: var(--fb-border); }
+.brand { font-family: var(--font-cond); font-weight: 700; font-size: 20px; letter-spacing: .03em; text-transform: uppercase; }
+.brand .logo {
+  border-radius: 9px; background: var(--accent-grad); color: #fff; font-family: var(--font-cond);
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--fb-accent) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+nav.side a { color: var(--fb-text-2); font-weight: 500; border: 1px solid transparent; border-radius: 10px; transition: background .15s, color .15s, border-color .15s; }
+nav.side a:hover { background: var(--fb-surface); color: var(--fb-text); }
+nav.side a.active {
+  background: var(--fb-surface); color: var(--fb-text); border-color: var(--fb-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04), inset 3px 0 0 var(--fb-accent);
+}
+
+/* ---------- Karten & Flächen ---------- */
+.card, .section { background: var(--card-bg); border-color: var(--card-border); box-shadow: var(--elev-1); }
+.section-head { border-radius: 16px; }
+.section-head:hover { background: color-mix(in srgb, var(--fb-surface-2) 60%, transparent); }
+.empty { border-color: var(--fb-border-2); border-radius: 16px; color: var(--fb-muted); }
+
+/* ---------- Knöpfe (gleiche Größe, neue Optik) ---------- */
+button, .btn {
+  border-radius: 10px; border-color: transparent; background: var(--fb-surface-2); color: var(--fb-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); transition: background .15s, border-color .15s, box-shadow .15s, transform .08s;
+}
+button:hover { background: var(--fb-surface-3); border-color: transparent; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:focus-visible { outline: none; box-shadow: var(--ring); }
+button.primary, button.btn-test {
+  background: var(--accent-grad); color: #fff; border-color: transparent;
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--fb-accent) 80%, transparent), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+button.primary:hover, button.btn-test:hover:not(:disabled) { background: linear-gradient(135deg, #a77dff 0%, #8547f0 100%); filter: none; }
+button.danger { color: var(--fb-red-text); }
+button.ghost { background: transparent; box-shadow: none; color: var(--fb-text-2); }
+button.ghost:hover { background: var(--fb-surface-2); color: var(--fb-text); }
+button.on { background: var(--fb-red); border-color: transparent; color: #fff; box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--fb-red) 80%, transparent), inset 0 1px 0 rgba(255, 255, 255, .2); }
+button.sound-toggle.active { color: var(--fb-accent-2); background: color-mix(in srgb, var(--fb-accent) 18%, var(--fb-surface-2)); border-color: color-mix(in srgb, var(--fb-accent) 40%, transparent); }
+
+/* ---------- Eingaben ---------- */
+input, select, textarea {
+  background: color-mix(in srgb, var(--fb-surface) 85%, transparent); border-color: var(--fb-border-2); border-radius: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+input:hover, select:hover, textarea:hover { border-color: var(--hover-border); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--fb-accent); box-shadow: var(--ring); }
+input[type='range'] { background: transparent; accent-color: var(--fb-accent); box-shadow: none; }
+input[type='color'] { border-radius: 8px; }
+label.field { color: var(--fb-text-2); font-weight: 500; }
+
+/* Haken als Schalter wie in FF-Broadcast (gleiche Stelle, eigene Optik) */
+input[type='checkbox'] {
+  appearance: none; -webkit-appearance: none; width: 34px; height: 20px; flex: none; margin: 0; padding: 0;
+  border-radius: 99px; border: 0; background: var(--fb-surface-3); position: relative; cursor: pointer; transition: background .15s; vertical-align: middle;
+}
+input[type='checkbox']::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .4); transition: transform .15s;
+}
+input[type='checkbox']:checked { background: var(--fb-accent); }
+input[type='checkbox']:checked::after { transform: translateX(14px); }
+input[type='checkbox']:focus-visible { box-shadow: var(--ring); }
+input[type='checkbox']:disabled { opacity: .45; cursor: default; }
+input[type='radio'] { accent-color: var(--fb-accent); }
+
+/* ---------- Abzeichen & Chips ---------- */
+.badge { font-weight: 600; letter-spacing: .05em; text-transform: uppercase; background: var(--fb-surface-3); border-color: transparent; color: var(--fb-text-2); font-size: 10.5px; }
+.badge.ok { color: var(--fb-green-text); background: color-mix(in srgb, var(--fb-green) 15%, transparent); }
+.badge.warn { color: var(--fb-yellow); background: color-mix(in srgb, var(--fb-yellow) 14%, transparent); }
+.badge.err { color: var(--fb-red-text); background: color-mix(in srgb, var(--fb-red) 18%, transparent); }
+.badge.live { color: var(--fb-red-text); background: color-mix(in srgb, var(--fb-red) 20%, transparent); }
+.chip { border-color: var(--fb-border-2); color: var(--fb-text-2); transition: background .15s, color .15s, border-color .15s; box-shadow: none; }
+.chip:hover { color: var(--fb-text); border-color: var(--fb-muted); background: transparent; }
+.chip.active { background: var(--fb-text); color: var(--fb-bg); border-color: var(--fb-text); }
+
+/* ---------- Umschalter (16:9 / 9:16) wie die Segmente in FF-Broadcast ---------- */
+.seg { background: color-mix(in srgb, var(--fb-surface-2) 70%, transparent); border-color: var(--fb-border); border-radius: 10px; }
+.seg button { background: transparent; box-shadow: none; color: var(--fb-text-2); border-radius: 7px; }
+.seg button + button { border-left-color: transparent; }
+.seg button.on { background: var(--fb-surface); color: var(--fb-text); box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04); }
+
+/* ---------- Listen, Tabellen, Navigation in Alert-Box und Widgets ---------- */
+th { font-family: var(--font-cond); font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fb-text-2); border-bottom-color: var(--fb-border); }
+td { border-bottom-color: var(--fb-border); }
+.ab-nav .grp, .dropdown-menu .grp { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--fb-muted); }
+.ab-nav button.item { box-shadow: none; color: var(--fb-text-2); font-weight: 500; }
+.ab-nav button.item:hover { background: var(--fb-surface); color: var(--fb-text); }
+.ab-nav button.item.active { background: var(--fb-surface); color: var(--fb-text); border-color: var(--fb-border); box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 3px 0 0 var(--fb-accent); }
+.ab-nav button.add { color: var(--fb-accent-2); box-shadow: none; }
+.list-item.active { background: var(--fb-surface); border-color: var(--fb-border); }
+.feed-row { border-bottom-color: var(--fb-border); }
+.feed-row.unread { background: color-mix(in srgb, var(--fb-accent) 6%, transparent); }
+.feed-row .icon { background: var(--fb-surface-2); border-radius: 9px; }
+.feed-row .title b { color: var(--fb-accent-2); }
+.widget-type { background: color-mix(in srgb, var(--fb-surface-2) 60%, transparent); border: 1px solid var(--fb-border); }
+.widget-type:hover { border-color: var(--hover-border); background: var(--fb-surface-2); }
+.queue-now, .held { border-radius: 12px; }
+
+/* ---------- Menüs, Dialoge, Meldungen ---------- */
+.dropdown-menu {
+  border-radius: 14px; background: color-mix(in srgb, var(--fb-surface) 96%, transparent); backdrop-filter: blur(14px);
+  border-color: var(--fb-border-2); box-shadow: var(--elev-2);
+}
+.dropdown-menu button, .dropdown-menu label { border-radius: 9px; box-shadow: none; }
+.dropdown-menu button:hover, .dropdown-menu label:hover { background: var(--fb-surface-2); }
+.modal-backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.modal { border-radius: 22px; background: var(--card-bg); border-color: var(--fb-border-2); box-shadow: var(--elev-2); animation: ffb-modalin .2s cubic-bezier(.2, .8, .2, 1); }
+@keyframes ffb-modalin { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+.toast {
+  border-radius: 12px; background: color-mix(in srgb, var(--fb-surface) 96%, transparent); backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--fb-green) 45%, transparent); box-shadow: var(--elev-2); font-weight: 500;
+}
+.toast.err { border-color: color-mix(in srgb, var(--fb-red) 55%, transparent); }
+
+/* ---------- Vorschau-Flächen, Mediathek, Sonstiges ---------- */
+.preview-frame { border-color: var(--fb-border); border-radius: 12px; background: repeating-conic-gradient(#141418 0% 25%, #0e0e11 0% 50%) 50% / 24px 24px; }
+.widget-preview { border-color: var(--fb-border); border-radius: 12px; }
+.media-tile, .instant { background: var(--fb-surface); border-color: var(--fb-border); border-radius: 12px; }
+.media-tile.selectable:hover { border-color: var(--fb-accent); }
+.fx-field { border-radius: 12px; border-color: color-mix(in srgb, var(--fb-accent) 55%, transparent); background: color-mix(in srgb, var(--fb-accent) 7%, transparent); }
+.fx-card { background: var(--fb-surface); border: 1px solid var(--fb-border); }
+.fx-card:hover { border-color: var(--hover-border); background: var(--fb-surface-2); }
+.fx-card.active { border-color: var(--fb-accent); }
+.device-code { background: var(--fb-bg-2); border-color: var(--fb-accent); border-radius: 12px; }
+.chat-line:hover { background: var(--fb-surface-2); }
+.sound-blocked-hint { color: var(--fb-accent-2); }
+.login { background: radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--fb-accent) 22%, transparent), transparent), var(--fb-bg); }
+/* MyInstants-Knöpfe behalten ihre eigene Farbe auch beim Überfahren */
+.instant-btn:hover { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 65%, #000)); filter: brightness(1.08); }

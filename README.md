@@ -450,6 +450,7 @@ Bewusst nicht übernommen: Facebook/X/TikTok-Events, Merch, Cloudbot und Zuschau
 | Komponente | Lizenz | Verwendung |
 | --- | --- | --- |
 | [CSS Text Effects](https://github.com/ckissi/colorion-text-effects) von Colorion | MIT | Animation Library, angepasst mit `scripts/vendor-text-effects.mjs` (Schrift aus dem Alert, px → em, beliebiger Text, Zeilenumbruch) |
+| [IBM Plex Sans/Mono](https://github.com/IBM/plex), [Barlow Condensed](https://github.com/jpt/barlow) | SIL Open Font License 1.1 | Schriften des Dashboards (lokal ausgeliefert, Design wie FF-Broadcast) |
 | [Animate.css](https://animate.style/) 4 | MIT | Ein- und Ausblend-Animationen |
 | [GIPHY](https://developers.giphy.com/) | API-Nutzungsbedingungen | GIF-Suche („Powered By GIPHY“ im Picker) |
 | [MyInstants](https://www.myinstants.com/) | – | Sound-Suche; übernommene Sounds landen in der eigenen Mediathek |

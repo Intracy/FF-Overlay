@@ -30,7 +30,7 @@ describe('API', () => {
     const res = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { password: 'pw' } });
     expect(res.statusCode).toBe(200);
     cookie = String(res.headers['set-cookie']).split(';')[0]!;
-    expect((await api('GET', '/api/auth/me')).json()).toEqual({ authenticated: true, authRequired: true });
+    expect((await api('GET', '/api/auth/me')).json()).toMatchObject({ authenticated: true, authRequired: true, user: { role: 'admin', via: 'password' } });
   });
 
   it('legt beim ersten Start Overlay, Templates und Regeln an', async () => {
@@ -133,7 +133,7 @@ describe('API', () => {
     config.adminPassword = '';
     try {
       expect((await app.inject({ method: 'GET', url: '/api/overlays' })).statusCode).toBe(200);
-      expect((await app.inject({ method: 'GET', url: '/api/auth/me' })).json()).toEqual({ authenticated: true, authRequired: false });
+      expect((await app.inject({ method: 'GET', url: '/api/auth/me' })).json()).toMatchObject({ authenticated: true, authRequired: false });
     } finally {
       config.adminPassword = 'pw';
     }

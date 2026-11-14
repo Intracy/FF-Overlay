@@ -38,6 +38,17 @@ export const config = {
   betterplacePollSeconds: Number(env('BETTERPLACE_POLL_SECONDS', '20')),
   eventRetentionDays: Number(env('EVENT_RETENTION_DAYS', '30')),
   isProduction: env('NODE_ENV') === 'production',
+  /**
+   * Anmeldung über das FrankenFinals-Broadcast-Portal (Single Sign-on). Ist PORTAL_SSO_SECRET gesetzt, öffnet das
+   * Portal die Overlay Engine mit einer signierten Eintrittskarte und der Rolle der Person (operator/editor/admin).
+   * ADMIN_PASSWORD bleibt dann nur als Notfall-Zugang.
+   */
+  portal: {
+    url: env('PORTAL_URL').replace(/\/$/, ''),
+    secret: env('PORTAL_SSO_SECRET'),
+    moduleId: env('PORTAL_MODULE_ID', 'overlay'),
+    sessionHours: Number(env('PORTAL_SESSION_HOURS', '12')),
+  },
 };
 
 export function assertConfig(log: (msg: string) => void): void {
@@ -46,7 +57,12 @@ export function assertConfig(log: (msg: string) => void): void {
     config.appSecret = crypto.randomBytes(32).toString('hex');
     log('APP_SECRET nicht gesetzt – nutze einen zufälligen Wert. Logins und gespeicherte Tokens überleben keinen Neustart.');
   }
-  if (!config.adminPassword) {
-    log('ADMIN_PASSWORD nicht gesetzt – Dashboard ist OHNE Passwort erreichbar. Nur im lokalen Netz verwenden.');
+  if (config.portal.secret && config.portal.secret.length < 32) {
+    if (config.isProduction) throw new Error('PORTAL_SSO_SECRET muss mindestens 32 Zeichen haben.');
+    log('PORTAL_SSO_SECRET ist kürzer als 32 Zeichen – Anmeldung über das Portal ist deshalb aus.');
+  }
+  if (config.portal.secret && !config.portal.url) log('PORTAL_URL fehlt – der Knopf „Über das Portal anmelden“ hat kein Ziel.');
+  if (!config.adminPassword && !config.portal.secret) {
+    log('Weder ADMIN_PASSWORD noch PORTAL_SSO_SECRET gesetzt – Dashboard ist OHNE Login erreichbar. Nur im lokalen Netz verwenden.');
   }
 }

@@ -109,3 +109,14 @@ describe('Rollen', () => {
     expect(requiredRole('DELETE', '/api/overlays/:id')).toBe('admin');
   });
 });
+
+describe('PORTAL_URL', async () => {
+  const { normalizeBaseUrl } = await import('../src/config.js');
+  it('wird auch ohne https:// oder mit Pfad/Slash zur richtigen Adresse', () => {
+    expect(normalizeBaseUrl('broadcast.example.de')).toBe('https://broadcast.example.de');
+    expect(normalizeBaseUrl('https://broadcast.example.de/')).toBe('https://broadcast.example.de');
+    expect(normalizeBaseUrl('https://broadcast.example.de/#/')).toBe('https://broadcast.example.de');
+    expect(normalizeBaseUrl('"http://localhost:3399"')).toBe('http://localhost:3399');
+    expect(normalizeBaseUrl('')).toBe('');
+  });
+});

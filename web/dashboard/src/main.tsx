@@ -50,7 +50,7 @@ function UserBox() {
         <span className="userbox-txt"><b>{u.name || u.email}</b><span>{u.roleLabel}</span></span>
       </div>
       <div className="userbox-actions">
-        {me.portalUrl && <button className="small" onClick={() => { location.href = me.portalUrl + '/'; }}>Zum Portal</button>}
+        {me.portalUrl && <a className="btn small" href={me.portalUrl + '/'}>Zum Portal</a>}
         <button className="small ghost" onClick={logout}>Abmelden</button>
       </div>
     </div>

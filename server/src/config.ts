@@ -9,6 +9,18 @@ function env(name: string, fallback = ''): string {
   return process.env[name]?.trim() || fallback;
 }
 
+/** Adresse vereinheitlichen: ohne http(s):// wird https:// ergänzt, Pfad und Slash am Ende fallen weg */
+export function normalizeBaseUrl(raw: string): string {
+  let v = raw.trim().replace(/^["']|["']$/g, '');
+  if (!v) return '';
+  if (!/^https?:\/\//i.test(v)) v = 'https://' + v.replace(/^\/+/, '');
+  try {
+    return new URL(v).origin;
+  } catch {
+    return '';
+  }
+}
+
 const dataDir = path.resolve(env('DATA_DIR', './data'));
 
 export const config = {
@@ -44,7 +56,7 @@ export const config = {
    * ADMIN_PASSWORD bleibt dann nur als Notfall-Zugang.
    */
   portal: {
-    url: env('PORTAL_URL').replace(/\/$/, ''),
+    url: normalizeBaseUrl(env('PORTAL_URL')),
     secret: env('PORTAL_SSO_SECRET'),
     moduleId: env('PORTAL_MODULE_ID', 'overlay'),
     sessionHours: Number(env('PORTAL_SESSION_HOURS', '12')),

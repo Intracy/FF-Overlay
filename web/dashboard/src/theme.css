@@ -89,7 +89,7 @@ p.lead { color: var(--fb-text-2); }
 nav.side { background: var(--glass); backdrop-filter: saturate(160%) blur(14px); border-right-color: var(--fb-border); }
 .brand { font-family: var(--font-cond); font-weight: 700; font-size: 20px; letter-spacing: .03em; text-transform: uppercase; }
 .brand .logo {
-  border-radius: 9px; background: var(--accent-grad); color: #fff; font-family: var(--font-cond);
+  width: 34px; height: 34px; border-radius: 10px; background: var(--accent-grad); color: #fff; font-family: var(--font-cond); flex: none;
   box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--fb-accent) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25);
 }
 nav.side a { color: var(--fb-text-2); font-weight: 500; border: 1px solid transparent; border-radius: 10px; transition: background .15s, color .15s, border-color .15s; }
@@ -214,3 +214,19 @@ td { border-bottom-color: var(--fb-border); }
 .login { background: radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--fb-accent) 22%, transparent), transparent), var(--fb-bg); }
 /* MyInstants-Knöpfe behalten ihre eigene Farbe auch beim Überfahren */
 .instant-btn:hover { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 65%, #000)); filter: brightness(1.08); }
+
+/* ---------- Wie im Portal: Wappen, zweizeiliger Name, Benutzer unten in der Seitenleiste ---------- */
+.brand-name { display: flex; flex-direction: column; line-height: 1; }
+.brand-name b { font-family: var(--font-cond); font-weight: 700; font-size: 18px; letter-spacing: .03em; }
+.brand-name span { font-family: var(--font); font-size: 10.5px; font-weight: 600; letter-spacing: .22em; color: var(--fb-accent-2); margin-top: 3px; }
+.userbox { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin: 8px 0 10px; border-radius: 14px; background: var(--card-bg); border: 1px solid var(--card-border); }
+.userbox-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.userbox .avatar { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 50%; font-size: 12px; font-weight: 700; color: var(--fb-accent-2); background: color-mix(in srgb, var(--fb-accent) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fb-accent) 45%, transparent); }
+.userbox-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.userbox-txt b { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.userbox-txt span { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--fb-accent-2); }
+.userbox-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.userbox-actions > * { flex: 1; text-align: center; justify-content: center; white-space: nowrap; }
+.login-card { width: min(380px, 100%); }
+.login-card .brand { justify-content: center; padding-bottom: 6px; }
+.login-card .login-portal { justify-content: center; padding: 11px 14px; }

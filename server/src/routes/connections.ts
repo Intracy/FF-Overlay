@@ -4,7 +4,7 @@ import type { AppContext } from '../context.js';
 import * as store from '../db.js';
 import { config } from '../config.js';
 import { encrypt, randomKey, safeEqual } from '../lib/crypto.js';
-import { isAuthenticated, requireAuth } from './auth.js';
+import { getSession, requireAuth } from './auth.js';
 import { authorizeUrl, exchangeCode, pollTwitchDevice, startTwitchDevice, validateToken, type TwitchTokens } from '../connectors/twitch/auth.js';
 import { myChannel, pollGoogleDevice, startGoogleDevice, type GoogleTokens } from '../connectors/youtube/auth.js';
 import type { YouTubeConnectionData } from '../connectors/youtube/connector.js';
@@ -108,7 +108,7 @@ export async function connectionRoutes(app: FastifyInstance, ctx: AppContext) {
 
   // ---------- Twitch OAuth ----------
   app.get('/auth/twitch/start', async (req, reply) => {
-    if (!isAuthenticated(req)) return reply.redirect('/login');
+    if (getSession(req)?.role !== 'admin') return reply.redirect('/');
     const tapp = twitchApp(db);
     if (!tapp.clientId || !tapp.clientSecret)
       return reply.code(400).send('Für die Anmeldung per Weiterleitung braucht die Twitch-App ein Client-Secret. Einfacher: „Mit Twitch verbinden“ (Gerätecode).');
@@ -120,7 +120,7 @@ export async function connectionRoutes(app: FastifyInstance, ctx: AppContext) {
   app.get<{ Querystring: { code?: string; state?: string; error?: string; error_description?: string } }>(
     '/auth/twitch/callback',
     async (req, reply) => {
-      if (!isAuthenticated(req)) return reply.redirect('/login');
+      if (getSession(req)?.role !== 'admin') return reply.redirect('/');
       const { code, state, error, error_description } = req.query;
       const valid = state && (oauthStates.get(state) ?? 0) > Date.now();
       if (state) oauthStates.delete(state);

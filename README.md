@@ -27,6 +27,7 @@ Ohne Cloud-Konto und ohne Abo, und deine Daten bleiben bei dir.
 - [Screenshots](#screenshots)
 - [Design](#design)
 - [Funktionen](#funktionen)
+- [Anmeldung über FrankenFinals Broadcast](#anmeldung-über-frankenfinals-broadcast)
 - [Projekte für mehrere Streams](#projekte-für-mehrere-streams)
 - [So funktioniert es](#so-funktioniert-es)
 - [Schnellstart](#schnellstart)
@@ -113,6 +114,39 @@ Das Dashboard nutzt dasselbe Design wie [FF-Broadcast](https://github.com/Intrac
 
 Das Design steckt in `web/dashboard/src/theme.css` und überschreibt nur das Aussehen. Layout und Anordnung kommen aus `styles.css`.
 Overlays und Widgets in OBS gestaltest du unabhängig davon selbst; neue Alert-Designs starten mit der Akzentfarbe **#9373c5**.
+
+---
+
+## Anmeldung über FrankenFinals Broadcast
+
+FF-Overlay ist ein Modul des Portals **FrankenFinals Broadcast** ([FrizBok/FF-Broadcast-Portal](https://github.com/FrizBok/FF-Broadcast-Portal)).
+Beide laufen als eigene Dienste nebeneinander; angemeldet wird man nur im Portal.
+
+1. Im Portal unter **Benutzer** bekommt eine Person für „Overlay Engine“ eine Rolle.
+2. Ein Klick auf die Kachel lässt das Portal eine **Eintrittskarte** ausstellen: 60 Sekunden gültig, nur einmal benutzbar,
+   mit HMAC-SHA256 signiert, mit Name, E-Mail und Rolle.
+3. FF-Overlay prüft sie unter `/auth/portal` mit demselben Schlüssel und öffnet eine eigene Sitzung (Standard 12 Stunden).
+   Wer die Adresse direkt aufruft, bekommt den Knopf „Über das Portal anmelden“.
+
+| Rolle im Portal | Darf in FF-Overlay |
+| --- | --- |
+| **Operator** | Alert Feed, Warteschlange (Pause, Skip), Test-Alerts, Widgets live steuern (Timer, Ziele, Abstimmung …), Chat moderieren |
+| **Editor** | zusätzlich Alert-Box, Designs, Regeln, Widgets, Chat-Overlays, Overlays und Mediathek bearbeiten |
+| **Overlay-Admin** | zusätzlich Verbindungen, App-Zugangsdaten, Projekte, Einstellungen und geheime Overlay-Keys |
+
+Plattform-Admins des Portals sind automatisch Overlay-Admin. Die Rechte prüft der Server für jede Anfrage
+(`server/src/lib/permissions.ts`); die Seitenleiste zeigt nur, was die Rolle darf.
+Browserquellen für OBS (`/overlay/…`, `/widget/…`) und Webhooks brauchen weiterhin keinen Login, sondern ihren geheimen Key.
+
+Einrichtung (beide Dienste brauchen denselben Schlüssel, z. B. `openssl rand -hex 32`):
+
+| FF-Overlay (`.env`) | Portal (`.env`) |
+| --- | --- |
+| `PORTAL_URL=https://broadcast.example.de` | `OVERLAY_URL=https://overlay.example.de` |
+| `PORTAL_SSO_SECRET=<schlüssel>` | `OVERLAY_SSO_SECRET=<schlüssel>` |
+
+`ADMIN_PASSWORD` bleibt als Notfall-Zugang (volle Rechte), falls das Portal nicht erreichbar ist. Ohne Portal-Einstellungen
+funktioniert FF-Overlay wie bisher mit Passwort.
 
 ---
 

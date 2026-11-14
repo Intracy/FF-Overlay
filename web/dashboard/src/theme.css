@@ -230,3 +230,5 @@ td { border-bottom-color: var(--fb-border); }
 .login-card { width: min(380px, 100%); }
 .login-card .brand { justify-content: center; padding-bottom: 6px; }
 .login-card .login-portal { justify-content: center; padding: 11px 14px; }
+.userbox a.btn { padding: 4px 8px; font-size: 12px; text-decoration: none; }
+.userbox a.btn:hover { background: var(--fb-surface-3); color: var(--fb-text); }

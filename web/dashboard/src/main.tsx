@@ -34,6 +34,22 @@ const NAV: { to: string; label: string; min: Role }[] = [
   { to: '/settings', label: 'Einstellungen', min: 'admin' },
 ];
 
+/** „Portal“ – in allen Modulen gleich: erster Menüpunkt, Kachel-Icon, Trennstrich zu den eigenen Bereichen */
+function PortalLink() {
+  const me = useSession();
+  if (!me?.portalUrl) return null;
+  return (
+    <a className="nav-portal" href={me.portalUrl + '/'} title="Zum Portal" aria-label="Zum Portal">
+      <span className="nav-portal-lbl">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+        Portal
+      </span>
+    </a>
+  );
+}
+
 function UserBox() {
   const me = useSession();
   if (!me?.user || me.user.via === 'open') return null;
@@ -50,7 +66,6 @@ function UserBox() {
         <span className="userbox-txt"><b>{u.name || u.email}</b><span>{u.roleLabel}</span></span>
       </div>
       <div className="userbox-actions">
-        {me.portalUrl && <a className="btn small" href={me.portalUrl + '/'}>Zum Portal</a>}
         <button className="small ghost" onClick={logout}>Abmelden</button>
       </div>
     </div>
@@ -96,6 +111,7 @@ function Shell() {
     <div className={`app ${popout ? 'popout' : ''}`}>
       <nav className="side" aria-label="Hauptnavigation">
         <Brand />
+        <PortalLink />
         <ProjectSwitcher />
         {nav.map((n) => (
           <Link key={n.to} to={n.to} className={`${path === n.to ? 'active' : ''}${n.to === '/projects' ? ' nav-projects' : ''}`}>

@@ -232,3 +232,7 @@ td { border-bottom-color: var(--fb-border); }
 .login-card .login-portal { justify-content: center; padding: 11px 14px; }
 .userbox a.btn { padding: 4px 8px; font-size: 12px; text-decoration: none; }
 .userbox a.btn:hover { background: var(--fb-surface-3); color: var(--fb-text); }
+/* „Portal“ – in allen Modulen gleich: erster Eintrag, Kachel-Icon, Trennstrich zu den eigenen Bereichen */
+nav.side a.nav-portal { margin-bottom: 10px; position: relative; }
+nav.side a.nav-portal::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: -6px; height: 1px; background: var(--fb-border-2, rgba(255,255,255,.08)); }
+.nav-portal-lbl { display: inline-flex; align-items: center; gap: 9px; }
